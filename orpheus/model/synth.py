@@ -281,7 +281,7 @@ def overlap_and_add(signal, frame_step):
     # subframe_signal = signal.view(*outer_dimensions, -1, subframe_length)
     subframe_signal = signal.reshape(*outer_dimensions, -1, subframe_length)
 
-    frame = torch.arange(0, output_subframes).unfold(0, subframes_per_frame, subframe_step)
+    frame = torch.arange(0, output_subframes).unfold(0, subframes_per_frame, subframe_step).to(subframe_signal)
     frame = signal.new_tensor(frame).long()  # signal may in GPU or CPU
     frame = frame.contiguous().view(-1)
 
@@ -342,7 +342,7 @@ def upsample_with_windows(inputs: torch.Tensor,
   # Constant overlap-add, half overlapping windows.
   hop_size = n_timesteps // n_intervals
   window_length = 2 * hop_size
-  window = torch.hann_window(window_length)  # [window]
+  window = torch.hann_window(window_length).to(inputs)  # [window]
 
   # Transpose for overlap_and_add.
   x = inputs.transpose(1, 2)  # [batch_size, n_channels, n_frames]
@@ -522,8 +522,8 @@ class SinusoidalSynthesizer(nn.Module):
         amplitude_envelopes = resample(amplitudes, self.n_samples, method=self.amp_resample_method)
         frequency_envelopes = resample(frequencies, self.n_samples, method='linear')
 
-        # signal = oscillator_bank(frequency_envelopes=frequency_envelopes,
-        #                               amplitude_envelopes=amplitude_envelopes,
-        #                               sample_rate=self.sample_rate)
+        signal = oscillator_bank(frequency_envelopes=frequency_envelopes,
+                                      amplitude_envelopes=amplitude_envelopes,
+                                      sample_rate=self.sample_rate)
 
-        return (amplitude_envelopes, frequency_envelopes)
+        return signal

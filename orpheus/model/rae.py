@@ -28,7 +28,7 @@ class RawAudioEncoder(nn.Module):
 
         self.encoder = Encoder(sequence_length, codebook_width, h_dims, scales, blocks_per_stages, layers_per_blocks, se_ratio)
         # self.decoder = Decoder(sequence_length, h_dims[::-1], scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1], se_ratio)
-        self.decoder = SynthDecoder(sequence_length, scales[::-1], blocks_per_stages[::-1], se_ratio)
+        self.decoder = SynthDecoder(sequence_length, h_dims[-1], se_ratio)
 
     def encode(self, x, deterministic=False, temperature=0.5):
         return self.encoder(x, deterministic, temperature)

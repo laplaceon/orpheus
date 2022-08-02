@@ -1,23 +1,46 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
-from blocks import MBConv
-from synth import SinusoidalSynthesizer
+from model.blocks import MBConv
+from model.synth import SinusoidalSynthesizer
 
 class SynthDecoder(nn.Module):
     def __init__(
         self,
         sequence_length,
-        scales,
-        blocks_per_stages,
+        dim,
         se_ratio
     ):
         super().__init__()
 
+        self.net1 = nn.Sequential(
+            nn.Conv1d(dim, dim*2, 3, padding=1),
+            nn.SiLU(),
+            nn.BatchNorm1d(dim*2),
+            MBConv(dim*2, dim*2, dim*2)
+        )
+
+        self.net2 = nn.Sequential(
+            nn.Conv1d(dim, dim*2, 3, padding=1),
+            nn.SiLU(),
+            nn.BatchNorm1d(dim*2),
+            MBConv(dim*2, dim*2, dim*2, se_ratio=se_ratio)
+        )
+
+        self.l1 = nn.Linear(dim*2, dim*2)
+
         self.synth = SinusoidalSynthesizer(sequence_length, 44100)
 
     def forward(self, z):
-        return z
+        amplitudes = self.net1(z)
+        frequencies = self.net2(z)
+        frequencies = F.relu(self.l1(frequencies.transpose(1, 2)))
+
+        controls = self.synth.get_controls(amplitudes.transpose(1, 2), frequencies)
+        audio = self.synth.get_signal(controls["amplitudes"], controls["frequencies"])
+
+        return audio.unsqueeze(1)
 
 class Decoder(nn.Module):
     def __init__(

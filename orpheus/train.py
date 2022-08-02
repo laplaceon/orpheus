@@ -13,12 +13,12 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 
-from model import RawAudioEncoder
+from model.rae import RawAudioEncoder
 
 from dataset import AudioFileDataset
 from sklearn.model_selection import train_test_split
 
-from utils import copy_params
+# from utils import copy_params
 from tqdm import tqdm
 
 from math import sqrt
@@ -27,7 +27,7 @@ torchaudio.USE_SOUNDFILE_LEGACY_INTERFACE = False
 torchaudio.set_audio_backend("soundfile")
 
 # Hyperparams
-batch_size = 4
+batch_size = 2
 
 # Params
 bitrate = 44100
@@ -117,10 +117,10 @@ def train(model, train_dl, lr=1e-3, beta_kl=1e-7, beta_rec=1.0):
 
 model = RawAudioEncoder(sequence_length).cuda()
 
-data_folder = "../data"
+data_folder = "./data"
 
 # audio_files = [f"{data_folder}/2000s/{x}" for x in os.listdir(f"{data_folder}/2000s") if x.endswith(".wav")] + [f"{data_folder}/2010s/{x}" for x in os.listdir(f"{data_folder}/2010s") if x.endswith(".wav")]
-audio_files = [f"{data_folder}/2000s/{x}" for x in os.listdir(f"{data_folder}/2000s") if x.endswith(".wav")][:65]
+audio_files = [f"{data_folder}/{x}" for x in os.listdir(f"{data_folder}") if x.endswith(".wav")][:65]
 
 X_train, X_test = train_test_split(audio_files, train_size=0.7, random_state=42)
 
@@ -131,5 +131,5 @@ train_ds = AudioFileDataset(X_train, sequence_length, multiplier=multiplier)
 train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 # val_dl = DataLoader(val_ds, batch_size=ae_batch_size*2)
 
-# train(model, train_dl)
-print(model)
+train(model, train_dl)
+# print(model)
