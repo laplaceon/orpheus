@@ -31,6 +31,8 @@ class Encoder(nn.Module):
         self.conv = nn.Sequential(*stages)
 
         self.quantizer = SQEmbedding(codebook_width, h_dims[-1], nn.Parameter(torch.tensor(log_param_q_init)))
+        # self.quantizer1 = SQEmbedding(codebook_width // 2, h_dims[-1], nn.Parameter(torch.tensor(log_param_q_init)))
+        # self.quantizer2 = SQEmbedding(codebook_width // 2, h_dims[-1], nn.Parameter(torch.tensor(log_param_q_init)))
         # self.jitter = Jitter(0.5)
 
     def encode(self, x):

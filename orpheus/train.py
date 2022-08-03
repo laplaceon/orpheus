@@ -46,7 +46,28 @@ def recons_loss(inp, tgt, time_weight=1.0, freq_weight=1.0, reduction="mean"):
 
     return time_weight * time_loss + freq_weight * freq_loss
 
-def train(model, train_dl, lr=1e-3, beta_kl=1e-7, beta_rec=1.0):
+def get_song_features(model, file):
+    data, rate = torchaudio.load(file)
+    bal = 0.5
+
+    if data.shape[0] == 2:
+        data = bal * data[0, :] + (1 - bal) * data[1, :]
+    else:
+        data = data[0, :]
+
+    consumable = data.shape[0] - (data.shape[0] % sequence_length)
+
+    data = torch.stack(torch.split(data[:consumable], sequence_length)).unsqueeze(1).cuda()
+
+    with torch.no_grad():
+        z = model.encode(data, True)[0]
+        output = model.decode(z)
+
+        output = output.squeeze(1).flatten()
+
+        return output
+
+def train(model, train_dl, lr=1e-3, beta_kl=1e-7, beta_rec=1.0, beta_kld_max=0.15):
     opt = Adam(model.parameters(), lr)
     lr_scheduler = ReduceLROnPlateau(opt, factor=0.5, patience=5, verbose=True)
 
@@ -78,7 +99,9 @@ def train(model, train_dl, lr=1e-3, beta_kl=1e-7, beta_rec=1.0):
             # mse = F.mse_loss(rec, real_imgs, reduction="sum") / bs
             r_loss = 1024 * torch.log(mse)
 
-            loss = r_loss + torch.abs(kl)
+            beta_kld = min(beta_kld_max, beta_kld_max * step / 16800)
+
+            loss = r_loss + beta_kld * torch.abs(kl)
 
             # print(r_loss, d_loss)
             r_loss_total += r_loss.item()
@@ -110,7 +133,7 @@ def train(model, train_dl, lr=1e-3, beta_kl=1e-7, beta_rec=1.0):
             ]
 
             for test_file in test_files:
-                out = get_song_features(model, f"../data/{test_file}")
+                out = get_song_features(model, f"../output/{test_file}")
                 torchaudio.save(f"../output/{slugify(test_file)}_epoch{i+1}.wav", out.cpu().unsqueeze(0), bitrate)
         i += 1
 
