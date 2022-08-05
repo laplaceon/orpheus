@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 
-from model.blocks import MBConv
-from model.quantizer import SQEmbedding, Jitter
+from orpheus.model.blocks import MBConv
+from orpheus.model.quantizer import SQEmbedding, Jitter
 
 class Encoder(nn.Module):
     def __init__(

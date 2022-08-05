@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from model.blocks import MBConv
-from model.synth import SinusoidalSynthesizer
+from orpheus.model.blocks import MBConv
+from orpheus.model.synth import SinusoidalSynthesizer
 
 class SynthDecoder(nn.Module):
     def __init__(

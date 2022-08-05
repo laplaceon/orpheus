@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from model.attention import window_partition, window_reverse
+from orpheus.model.attention import window_partition, window_reverse
 
 class DepthwiseSeparableConv(nn.Module):
     def __init__(

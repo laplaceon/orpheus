@@ -4,8 +4,8 @@ import torch.nn.functional as F
 
 import math
 
-from model.encoder import Encoder
-from model.decoder import Decoder, SynthDecoder
+from orpheus.model.encoder import Encoder
+from orpheus.model.decoder import Decoder, SynthDecoder
 
 class RawAudioEncoder(nn.Module):
     def __init__(

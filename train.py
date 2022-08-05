@@ -13,7 +13,7 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 
-from model.rae import RawAudioEncoder
+from orpheus.model.rae import RawAudioEncoder
 
 from dataset import AudioFileDataset
 from sklearn.model_selection import train_test_split
