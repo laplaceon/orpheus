@@ -105,6 +105,39 @@ class ResBlock(nn.Module):
 
         return self.activation(h + self.conv_res(x))
 
+# class ResBlock(nn.Module):
+#     def __init__(
+#         self,
+#         in_channels,
+#         out_channels,
+#         kernel=3,
+#         dilation=1,
+#         groups=8,
+#         activation=nn.ReLU()
+#     ):
+#         super().__init__()
+
+#         self.conv1 = nn.Sequential(
+#             DepthwiseSeparableConv(in_channels, out_channels, kernel_size=kernel, dilation=dilation, padding="same"),
+#             nn.BatchNorm1d(out_channels),
+#             activation
+#         )
+#         self.conv2 = nn.Sequential(
+#             DepthwiseSeparableConv(out_channels, out_channels, kernel_size=kernel, dilation=dilation, padding="same"),
+#             nn.BatchNorm1d(out_channels)
+#         )
+
+#         self.conv_res = nn.Conv1d(in_channels, out_channels, kernel_size=1, dilation=dilation, padding="same")
+
+#         self.activation = activation
+
+#     def forward(self, x):
+#         residual = x
+#         h = self.conv1(x)
+#         h = self.conv2(h)
+
+#         return self.activation(h + residual)
+
 class MBConv(nn.Module):
     def __init__(
         self,

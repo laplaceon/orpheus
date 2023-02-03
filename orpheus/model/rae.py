@@ -7,14 +7,14 @@ import math
 from orpheus.model.encoder import Encoder
 from orpheus.model.decoder import Decoder, SynthDecoder
 
-class RawAudioEncoder(nn.Module):
+class Orpheus(nn.Module):
     def __init__(
         self,
         sequence_length,
-        h_dims=(1, 8, 32, 32, 32, 24),
-        scales=(3, 3, 3, 2, 2),
-        blocks_per_stages=(2, 2, 4, 4, 3),
-        layers_per_blocks=(4, 4, 4, 4, 4),
+        h_dims=(64, 96, 144, 216, 324),
+        scales=(2, 2, 2, 2),
+        blocks_per_stages=(1, 1, 1, 1),
+        layers_per_blocks=(2, 2, 2, 2),
         se_ratio=0.5,
         codebook_width=256
     ):
@@ -27,15 +27,20 @@ class RawAudioEncoder(nn.Module):
         self.z_shape = (int(z_length), h_dims[-1])
 
         self.encoder = Encoder(sequence_length, codebook_width, h_dims, scales, blocks_per_stages, layers_per_blocks, se_ratio)
-        # self.decoder = Decoder(sequence_length, h_dims[::-1], scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1], se_ratio)
-        self.decoder = SynthDecoder(sequence_length, h_dims[-1], se_ratio)
+        self.decoder = Decoder(sequence_length, h_dims[::-1], scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1], se_ratio)
+        # self.decoder = SynthDecoder(sequence_length, h_dims[-1], se_ratio)
 
-    def encode(self, x, deterministic=False, temperature=0.5):
-        return self.encoder(x, deterministic, temperature)
+        # self.quantizer = VectorQuantizer(codebook_width, h_dims[-1])
+
+    def encode(self, x):
+        return self.encoder(x)
 
     def decode(self, z):
         return self.decoder(z)
 
     def forward(self, x):
-        z = self.encode(x, deterministic=True)
-        return self.decode(z)
+        # quantized_inputs, vq_loss = self.quantizer(self.encode(x))
+
+        # return [self.decode(quantized_inputs), vq_loss]
+
+        return self.decode(self.encode(x))

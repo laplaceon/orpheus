@@ -18,14 +18,16 @@ class SynthDecoder(nn.Module):
             nn.Conv1d(dim, dim*2, 3, padding=1),
             nn.SiLU(),
             nn.BatchNorm1d(dim*2),
-            MBConv(dim*2, dim*2, dim*2)
+            MBConv(dim*2, dim*2, dim*2),
+            nn.Tanh()
         )
 
         self.net2 = nn.Sequential(
             nn.Conv1d(dim, dim*2, 3, padding=1),
             nn.SiLU(),
             nn.BatchNorm1d(dim*2),
-            MBConv(dim*2, dim*2, dim*2, se_ratio=se_ratio)
+            MBConv(dim*2, dim*2, dim*2, se_ratio=se_ratio),
+            nn.Tanh()
         )
 
         self.l1 = nn.Linear(dim*2, dim*2)

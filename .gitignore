@@ -7,4 +7,8 @@ build/
 develop-eggs/
 dist/
 data/
+input/
 output/
+models/
+
+.code-workspace
