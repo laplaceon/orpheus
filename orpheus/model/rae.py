@@ -4,14 +4,14 @@ import torch.nn.functional as F
 
 import math
 
-from orpheus.model.encoder import Encoder
-from orpheus.model.decoder import Decoder, SynthDecoder
+from .encoder import Encoder
+from .decoder import Decoder, SynthDecoder
 
 class Orpheus(nn.Module):
     def __init__(
         self,
         sequence_length,
-        h_dims=(64, 96, 144, 216, 324),
+        h_dims=(64, 96, 144, 216, 256),
         scales=(2, 2, 2, 2),
         blocks_per_stages=(1, 1, 1, 1),
         layers_per_blocks=(2, 2, 2, 2),
@@ -27,8 +27,8 @@ class Orpheus(nn.Module):
         self.z_shape = (int(z_length), h_dims[-1])
 
         self.encoder = Encoder(sequence_length, codebook_width, h_dims, scales, blocks_per_stages, layers_per_blocks, se_ratio)
-        self.decoder = Decoder(sequence_length, h_dims[::-1], scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1], se_ratio)
-        # self.decoder = SynthDecoder(sequence_length, h_dims[-1], se_ratio)
+        # self.decoder = Decoder(sequence_length, h_dims[::-1], scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1], se_ratio)
+        self.decoder = SynthDecoder(sequence_length, h_dims[-1], se_ratio)
 
         # self.quantizer = VectorQuantizer(codebook_width, h_dims[-1])
 
@@ -43,4 +43,8 @@ class Orpheus(nn.Module):
 
         # return [self.decode(quantized_inputs), vq_loss]
 
-        return self.decode(self.encode(x))
+        z = self.encode(x)
+
+        # print(z.shape)
+
+        return self.decode(z)

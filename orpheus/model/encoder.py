@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from orpheus.model.blocks import MBConvRe
+from .blocks import MBConv, ResBlock
 
 class Encoder(nn.Module):
     def __init__(

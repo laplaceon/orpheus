@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from orpheus.model.attention import window_partition, window_reverse
+# from attention import window_partition, window_reverse
 
 class DepthwiseSeparableConv(nn.Module):
     def __init__(
@@ -105,38 +105,38 @@ class ResBlock(nn.Module):
 
         return self.activation(h + self.conv_res(x))
 
-# class ResBlock(nn.Module):
-#     def __init__(
-#         self,
-#         in_channels,
-#         out_channels,
-#         kernel=3,
-#         dilation=1,
-#         groups=8,
-#         activation=nn.ReLU()
-#     ):
-#         super().__init__()
+class ResBlock(nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel=3,
+        dilation=1,
+        groups=8,
+        activation=nn.ReLU()
+    ):
+        super().__init__()
 
-#         self.conv1 = nn.Sequential(
-#             DepthwiseSeparableConv(in_channels, out_channels, kernel_size=kernel, dilation=dilation, padding="same"),
-#             nn.BatchNorm1d(out_channels),
-#             activation
-#         )
-#         self.conv2 = nn.Sequential(
-#             DepthwiseSeparableConv(out_channels, out_channels, kernel_size=kernel, dilation=dilation, padding="same"),
-#             nn.BatchNorm1d(out_channels)
-#         )
+        self.conv1 = nn.Sequential(
+            DepthwiseSeparableConv(in_channels, out_channels, kernel_size=kernel, dilation=dilation, padding="same"),
+            nn.BatchNorm1d(out_channels),
+            activation
+        )
+        self.conv2 = nn.Sequential(
+            DepthwiseSeparableConv(out_channels, out_channels, kernel_size=kernel, dilation=dilation, padding="same"),
+            nn.BatchNorm1d(out_channels)
+        )
 
-#         self.conv_res = nn.Conv1d(in_channels, out_channels, kernel_size=1, dilation=dilation, padding="same")
+        self.conv_res = nn.Conv1d(in_channels, out_channels, kernel_size=1, dilation=dilation, padding="same")
 
-#         self.activation = activation
+        self.activation = activation
 
-#     def forward(self, x):
-#         residual = x
-#         h = self.conv1(x)
-#         h = self.conv2(h)
+    def forward(self, x):
+        residual = x
+        h = self.conv1(x)
+        h = self.conv2(h)
 
-#         return self.activation(h + residual)
+        return self.activation(h + residual)
 
 class MBConv(nn.Module):
     def __init__(
@@ -169,28 +169,28 @@ class MBConv(nn.Module):
 
         return self.conv(x) + residual
 
-class AttentionLayer(nn.Module):
-    def __init__(
-        self,
-        dim,
-        max_seq_len,
-        dim_head = 64,
-        heads = 8,
-        causal = False,
-        dropout = 0.0,
-        window_len = 32
-    ):
-        super().__init__()
+# class AttentionLayer(nn.Module):
+#     def __init__(
+#         self,
+#         dim,
+#         max_seq_len,
+#         dim_head = 64,
+#         heads = 8,
+#         causal = False,
+#         dropout = 0.0,
+#         window_len = 32
+#     ):
+#         super().__init__()
 
-        self.attn = AttentionLayers(dim, 1, rel_pos_bias=True)
+#         self.attn = AttentionLayers(dim, 1, rel_pos_bias=True)
 
-        self.attn_window_len = window_len
+#         self.attn_window_len = window_len
 
-    def forward(self, x):
-        seq_len = x.shape[-1]
+#     def forward(self, x):
+#         seq_len = x.shape[-1]
 
-        x = window_partition(x, window_size=self.attn_window_len)
-        x = self.attn(x)
-        x = window_reverse(x, seq_len, window_size=self.attn_window_len)
+#         x = window_partition(x, window_size=self.attn_window_len)
+#         x = self.attn(x)
+#         x = window_reverse(x, seq_len, window_size=self.attn_window_len)
 
-        return x
+#         return x

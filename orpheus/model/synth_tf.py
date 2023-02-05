@@ -199,6 +199,8 @@ def resample(inputs: tf.Tensor,
   is_2d = len(inputs.shape) == 2
   is_4d = len(inputs.shape) == 4
 
+  # print(inputs.shape)
+
   # Ensure inputs are at least 3d.
   if is_1d:
     inputs = inputs[tf.newaxis, :, tf.newaxis]
@@ -227,6 +229,8 @@ def resample(inputs: tf.Tensor,
   else:
     raise ValueError('Method ({}) is invalid. Must be one of {}.'.format(
         method, "['nearest', 'linear', 'cubic', 'window']"))
+
+  # print(outputs.shape)
 
   return outputs
 
@@ -532,8 +536,8 @@ class Sinusoidal(Processor):
                                         method=self.amp_resample_method)
     frequency_envelopes = resample(frequencies, self.n_samples)
 
-    # signal = oscillator_bank(frequency_envelopes=frequency_envelopes,
-    #                               amplitude_envelopes=amplitude_envelopes,
-    #                               sample_rate=self.sample_rate)
+    signal = oscillator_bank(frequency_envelopes=frequency_envelopes,
+                                  amplitude_envelopes=amplitude_envelopes,
+                                  sample_rate=self.sample_rate)
 
-    return (amplitude_envelopes, frequency_envelopes)
+    return signal

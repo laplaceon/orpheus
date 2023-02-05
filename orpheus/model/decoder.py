@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from orpheus.model.blocks import MBConv
-from orpheus.model.synth import SinusoidalSynthesizer
+from .blocks import MBConv
+from .synth import SinusoidalSynthesizer
 
 class SynthDecoder(nn.Module):
     def __init__(
@@ -30,19 +30,16 @@ class SynthDecoder(nn.Module):
             nn.Tanh()
         )
 
-        self.l1 = nn.Linear(dim*2, dim*2)
-
         self.synth = SinusoidalSynthesizer(sequence_length, 44100)
 
     def forward(self, z):
         amplitudes = self.net1(z)
         frequencies = self.net2(z)
-        frequencies = F.relu(self.l1(frequencies.transpose(1, 2)))
 
-        controls = self.synth.get_controls(amplitudes.transpose(1, 2), frequencies)
+        controls = self.synth.get_controls(amplitudes, frequencies)
         audio = self.synth.get_signal(controls["amplitudes"], controls["frequencies"])
 
-        return audio.unsqueeze(1)
+        return audio
 
 class Decoder(nn.Module):
     def __init__(

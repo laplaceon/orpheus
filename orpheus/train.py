@@ -13,7 +13,7 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 
-from base_model.rae import Orpheus
+from model.rae import Orpheus
 
 from dataset import AudioFileDataset
 from sklearn.model_selection import train_test_split
@@ -27,13 +27,13 @@ torchaudio.USE_SOUNDFILE_LEGACY_INTERFACE = False
 torchaudio.set_audio_backend("soundfile")
 
 # Hyperparams
-batch_size = 32
+batch_size = 16
 
 # Params
 bitrate = 44100
-sequence_length = 204768
+sequence_length = 262144
 
-n_fft = 1024
+n_fft = 1026
 n_mels = 64
 to_mel = torchaudio.transforms.MelSpectrogram(sample_rate=bitrate, n_fft=n_fft, n_mels=n_mels).cuda()
 from_mel = torchaudio.transforms.InverseMelScale(n_stft=n_fft // 2 + 1, n_mels=n_mels, sample_rate=bitrate).cuda()
@@ -116,13 +116,16 @@ def train(model, train_dl, lr=1e-4):
 
             with torch.no_grad():
                 mel_imgs = to_mel(real_imgs)
+                # print(mel_imgs.shape)
 
             opt.zero_grad()
 
             # Train Encoder, Decoder
             rec = model(mel_imgs)
 
-            r_loss = F.mse_loss(rec, mel_imgs)
+            # print(rec.shape, real_imgs.shape)
+
+            r_loss = F.mse_loss(rec, real_imgs)
 
             # mse = F.mse_loss(rec, real_imgs, reduction="sum") / bs
 
@@ -158,10 +161,10 @@ def train(model, train_dl, lr=1e-4):
 
 model = Orpheus(sequence_length).cuda()
 
-data_folder = "./data"
+data_folder = "../data"
 
 # audio_files = [f"{data_folder}/2000s/{x}" for x in os.listdir(f"{data_folder}/2000s") if x.endswith(".wav")] + [f"{data_folder}/2010s/{x}" for x in os.listdir(f"{data_folder}/2010s") if x.endswith(".wav")]
-audio_files = [f"{data_folder}/{x}" for x in os.listdir(f"{data_folder}") if x.endswith(".wav")]
+audio_files = [f"{data_folder}/{x}" for x in os.listdir(f"{data_folder}") if x.endswith(".wav")][:65]
 
 X_train, X_test = train_test_split(audio_files, train_size=0.7, random_state=42)
 

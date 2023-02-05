@@ -1,4 +1,5 @@
-from orpheus.model.blocks_2d import MBConv, MBConvResidual
-from orpheus.model.encoder import EncoderStage
-from orpheus.model.decoder import DecoderStage
-from orpheus.model.synth import SinusoidalSynthesizer
+from .blocks import MBConv
+from .blocks_2d import MBConv, MBConvResidual
+from .encoder import EncoderStage
+from .decoder import DecoderStage
+from .synth import SinusoidalSynthesizer

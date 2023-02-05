@@ -4,6 +4,8 @@ import torch.nn.functional as F
 import math
 import numpy as np
 
+import torchaudio
+
 def safe_divide(numerator, denominator, eps=1e-7):
   """Avoid dividing by zero by adding a small epsilon."""
   safe_denominator = torch.where(denominator == 0.0, eps, denominator)
@@ -209,6 +211,8 @@ def resample(inputs: torch.Tensor,
   is_2d = len(inputs.shape) == 2
   is_4d = len(inputs.shape) == 4
 
+  # print(inputs.shape)
+
   # Ensure inputs are at least 3d.
   if is_1d:
     inputs = inputs[None, :, None]
@@ -242,6 +246,7 @@ def resample(inputs: torch.Tensor,
     outputs = _image_resize('bicubic')
   elif method == 'window':
     outputs = upsample_with_windows(inputs, n_timesteps, add_endpoint)
+    # outputs = torchaudio.functional.resample(inputs, 512, n_timesteps)
   else:
     raise ValueError('Method ({}) is invalid. Must be one of {}.'.format(
         method, "['nearest', 'linear', 'cubic', 'window']"))
@@ -251,6 +256,8 @@ def resample(inputs: torch.Tensor,
     outputs = outputs[0, :, 0]
   elif is_2d:
     outputs = outputs[:, :, 0]
+
+  # print(outputs.shape)
 
   return outputs
 
@@ -278,11 +285,12 @@ def overlap_and_add(signal, frame_step):
     output_size = frame_step * (frames - 1) + frame_length
     output_subframes = output_size // subframe_length
 
-    # subframe_signal = signal.reshape(*outer_dimensions, -1, subframe_length)
-    subframe_signal = signal.contiguous().view(*outer_dimensions, -1, subframe_length)
+    subframe_signal = signal.reshape(*outer_dimensions, -1, subframe_length)
+    # subframe_signal = signal.view(*outer_dimensions, -1, subframe_length)
 
     frame = torch.arange(0, output_subframes).unfold(0, subframes_per_frame, subframe_step).to(subframe_signal)
-    frame = signal.new_tensor(frame).long()  # signal may in GPU or CPU
+    # frame = signal.new_tensor(frame).long()  # signal may in GPU or CPU
+    frame = frame.clone().long().to(subframe_signal.device)
     frame = frame.contiguous().view(-1)
 
     result = signal.new_zeros(*outer_dimensions, output_subframes, subframe_length)
@@ -342,7 +350,7 @@ def upsample_with_windows(inputs: torch.Tensor,
   # Constant overlap-add, half overlapping windows.
   hop_size = n_timesteps // n_intervals
   window_length = 2 * hop_size
-  window = torch.hann_window(window_length).to(inputs)  # [window]
+  window = torch.hann_window(window_length).to(inputs.device)  # [window]
 
   # Transpose for overlap_and_add.
   x = inputs.transpose(1, 2)  # [batch_size, n_channels, n_frames]
@@ -520,7 +528,7 @@ class SinusoidalSynthesizer(nn.Module):
 
     def get_signal(self, amplitudes, frequencies):
         amplitude_envelopes = resample(amplitudes, self.n_samples, method=self.amp_resample_method)
-        frequency_envelopes = resample(frequencies, self.n_samples, method='linear')
+        frequency_envelopes = resample(frequencies, self.n_samples)
 
         signal = oscillator_bank(frequency_envelopes=frequency_envelopes,
                                       amplitude_envelopes=amplitude_envelopes,
