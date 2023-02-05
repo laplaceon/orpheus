@@ -2,11 +2,11 @@ from setuptools import setup
 
 setup(
     name='orpheus',
-    version='0.1.0',
+    version='0.1.1',
     description='A neural network for music representation learning',
     url='https://github.com/laplaceon/orpheus',
     author='Riyadh Rahman',
-    packages=['orpheus.model', 'orpheus.base_model'],
+    packages=['orpheus.model'],
     install_requires=[
         'torch',
         'numpy',

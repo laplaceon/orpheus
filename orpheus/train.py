@@ -40,14 +40,14 @@ from_mel = torchaudio.transforms.InverseMelScale(n_stft=n_fft // 2 + 1, n_mels=n
 to_wave = torchaudio.transforms.GriffinLim(n_fft=n_fft).cuda()
 
 def recons_loss(inp, tgt, time_weight=1.0, freq_weight=1.0, reduction="mean"):
-    lcosh = auraloss.time.LogCoshLoss(reduction=reduction)
+    # lcosh = auraloss.time.LogCoshLoss(reduction=reduction)
 
     fft_sizes = [2048, 1024, 512, 256, 128, 64]
     hops = [int(0.25*fft) for fft in fft_sizes]
 
     stft = auraloss.freq.MultiResolutionSTFTLoss(fft_sizes=fft_sizes, hop_sizes=hops, win_lengths=fft_sizes, reduction=reduction)
 
-    time_loss = lcosh(inp, tgt)
+    time_loss = F.mse_loss(inp, tgt)
     freq_loss = stft(inp, tgt)
 
     return time_weight * time_loss + freq_weight * freq_loss
@@ -125,7 +125,7 @@ def train(model, train_dl, lr=1e-4):
 
             # print(rec.shape, real_imgs.shape)
 
-            r_loss = F.mse_loss(rec, real_imgs)
+            r_loss = recons_loss(rec, real_imgs)
 
             # mse = F.mse_loss(rec, real_imgs, reduction="sum") / bs
 
