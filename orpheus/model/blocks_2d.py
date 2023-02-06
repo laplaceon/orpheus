@@ -31,7 +31,6 @@ class PointwiseConv2d(nn.Module):
         self,
         in_channels,
         out_channels,
-        kernel_size,
         bias=False
     ):
         super().__init__()
@@ -103,9 +102,11 @@ class Dropsample(nn.Module):
 def MBConv(
     dim_in,
     dim_out,
-    *,
+    kernel_size = 3,
+    padding = 1,
+    dilation = 1,
     downsample_factor = None,
-    expansion_rate = 4,
+    expansion_rate = 2,
     shrinkage_rate = 0.25,
     dropout = 0.
 ):
@@ -114,18 +115,18 @@ def MBConv(
     stride = downsample_factor if downsample_factor is not None else 1
 
     net = nn.Sequential(
-        PointwiseConv2d(dim_in, hidden_dim, 1),
+        PointwiseConv2d(dim_in, hidden_dim),
         nn.BatchNorm2d(hidden_dim),
         nn.GELU(),
-        DepthwiseConv2d(hidden_dim, 3, stride = stride, padding = 1),
+        DepthwiseConv2d(hidden_dim, kernel_size, stride=stride, padding=padding, dilation=dilation),
         nn.BatchNorm2d(hidden_dim),
         nn.GELU(),
-        SqueezeExcitation(hidden_dim, squeeze_channels = squeeze_channels),
-        PointwiseConv2d(hidden_dim, dim_out, 1),
+        SqueezeExcitation(hidden_dim, squeeze_channels=squeeze_channels),
+        PointwiseConv2d(hidden_dim, dim_out),
         nn.BatchNorm2d(dim_out)
     )
 
-    if dim_in == dim_out and not downsample_factor is None:
+    if dim_in == dim_out and downsample_factor is None:
         net = MBConvResidual(net, dropout = dropout)
 
     return net

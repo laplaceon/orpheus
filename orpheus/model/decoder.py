@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .blocks import MBConv
+from .blocks_1d import MBConv
 from .synth import SinusoidalSynthesizer
 
 class SynthDecoder(nn.Module):
@@ -19,6 +19,8 @@ class SynthDecoder(nn.Module):
             nn.SiLU(),
             nn.BatchNorm1d(dim*2),
             MBConv(dim*2, dim*2, dim*2),
+            MBConv(dim*2, dim*2, dim*2),
+            MBConv(dim*2, dim*2, dim*2),
             nn.Tanh()
         )
 
@@ -27,12 +29,16 @@ class SynthDecoder(nn.Module):
             nn.SiLU(),
             nn.BatchNorm1d(dim*2),
             MBConv(dim*2, dim*2, dim*2, se_ratio=se_ratio),
-            nn.Tanh()
+            MBConv(dim*2, dim*2, dim*2),
+            MBConv(dim*2, dim*2, dim*2),
+            nn.ReLU()
         )
 
         self.synth = SinusoidalSynthesizer(sequence_length, 44100)
 
     def forward(self, z):
+        z = z.view(-1, z.shape[1], z.shape[2] * z.shape[3])
+
         amplitudes = self.net1(z)
         frequencies = self.net2(z)
 

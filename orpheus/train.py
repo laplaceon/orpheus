@@ -27,13 +27,13 @@ torchaudio.USE_SOUNDFILE_LEGACY_INTERFACE = False
 torchaudio.set_audio_backend("soundfile")
 
 # Hyperparams
-batch_size = 16
+batch_size = 8
 
 # Params
 bitrate = 44100
 sequence_length = 262144
 
-n_fft = 1026
+n_fft = 1024
 n_mels = 64
 to_mel = torchaudio.transforms.MelSpectrogram(sample_rate=bitrate, n_fft=n_fft, n_mels=n_mels).cuda()
 from_mel = torchaudio.transforms.InverseMelScale(n_stft=n_fft // 2 + 1, n_mels=n_mels, sample_rate=bitrate).cuda()
@@ -54,7 +54,6 @@ def recons_loss(inp, tgt, time_weight=1.0, freq_weight=1.0, reduction="mean"):
 
 def get_song_features(model, file):
     data, rate = torchaudio.load(file)
-    print(data.shape)
     bal = 0.5
 
     if data.shape[0] == 2:
@@ -64,21 +63,24 @@ def get_song_features(model, file):
 
     consumable = data.shape[0] - (data.shape[0] % sequence_length)
 
-    data = torch.stack(torch.split(data[:consumable], sequence_length))
-    data_spec = to_mel(data).cuda()
+    data = torch.stack(torch.split(data[:consumable], sequence_length)).cuda()
+    data_spec = to_mel(data[:20])
 
     with torch.no_grad():
         z = model.encode(data_spec)
         output = model.decode(z)
-
-    lin_out = from_mel(output)
-
-    with torch.no_grad():
-        wave = to_wave(lin_out)
-
-        output = wave.flatten()
-
+        output = output.flatten()
+        # print(output[:5].shape)
         return output
+
+    # lin_out = from_mel(output)
+
+    # with torch.no_grad():
+    #     wave = to_wave(lin_out)
+
+    #     output = wave.flatten()
+
+    #     return output
 
 def eval(model, val_dl):
     a = 1
@@ -115,7 +117,7 @@ def train(model, train_dl, lr=1e-4):
             bs = real_imgs.shape[0]
 
             with torch.no_grad():
-                mel_imgs = to_mel(real_imgs)
+                mel_imgs = to_mel(real_imgs.unsqueeze(1))
                 # print(mel_imgs.shape)
 
             opt.zero_grad()
@@ -176,5 +178,6 @@ train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 # val_dl = DataLoader(val_ds, batch_size=ae_batch_size*2)
 
 train(model, train_dl)
+# model.load_state_dict(torch.load("../models/ravae_5l_sqvae_4.pt"))
 # real_eval(model, 0)
 # print(model)

@@ -532,12 +532,12 @@ class Sinusoidal(Processor):
       signal: A tensor of harmonic waves of shape [batch, n_samples].
     """
     # Create sample-wise envelopes.
-    amplitude_envelopes = resample(amplitudes, self.n_samples,
-                                        method=self.amp_resample_method)
-    frequency_envelopes = resample(frequencies, self.n_samples)
+    # amplitude_envelopes = resample(amplitudes, self.n_samples,
+    #                                     method=self.amp_resample_method)
+    # frequency_envelopes = resample(frequencies, self.n_samples)
 
-    signal = oscillator_bank(frequency_envelopes=frequency_envelopes,
-                                  amplitude_envelopes=amplitude_envelopes,
+    signal = oscillator_bank(frequency_envelopes=frequencies,
+                                  amplitude_envelopes=amplitudes,
                                   sample_rate=self.sample_rate)
 
     return signal

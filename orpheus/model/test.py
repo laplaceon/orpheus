@@ -49,8 +49,20 @@ scaled_pt = sinusoidal_pt.get_controls(a_pt, f_pt)
 # amp_diff = cd1(scaled_tf['amplitudes'], scaled_pt['amplitudes'])
 # freq_diff = cd1(scaled_tf['frequencies'], scaled_pt['frequencies'])
 
-signal_tf = sinusoidal_tf.get_signal(scaled_tf['amplitudes'], scaled_tf['frequencies'])
-signal_pt = sinusoidal_pt.get_signal(scaled_pt['amplitudes'], scaled_pt['frequencies'])
+a = np.random.rand(16, 262144, 32)
+f = np.random.rand(16, 262144, 32)
+
+a_pt = torch.Tensor(a)
+f_pt = torch.Tensor(f)
+
+a_tf = tf.convert_to_tensor(a, dtype=tf.float32)
+f_tf = tf.convert_to_tensor(f, dtype=tf.float32)
+
+# signal_tf = sinusoidal_tf.get_signal(scaled_tf['amplitudes'], scaled_tf['frequencies'])
+# signal_pt = sinusoidal_pt.get_signal(scaled_pt['amplitudes'], scaled_pt['frequencies'])
+
+signal_tf = sinusoidal_tf.get_signal(a_tf, f_tf)
+signal_pt = sinusoidal_pt.get_signal(a_pt, f_pt)
 
 # (ae, fe, signal_tf) = sinusoidal_tf.get_signal(scaled_tf['amplitudes'], scaled_tf['frequencies'])
 # signal_pt = sinusoidal_pt.get_signal(torch.tensor(ae), torch.tensor(fe))

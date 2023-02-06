@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from .blocks import MBConv, ResBlock
+from .blocks_1d import MBConv, ResBlock
 
 class Encoder(nn.Module):
     def __init__(
@@ -21,7 +21,7 @@ class Encoder(nn.Module):
             in_channels, out_channels = h_dims[i], h_dims[i+1]
 
             sequence_length = int(sequence_length / scales[i])
-            encoder_stage = EncoderStage(in_channels, out_channels, 3, scales[i], sequence_length, blocks_per_stages[i], layers_per_blocks[i], se_ratio, last_stage=(i+1 == len(h_dims) - 1))
+            encoder_stage = EncoderStage(in_channels, out_channels, 3, scales[i], sequence_length, blocks_per_stages[i], layers_per_blocks[i], se_ratio, first_stage=(i == 0), last_stage=(i+1 == len(h_dims) - 1))
             stages.append(encoder_stage)
 
         self.conv = nn.Sequential(*stages)
@@ -40,11 +40,14 @@ class EncoderStage(nn.Module):
         num_blocks,
         layers_per_block,
         se_ratio,
+        first_stage=False,
         last_stage=False
     ):
         super().__init__()
 
-        self.downscale = nn.Conv1d(in_channels, out_channels, kernel_size=scale+1, stride=scale, padding=1)
+        padding = 0 if first_stage else 1
+
+        self.downscale = nn.Conv1d(in_channels, out_channels, kernel_size=scale+1, stride=scale, padding=padding)
 
         blocks = []
         for i in range(num_blocks):
@@ -62,6 +65,7 @@ class EncoderStage(nn.Module):
 
     def forward(self, x):
         out = self.downscale(x)
+        print(x.shape, out.shape)
         out = self.blocks(out)
         return out
 
