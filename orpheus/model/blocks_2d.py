@@ -106,7 +106,7 @@ def MBConv(
     padding = 1,
     dilation = 1,
     downsample_factor = None,
-    expansion_rate = 2,
+    expansion_rate = 4,
     shrinkage_rate = 0.25,
     dropout = 0.
 ):

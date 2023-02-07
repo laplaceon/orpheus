@@ -4,6 +4,10 @@ import torch.nn.functional as F
 import math
 import numpy as np
 
+import torch.fft as fft
+
+from typing import Callable
+
 import torchaudio
 
 def safe_divide(numerator, denominator, eps=1e-7):
@@ -447,6 +451,14 @@ def angular_cumsum(angular_frequency, chunk_size=1000):
     phase = phase[:, :n_time]
   return phase
 
+def fft_convolve(signal, kernel):
+    signal = nn.functional.pad(signal, (0, signal.shape[-1]))
+    kernel = nn.functional.pad(kernel, (kernel.shape[-1], 0))
+
+    output = fft.irfft(fft.rfft(signal) * fft.rfft(kernel))
+    output = output[..., output.shape[-1] // 2:]
+
+    return output
 
 def oscillator_bank(frequency_envelopes: torch.Tensor,
                     amplitude_envelopes: torch.Tensor,
@@ -498,6 +510,49 @@ def oscillator_bank(frequency_envelopes: torch.Tensor,
     audio = torch.sum(audio, dim=-1)  # [mb, n_samples]
   return audio
 
+def amp_to_impulse_response(amp, target_size):
+    amp = torch.stack([amp, torch.zeros_like(amp)], -1)
+    amp = torch.view_as_complex(amp)
+    amp = fft.irfft(amp)
+
+    filter_size = amp.shape[-1]
+
+    amp = torch.roll(amp, filter_size // 2, -1)
+    win = torch.hann_window(filter_size, dtype=amp.dtype, device=amp.device)
+
+    amp = amp * win
+
+    amp = nn.functional.pad(amp, (0, int(target_size) - int(filter_size)))
+    amp = torch.roll(amp, -filter_size // 2, -1)
+
+    return amp
+
+# def frequency_filter(audio: torch.Tensor,
+#                      magnitudes: torch.Tensor,
+#                      window_size: int = 0) -> torch.Tensor:
+#   """Filter audio with a finite impulse response filter.
+#   Args:
+#     audio: Input audio. Tensor of shape [batch, audio_timesteps].
+#     magnitudes: Frequency transfer curve. Float32 Tensor of shape [batch,
+#       n_frames, n_frequencies] or [batch, n_frequencies]. The frequencies of the
+#       last dimension are ordered as [0, f_nyqist / (n_frequencies -1), ...,
+#       f_nyquist], where f_nyquist is (sample_rate / 2). Automatically splits the
+#       audio into equally sized frames to match frames in magnitudes.
+#     window_size: Size of the window to apply in the time domain. If window_size
+#       is less than 1, it is set as the default (n_frequencies).
+#     padding: Either 'valid' or 'same'. For 'same' the final output to be the
+#       same size as the input audio (audio_timesteps). For 'valid' the audio is
+#       extended to include the tail of the impulse response (audio_timesteps +
+#       window_size - 1).
+#   Returns:
+#     Filtered audio. Tensor of shape
+#         [batch, audio_timesteps + window_size - 1] ('valid' padding) or shape
+#         [batch, audio_timesteps] ('same' padding).
+#   """
+#   impulse_response = frequency_impulse_response(magnitudes,
+#                                                 window_size=window_size)
+#   return fft_convolve(audio, impulse_response)
+
 class SinusoidalSynthesizer(nn.Module):
     def __init__(
         self,
@@ -535,3 +590,164 @@ class SinusoidalSynthesizer(nn.Module):
                                       sample_rate=self.sample_rate)
 
         return signal
+
+
+class Reverb(nn.Module):
+    def __init__(self, length, sampling_rate, initial_wet=0, initial_decay=5):
+        super().__init__()
+        self.length = length
+        self.sampling_rate = sampling_rate
+
+        self.noise = nn.Parameter((torch.rand(length) * 2 - 1).unsqueeze(-1))
+        self.decay = nn.Parameter(torch.tensor(float(initial_decay)))
+        self.wet = nn.Parameter(torch.tensor(float(initial_wet)))
+
+        t = torch.arange(self.length) / self.sampling_rate
+        t = t.reshape(1, -1, 1)
+        self.register_buffer("t", t)
+
+    def build_impulse(self):
+        t = torch.exp(-nn.functional.softplus(-self.decay) * self.t * 500)
+        noise = self.noise * t
+        impulse = noise * torch.sigmoid(self.wet)
+        impulse[:, 0] = 1
+        return impulse
+
+    def forward(self, x):
+        lenx = x.shape[1]
+        impulse = self.build_impulse()
+        impulse = nn.functional.pad(impulse, (0, 0, 0, lenx - self.length))
+
+        x = fft_convolve(x.squeeze(-1), impulse.squeeze(-1))
+
+        return x
+
+# class FilteredNoise(nn.Module):
+#   """Synthesize audio by filtering white noise."""
+
+#   def __init__(self,
+#                n_samples=64000,
+#                window_size=257,
+#                scale_fn=exp_sigmoid,
+#                initial_bias=-5.0,
+#                name='filtered_noise'):
+#     super().__init__(name=name)
+#     self.n_samples = n_samples
+#     self.window_size = window_size
+#     self.scale_fn = scale_fn
+#     self.initial_bias = initial_bias
+
+#   def get_controls(self, magnitudes):
+#     """Convert network outputs into a dictionary of synthesizer controls.
+#     Args:
+#       magnitudes: 3-D Tensor of synthesizer parameters, of shape [batch, time,
+#         n_filter_banks].
+#     Returns:
+#       controls: Dictionary of tensors of synthesizer controls.
+#     """
+#     # Scale the magnitudes.
+#     if self.scale_fn is not None:
+#       magnitudes = self.scale_fn(magnitudes + self.initial_bias)
+
+#     return {'magnitudes': magnitudes}
+
+#   def get_signal(self, magnitudes):
+#     """Synthesize audio with filtered white noise.
+#     Args:
+#       magnitudes: Magnitudes tensor of shape [batch, n_frames, n_filter_banks].
+#         Expects float32 that is strictly positive.
+#     Returns:
+#       signal: A tensor of harmonic waves of shape [batch, n_samples, 1].
+#     """
+#     batch_size = int(magnitudes.shape[0])
+#     signal = torch.rand(batch_size, self.n_samples) * 2 - 1
+#     return frequency_filter(signal, magnitudes, window_size=self.window_size)
+
+class FilteredNoise(nn.Module):
+    def __init__(self, frame_length = 64, attenuate_gain = 1e-2, device = 'cuda'):
+        super(FilteredNoise, self).__init__()
+        
+        self.frame_length = frame_length
+        self.device = device
+        self.attenuate_gain = attenuate_gain
+        
+    def forward(self, z):
+        """
+        Compute linear-phase LTI-FVR (time-varient in terms of frame by frame) filter banks in batch from network output,
+        and create time-varying filtered noise by overlap-add method.
+        
+        Argument:
+            z['H'] : filter coefficient bank for each batch, which will be used for constructing linear-phase filter.
+                - dimension : (batch_num, frame_num, filter_coeff_length)
+        
+        """
+        
+        batch_num, frame_num, filter_coeff_length = z.shape
+        self.filter_window = nn.Parameter(torch.hann_window(filter_coeff_length * 2 - 1, dtype = torch.float32), requires_grad = False).to(self.device)
+        
+        INPUT_FILTER_COEFFICIENT = z
+        
+        # Desired linear-phase filter can be obtained by time-shifting a zero-phase form (especially to a causal form to be real-time),
+        # which has zero imaginery part in the frequency response. 
+        # Therefore, first we create a zero-phase filter in frequency domain.
+        # Then, IDFT & make it causal form. length IDFT-ed signal size can be both even or odd, 
+        # but we choose odd number such that a single sample can represent the center of impulse response.
+        ZERO_PHASE_FR_BANK = INPUT_FILTER_COEFFICIENT.unsqueeze(-1).expand(batch_num, frame_num, filter_coeff_length, 2).contiguous()
+        ZERO_PHASE_FR_BANK[..., 1] = 0
+        ZERO_PHASE_FR_BANK = ZERO_PHASE_FR_BANK.view(-1, filter_coeff_length, 2)
+        # zero_phase_ir_bank = fft.irfft(ZERO_PHASE_FR_BANK, 1, signal_sizes = (filter_coeff_length * 2 - 1,))
+        zero_phase_ir_bank = fft.irfft(torch.view_as_complex(ZERO_PHASE_FR_BANK), n = (filter_coeff_length * 2 - 1))
+           
+        # Make linear phase causal impulse response & Hann-window it.
+        # Then zero pad + DFT for linear convolution.
+        linear_phase_ir_bank = zero_phase_ir_bank.roll(filter_coeff_length - 1, 1)
+        windowed_linear_phase_ir_bank = linear_phase_ir_bank * self.filter_window.view(1, -1)
+        zero_paded_windowed_linear_phase_ir_bank = nn.functional.pad(windowed_linear_phase_ir_bank, (0, self.frame_length - 1))
+        ZERO_PADED_WINDOWED_LINEAR_PHASE_FR_BANK = fft.rfft(torch.view_as_complex(zero_paded_windowed_linear_phase_ir_bank))
+        
+        # Generate white noise & zero pad & DFT for linear convolution.
+        noise = torch.rand(batch_num, frame_num, self.frame_length, dtype = torch.float32).view(-1, self.frame_length).to(self.device) * 2 - 1
+        zero_paded_noise = nn.functional.pad(noise, (0, filter_coeff_length * 2 - 2))
+        ZERO_PADED_NOISE = fft.rfft(torch.view_as_complex(zero_paded_noise))
+
+        # Convolve & IDFT to make filtered noise frame, for each frame, noise band, and batch.
+        FILTERED_NOISE = torch.zeros_like(ZERO_PADED_NOISE).to(self.device)
+        FILTERED_NOISE[:, :, 0] = ZERO_PADED_NOISE[:, :, 0] * ZERO_PADED_WINDOWED_LINEAR_PHASE_FR_BANK[:, :, 0] \
+            - ZERO_PADED_NOISE[:, :, 1] * ZERO_PADED_WINDOWED_LINEAR_PHASE_FR_BANK[:, :, 1]
+        FILTERED_NOISE[:, :, 1] = ZERO_PADED_NOISE[:, :, 0] * ZERO_PADED_WINDOWED_LINEAR_PHASE_FR_BANK[:, :, 1] \
+            + ZERO_PADED_NOISE[:, :, 1] * ZERO_PADED_WINDOWED_LINEAR_PHASE_FR_BANK[:, :, 0]
+        filtered_noise = fft.irfft(torch.view_as_complex(FILTERED_NOISE)).view(batch_num, frame_num, -1) * self.attenuate_gain         
+                
+        # Overlap-add to build time-varying filtered noise.
+        overlap_add_filter = torch.eye(filtered_noise.shape[-1], requires_grad = False).unsqueeze(1).to(self.device)
+        output_signal = nn.functional.conv_transpose1d(filtered_noise.transpose(1, 2), 
+                                                       overlap_add_filter, 
+                                                       stride = self.frame_length, 
+                                                       padding = 0).squeeze(1)
+        
+        return output_signal
+
+class FIRNoiseSynth(nn.Module):
+    def __init__(
+        self, ir_length: int, hop_length: int, window_fn: Callable = torch.hann_window
+    ):
+        super().__init__()
+        self.ir_length = ir_length
+        self.hop_length = hop_length
+        self.register_buffer("window", window_fn(ir_length))
+
+    def forward(self, H_re):
+        H_im = torch.zeros_like(H_re)
+        H_z = torch.complex(H_re, H_im)
+
+        h = torch.fft.irfft(H_z.transpose(1, 2))
+        h = h.roll(self.ir_length // 2, -1)
+        h = h * self.window.view(1, 1, -1)
+        H = torch.fft.rfft(h)
+
+        noise = torch.rand(self.hop_length * H_re.shape[-1] - 1, device=H_re.device)
+        X = torch.stft(noise, self.ir_length, self.hop_length, return_complex=True)
+        X = X.unsqueeze(0)
+        Y = X * H.transpose(1, 2)
+        y = torch.istft(Y, self.ir_length, self.hop_length, center=False)
+        return y.unsqueeze(1)[:, :, : H_re.shape[-1] * self.hop_length]

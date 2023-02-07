@@ -98,7 +98,7 @@ def real_eval(model, epoch):
         torchaudio.save(f"../output/{slugify(test_file)}_epoch{epoch+1}.wav", out.cpu().unsqueeze(0), bitrate)
 
 
-def train(model, train_dl, lr=1e-4):
+def train(model, train_dl, lr=1e-4, beta=1.0):
     opt = Adam(model.parameters(), lr)
     lr_scheduler = ReduceLROnPlateau(opt, factor=0.5, patience=10, verbose=True)
 
@@ -122,19 +122,12 @@ def train(model, train_dl, lr=1e-4):
 
             opt.zero_grad()
 
-            # Train Encoder, Decoder
-            rec = model(mel_imgs)
-
-            # print(rec.shape, real_imgs.shape)
-
-            r_loss = recons_loss(rec, real_imgs)
-
-            # mse = F.mse_loss(rec, real_imgs, reduction="sum") / bs
-
-            # beta_kld = min(beta_kld_max, beta_kld_max * step / 16800)
-
-            # loss = r_loss + beta_kld * torch.abs(kl)
-            loss = r_loss
+            # rec = model(mel_imgs)
+            x_tilde, z_e_x, z_q_x = model(mel_imgs)
+            r_loss = recons_loss(x_tilde, real_imgs)
+            loss_vq = F.mse_loss(z_q_x, z_e_x.detach())
+            loss_commit = F.mse_loss(z_e_x, z_q_x.detach())
+            loss = r_loss + loss_vq + beta * loss_commit
 
             # print(r_loss, d_loss)
             r_loss_total += r_loss.item()

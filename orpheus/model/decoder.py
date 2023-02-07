@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .blocks_1d import MBConv
-from .synth import SinusoidalSynthesizer
+from .synth import SinusoidalSynthesizer, FIRNoiseSynth, Reverb
 
 class SynthDecoder(nn.Module):
     def __init__(
@@ -19,8 +19,6 @@ class SynthDecoder(nn.Module):
             nn.SiLU(),
             nn.BatchNorm1d(dim*2),
             MBConv(dim*2, dim*2, dim*2),
-            MBConv(dim*2, dim*2, dim*2),
-            MBConv(dim*2, dim*2, dim*2),
             nn.Tanh()
         )
 
@@ -29,21 +27,34 @@ class SynthDecoder(nn.Module):
             nn.SiLU(),
             nn.BatchNorm1d(dim*2),
             MBConv(dim*2, dim*2, dim*2, se_ratio=se_ratio),
-            MBConv(dim*2, dim*2, dim*2),
-            MBConv(dim*2, dim*2, dim*2),
             nn.ReLU()
         )
 
+        self.net3 = nn.Sequential(
+            nn.Conv1d(dim, dim*2, 3, padding=1),
+            nn.SiLU(),
+            nn.BatchNorm1d(dim*2),
+            MBConv(dim*2, dim*2, dim*2),
+            nn.Tanh()
+        )
+
         self.synth = SinusoidalSynthesizer(sequence_length, 44100)
+        self.filter = FIRNoiseSynth(510, 256)
+        self.reverb = Reverb(sequence_length, 44100)
 
     def forward(self, z):
-        z = z.view(-1, z.shape[1], z.shape[2] * z.shape[3])
+        z = z.view(-1, z.shape[1], z.shape[2]*z.shape[3])
 
         amplitudes = self.net1(z)
         frequencies = self.net2(z)
+        filter_in = self.net3(z)
+        noise = self.filter(filter_in)
+        noise = F.interpolate(noise, scale_factor=32, mode="linear").squeeze(1)
 
         controls = self.synth.get_controls(amplitudes, frequencies)
-        audio = self.synth.get_signal(controls["amplitudes"], controls["frequencies"])
+        synth_out = self.synth.get_signal(controls["amplitudes"], controls["frequencies"])
+
+        audio = self.reverb(synth_out + noise)
 
         return audio
 
