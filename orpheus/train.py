@@ -18,6 +18,8 @@ from model.rae import Orpheus
 from dataset import AudioFileDataset
 from sklearn.model_selection import train_test_split
 
+from torch_audiomentations import SomeOf, OneOf, PolarityInversion, AddColoredNoise, Gain, HighPassFilter, LowPassFilter
+
 # from utils import copy_params
 from tqdm import tqdm
 
@@ -38,6 +40,20 @@ n_mels = 64
 to_mel = torchaudio.transforms.MelSpectrogram(sample_rate=bitrate, n_fft=n_fft, n_mels=n_mels).cuda()
 from_mel = torchaudio.transforms.InverseMelScale(n_stft=n_fft // 2 + 1, n_mels=n_mels, sample_rate=bitrate).cuda()
 to_wave = torchaudio.transforms.GriffinLim(n_fft=n_fft).cuda()
+apply_augmentations = SomeOf(
+    num_transforms = (1, 3),
+    transforms = [
+        PolarityInversion(),
+        AddColoredNoise(),
+        Gain(),
+        OneOf(
+            transforms = [
+                HighPassFilter(),
+                LowPassFilter()
+            ]
+        )
+    ]
+).cuda()
 
 def recons_loss(inp, tgt, time_weight=1.0, freq_weight=1.0, reduction="mean"):
     # lcosh = auraloss.time.LogCoshLoss(reduction=reduction)
@@ -64,7 +80,7 @@ def get_song_features(model, file):
     consumable = data.shape[0] - (data.shape[0] % sequence_length)
 
     data = torch.stack(torch.split(data[:consumable], sequence_length)).cuda()
-    data_spec = to_mel(data[:20])
+    data_spec = to_mel(data[:20].unsqueeze(1))
 
     with torch.no_grad():
         z = model.encode(data_spec)
@@ -95,6 +111,7 @@ def real_eval(model, epoch):
 
     for test_file in test_files:
         out = get_song_features(model, f"../input/{test_file}")
+        print(out)
         torchaudio.save(f"../output/{slugify(test_file)}_epoch{epoch+1}.wav", out.cpu().unsqueeze(0), bitrate)
 
 
@@ -117,17 +134,18 @@ def train(model, train_dl, lr=1e-4, beta=1.0):
             bs = real_imgs.shape[0]
 
             with torch.no_grad():
-                mel_imgs = to_mel(real_imgs.unsqueeze(1))
+                modded = apply_augmentations(real_imgs.unsqueeze(1), sample_rate=bitrate, mode="per_example", p=0.95)
+                mel_imgs = to_mel(modded)
                 # print(mel_imgs.shape)
 
             opt.zero_grad()
 
             # rec = model(mel_imgs)
-            x_tilde, z_e_x, z_q_x = model(mel_imgs)
+            x_tilde, z_e_x = model(mel_imgs)
             r_loss = recons_loss(x_tilde, real_imgs)
-            loss_vq = F.mse_loss(z_q_x, z_e_x.detach())
-            loss_commit = F.mse_loss(z_e_x, z_q_x.detach())
-            loss = r_loss + loss_vq + beta * loss_commit
+            # loss_vq = F.mse_loss(z_q_x, z_e_x.detach())
+            # loss_commit = F.mse_loss(z_e_x, z_q_x.detach())
+            loss = r_loss
 
             # print(r_loss, d_loss)
             r_loss_total += r_loss.item()
@@ -171,6 +189,6 @@ train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 # val_dl = DataLoader(val_ds, batch_size=ae_batch_size*2)
 
 train(model, train_dl)
-# model.load_state_dict(torch.load("../models/ravae_5l_sqvae_4.pt"))
-# real_eval(model, 0)
+# model.load_state_dict(torch.load("../models/ravae_5l_vqvae_0.pt"))
+# real_eval(model, 7)
 # print(model)

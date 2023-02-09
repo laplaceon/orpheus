@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .blocks_1d import MBConv
+from .blocks_1d import MBConv, DepthwiseSeparableConv, ResBlock
 from .synth import SinusoidalSynthesizer, FIRNoiseSynth, Reverb
 
 class SynthDecoder(nn.Module):
@@ -43,7 +43,7 @@ class SynthDecoder(nn.Module):
         self.reverb = Reverb(sequence_length, 44100)
 
     def forward(self, z):
-        z = z.view(-1, z.shape[1], z.shape[2]*z.shape[3])
+        z = z.view(z.shape[0], z.shape[1], -1)
 
         amplitudes = self.net1(z)
         frequencies = self.net2(z)
@@ -79,8 +79,9 @@ class Decoder(nn.Module):
 
         self.conv = nn.Sequential(*stages)
 
-    def forward(self, x):
-        return self.conv(x)
+    def forward(self, z):
+        z = z.view(z.shape[0], z.shape[1], -1)
+        return self.conv(z).squeeze(1)
 
 
 class DecoderStage(nn.Module):
@@ -98,7 +99,7 @@ class DecoderStage(nn.Module):
         super().__init__()
 
         blocks = []
-        for i in range(num_blocks):
+        for _ in range(num_blocks):
             blocks.append(
                 DecoderBlock(
                     in_channels,
@@ -136,11 +137,11 @@ class DecoderBlock(nn.Module):
             num_layers = default_num_layers
 
         dilate = 1
-        conv = [MBConv(channels, channels*2, channels, kernel, se_ratio=se_ratio)]
+        conv = [ResBlock(channels, channels, kernel)]
 
         for i in range(num_layers-1):
             dilation = dilation_factor ** (i+1)
-            conv.append(MBConv(channels, channels*2, channels, kernel, dilation=dilation, se_ratio=se_ratio))
+            conv.append(ResBlock(channels, channels, kernel, dilation=dilation))
 
         self.conv = nn.Sequential(*conv)
 
