@@ -40,7 +40,7 @@ n_fft = 1024
 n_mels = 64
 to_mel = torchaudio.transforms.MelSpectrogram(sample_rate=bitrate, n_fft=n_fft, n_mels=n_mels).cuda()
 from_mel = torchaudio.transforms.InverseMelScale(n_stft=n_fft // 2 + 1, n_mels=n_mels, sample_rate=bitrate).cuda()
-to_db = torchaudio.transforms.AmplitudeToDB(top_db=80)
+to_db = torchaudio.transforms.AmplitudeToDB(top_db=80).cuda()
 to_wave = torchaudio.transforms.GriffinLim(n_fft=n_fft).cuda()
 apply_augmentations = SomeOf(
     num_transforms = (1, 3),

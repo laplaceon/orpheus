@@ -14,17 +14,17 @@ from phase import unwrap
 apply_augmentations = SomeOf(
     num_transforms = (1, 3),
     transforms = [
-        PolarityInversion(sample_rate=44100),
-        AddColoredNoise(sample_rate=44100),
-        Gain(sample_rate=44100),
+        PolarityInversion(),
+        AddColoredNoise(),
+        Gain(),
         OneOf(
             transforms = [
-                HighPassFilter(sample_rate=44100),
-                LowPassFilter(sample_rate=44100)
+                HighPassFilter(),
+                LowPassFilter()
             ]
         )
     ]
-).cuda()
+)
 
 to_db = torchaudio.transforms.AmplitudeToDB(top_db=80)
 

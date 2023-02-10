@@ -11,7 +11,7 @@ class SynthDecoder(nn.Module):
         sequence_length,
         dim,
         se_ratio,
-        sinusoidal_multiplier = 2
+        sinusoidal_multiplier = 1.5
     ):
         super().__init__()
 
@@ -61,7 +61,7 @@ class SynthDecoder(nn.Module):
 
         audio = synth_out + noise
 
-        return audio
+        return torch.tanh(audio)
 
 class Decoder(nn.Module):
     def __init__(
@@ -149,7 +149,7 @@ class DecoderBlock(nn.Module):
         conv = [ResBlock(channels, channels, kernel)]
 
         for i in range(num_layers-1):
-            # dilation = dilation_factor ** (i+1)
+            dilation = dilation_factor ** (i+1)
             conv.append(ResBlock(channels, channels, kernel, dilation=1))
 
         self.conv = nn.Sequential(*conv)
