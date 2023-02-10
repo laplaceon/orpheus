@@ -29,16 +29,18 @@ torchaudio.USE_SOUNDFILE_LEGACY_INTERFACE = False
 torchaudio.set_audio_backend("soundfile")
 
 # Hyperparams
-batch_size = 8
+batch_size = 4
 
 # Params
 bitrate = 44100
 sequence_length = 262144
+# sequence_length = 131072
 
 n_fft = 1024
 n_mels = 64
 to_mel = torchaudio.transforms.MelSpectrogram(sample_rate=bitrate, n_fft=n_fft, n_mels=n_mels).cuda()
 from_mel = torchaudio.transforms.InverseMelScale(n_stft=n_fft // 2 + 1, n_mels=n_mels, sample_rate=bitrate).cuda()
+to_db = torchaudio.transforms.AmplitudeToDB(top_db=80)
 to_wave = torchaudio.transforms.GriffinLim(n_fft=n_fft).cuda()
 apply_augmentations = SomeOf(
     num_transforms = (1, 3),
@@ -134,8 +136,8 @@ def train(model, train_dl, lr=1e-4, beta=1.0):
             bs = real_imgs.shape[0]
 
             with torch.no_grad():
-                modded = apply_augmentations(real_imgs.unsqueeze(1), sample_rate=bitrate, mode="per_example", p=0.95)
-                mel_imgs = to_mel(modded)
+                modded = apply_augmentations(real_imgs.unsqueeze(1), sample_rate=bitrate)
+                mel_imgs = to_db(to_mel(modded))
                 # print(mel_imgs.shape)
 
             opt.zero_grad()
@@ -143,6 +145,7 @@ def train(model, train_dl, lr=1e-4, beta=1.0):
             # rec = model(mel_imgs)
             x_tilde, z_e_x = model(mel_imgs)
             r_loss = recons_loss(x_tilde, real_imgs)
+            # r_loss = F.mse_loss(x_tilde, mel_imgs)
             # loss_vq = F.mse_loss(z_q_x, z_e_x.detach())
             # loss_commit = F.mse_loss(z_e_x, z_q_x.detach())
             loss = r_loss

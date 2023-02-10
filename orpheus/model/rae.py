@@ -34,8 +34,9 @@ class Orpheus(nn.Module):
         blocks_per_stages_dec = [1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1]
         layers_per_blocks_dec = [3, 4, 4, 4, 3, 2, 2, 2, 2, 2, 2]
 
-        self.decoder = Decoder(sequence_length, h_dims_dec, scales_dec, blocks_per_stages_dec, layers_per_blocks_dec, se_ratio)
-        # self.decoder = SynthDecoder(sequence_length, h_dims[-1], se_ratio)
+        # self.decoder = Decoder(sequence_length, h_dims_dec, scales_dec, blocks_per_stages_dec, layers_per_blocks_dec, se_ratio)
+        # self.decoder = Decoder(sequence_length, h_dims[::-1], scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1], se_ratio)
+        self.decoder = SynthDecoder(sequence_length, h_dims[-1], se_ratio)
 
         # self.codebook = VQEmbedding(codebook_width, h_dims[-1])
 
@@ -55,5 +56,6 @@ class Orpheus(nn.Module):
         # z_q_x_st, z_q_x = self.codebook.straight_through(z_e_x)
         # x_tilde = self.decoder(z_q_x_st)
         x_tilde = self.decoder(z_e_x)
+        # print(x_tilde.shape)
         # print(z_e_x.shape, x_tilde.shape)
         return x_tilde, z_e_x

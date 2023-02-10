@@ -26,6 +26,8 @@ apply_augmentations = SomeOf(
     ]
 ).cuda()
 
+to_db = torchaudio.transforms.AmplitudeToDB(top_db=80)
+
 def torch_unwrap(x):
     # Port from np.unwrap
     dx = torch_diff(x)
@@ -55,32 +57,32 @@ def visualize_magnitude_and_phase(c, to_mel, resize):
     for k in c:
         spec = c[k]
 
-        m, p = spec.abs(), spec.angle()
+        m, p = spec.abs().pow(2), spec.angle()
         unwrapped_p = torch_unwrap(p)
         inf = torch_diff(unwrapped_p)
-        m_mel = resize(to_mel(m)).cpu()
-        # p_mel = resize(to_mel(p)).cpu()
-        # up_mel = resize(to_mel(unwrapped_p)).cpu()
+        m_mel = to_db(resize(to_mel(m))).cpu()
+        p_mel = resize(to_mel(p)).cpu()
+        up_mel = resize(to_mel(unwrapped_p)).cpu()
         if_mel = resize(to_mel(inf)).cpu()
 
-        combo = torch.cat([m_mel, if_mel, torch.zeros_like(m_mel)], dim=1)
+        # combo = torch.cat([m_mel, if_mel, torch.zeros_like(m_mel)], dim=1)
 
         for i in range(spec.shape[0]):
             plt.figure()
 
             f, axarr = plt.subplots(1,5) 
 
-            # axarr[0].imshow(m[i].permute(1, 2, 0).cpu())
-            # axarr[1].imshow(m_mel[i].permute(1, 2, 0))
-            # axarr[2].imshow(p_mel[i].permute(1, 2, 0))
-            # axarr[3].imshow(up_mel[i].permute(1, 2, 0).cpu())
-            # axarr[4].imshow(if_mel[i].permute(1, 2, 0))
-
             axarr[0].imshow(m[i].permute(1, 2, 0).cpu())
-            axarr[1].imshow(p[i].permute(1, 2, 0).cpu())
-            axarr[2].imshow(unwrapped_p[i].permute(1, 2, 0).cpu())
-            axarr[3].imshow(inf[i].permute(1, 2, 0).cpu())
-            axarr[4].imshow(combo[i].permute(1, 2, 0).cpu())
+            axarr[1].imshow(m_mel[i].permute(1, 2, 0))
+            axarr[2].imshow(p_mel[i].permute(1, 2, 0))
+            axarr[3].imshow(up_mel[i].permute(1, 2, 0).cpu())
+            axarr[4].imshow(if_mel[i].permute(1, 2, 0))
+
+            # axarr[0].imshow(m[i].permute(1, 2, 0).cpu())
+            # axarr[1].imshow(p[i].permute(1, 2, 0).cpu())
+            # axarr[2].imshow(unwrapped_p[i].permute(1, 2, 0).cpu())
+            # axarr[3].imshow(inf[i].permute(1, 2, 0).cpu())
+            # axarr[4].imshow(combo[i].permute(1, 2, 0).cpu())
             
             plt.show()
 
@@ -101,7 +103,8 @@ def load_audio_clips(l):
     return data_map
 
 bitrate = 44100
-sequence_length = 262144
+# sequence_length = 262144
+sequence_length = 131072
 n_fft = 2048
 n_stft = n_fft // 2 + 1
 n_mels = 64
@@ -112,4 +115,4 @@ resize = torchvision.transforms.Resize((n_stft, n_stft)).cuda()
 
 clips = load_audio_clips(["../input/Synthwave Coolin'.wav", "../input/Waiting For The End [Official Music Video] - Linkin Park-HQ.wav"])
 spectrograms = get_complex_spectrogram(clips, to_complex)
-# visualize_magnitude_and_phase(spectrograms, to_mel, resize)
+visualize_magnitude_and_phase(spectrograms, to_mel, resize)

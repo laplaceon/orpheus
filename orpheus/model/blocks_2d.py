@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torchvision.ops import SqueezeExcitation
 # from einops.layers.torch import Rearrange, Reduce
 
-class DepthwiseSeparableConv2d(nn.Module):
+class DepthwiseSeparableConv(nn.Module):
     def __init__(
         self,
         in_channels,
@@ -73,6 +73,39 @@ class DepthwiseConv2d(nn.Module):
 
 #     def forward(self, x):
 #         return x * self.gate(x)
+
+class ResBlock(nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel=3,
+        dilation=1,
+        groups=8,
+        activation=nn.ReLU()
+    ):
+        super().__init__()
+
+        self.conv1 = nn.Sequential(
+            DepthwiseSeparableConv(in_channels, out_channels, kernel_size=kernel, dilation=dilation, padding="same"),
+            nn.BatchNorm2d(out_channels),
+            activation
+        )
+        self.conv2 = nn.Sequential(
+            DepthwiseSeparableConv(out_channels, out_channels, kernel_size=kernel, dilation=dilation, padding="same"),
+            nn.BatchNorm2d(out_channels)
+        )
+
+        self.conv_res = nn.Conv2d(in_channels, out_channels, kernel_size=1, dilation=dilation, padding="same")
+
+        self.activation = activation
+
+    def forward(self, x):
+        residual = x
+        h = self.conv1(x)
+        h = self.conv2(h)
+
+        return self.activation(h + residual)
 
 class MBConvResidual(nn.Module):
     def __init__(self, fn, dropout = 0.):
