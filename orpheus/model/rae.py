@@ -38,7 +38,7 @@ class Orpheus(nn.Module):
         # self.decoder = Decoder(sequence_length, h_dims[::-1], scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1], se_ratio)
         self.decoder = SynthDecoder(sequence_length, h_dims[-1], se_ratio)
 
-        self.codebook = SQEmbedding(codebook_width, h_dims[-1])
+        # self.codebook = SQEmbedding(codebook_width, h_dims[-1])
 
     def encode(self, x):
         z_e_x = self.encoder(x)

@@ -12,7 +12,7 @@ class SynthDecoder(nn.Module):
         sequence_length,
         dim,
         se_ratio,
-        num_waveshapers = 64,
+        num_waveshapers = 48,
         sinusoidal_multiplier = 2
     ):
         super().__init__()
