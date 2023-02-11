@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 from .blocks_1d import MBConv, DepthwiseSeparableConv, ResBlock
 from .synth import SinusoidalSynthesizer, FIRNoiseSynth, Reverb
+from .newt import NEWT
 
 class SynthDecoder(nn.Module):
     def __init__(
@@ -11,7 +12,8 @@ class SynthDecoder(nn.Module):
         sequence_length,
         dim,
         se_ratio,
-        sinusoidal_multiplier = 1.5
+        num_waveshapers = 32,
+        sinusoidal_multiplier = 2
     ):
         super().__init__()
 
@@ -36,19 +38,23 @@ class SynthDecoder(nn.Module):
             nn.SiLU(),
             nn.BatchNorm1d(dim*2),
             MBConv(dim*2, dim*2, dim*2),
-            nn.Tanh()
+            nn.ReLU()
         )
 
-        self.synth = SinusoidalSynthesizer(sequence_length, 44100)
-        self.filter = FIRNoiseSynth(510, 256)
-        # self.reverb = Reverb(sequence_length, 44100)
+        self.newt = NEWT(num_waveshapers, dim)
+
+        self.synth = SinusoidalSynthesizer(sequence_length // (sinusoidal_multiplier * 2), 44100)
+        self.filter = FIRNoiseSynth(510, dim*2)
+        self.reverb = Reverb(sequence_length, 44100)
 
         self.sinusoidal_multiplier = sinusoidal_multiplier
 
     def forward(self, z):
         z = z.view(z.shape[0], z.shape[1], -1)
 
-        amplitudes = F.interpolate(self.net1(z), scale_factor=self.sinusoidal_multiplier)
+        net1_out = self.net1(z)
+
+        amplitudes = F.interpolate(net1_out, scale_factor=self.sinusoidal_multiplier)
         frequencies = F.interpolate(self.net2(z), scale_factor=self.sinusoidal_multiplier)
         filter_in = self.net3(z)
         noise = self.filter(filter_in)
@@ -56,10 +62,10 @@ class SynthDecoder(nn.Module):
 
         controls = self.synth.get_controls(amplitudes, frequencies)
         synth_out = self.synth.get_signal(controls["amplitudes"], controls["frequencies"])
+        newt_out = self.newt(synth_out.unsqueeze(1), z).squeeze(1)
+        # print(newt_out.shape, noise.shape)
 
-        # audio = self.reverb(synth_out + noise)
-
-        audio = synth_out + noise
+        audio = self.reverb(newt_out + noise)
 
         return torch.tanh(audio)
 

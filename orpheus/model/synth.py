@@ -265,7 +265,6 @@ def resample(inputs: torch.Tensor,
 
   return outputs
 
-
 def overlap_and_add(signal, frame_step):
     """Reconstructs a signal from a framed representation.
     Adds potentially overlapping frames of a signal with shape

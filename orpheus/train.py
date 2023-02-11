@@ -82,7 +82,7 @@ def get_song_features(model, file):
     consumable = data.shape[0] - (data.shape[0] % sequence_length)
 
     data = torch.stack(torch.split(data[:consumable], sequence_length)).cuda()
-    data_spec = to_mel(data[:20].unsqueeze(1))
+    data_spec = to_mel(data[:15].unsqueeze(1))
 
     with torch.no_grad():
         z = model.encode(data_spec)
@@ -192,6 +192,9 @@ train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 # val_dl = DataLoader(val_ds, batch_size=ae_batch_size*2)
 
 train(model, train_dl)
-# model.load_state_dict(torch.load("../models/ravae_5l_vqvae_0.pt"))
-# real_eval(model, 7)
+# model.load_state_dict(torch.load("../models/ravae_5l_ae_0.pt"))
+# real_eval(model, 1)
 # print(model)
+
+# pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+# print(pytorch_total_params)
