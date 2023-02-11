@@ -12,7 +12,7 @@ class SynthDecoder(nn.Module):
         sequence_length,
         dim,
         se_ratio,
-        num_waveshapers = 32,
+        num_waveshapers = 64,
         sinusoidal_multiplier = 2
     ):
         super().__init__()
@@ -67,7 +67,7 @@ class SynthDecoder(nn.Module):
 
         audio = self.reverb(newt_out + noise)
 
-        return torch.tanh(audio)
+        return audio
 
 class Decoder(nn.Module):
     def __init__(

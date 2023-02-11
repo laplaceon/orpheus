@@ -107,7 +107,7 @@ def real_eval(model, epoch):
     model.eval()
 
     test_files = [
-        "Synthwave Coolin'.wav",
+        # "Synthwave Coolin'.wav",
         "Waiting For The End [Official Music Video] - Linkin Park-HQ.wav"
     ]
 
@@ -186,14 +186,14 @@ X_train, X_test = train_test_split(audio_files, train_size=0.7, random_state=42)
 
 multiplier = 32
 
-train_ds = AudioFileDataset(X_train, sequence_length, multiplier=multiplier)
+# train_ds = AudioFileDataset(X_train, sequence_length, multiplier=multiplier)
 # val_ds = AudioFileDataset(X_test, sequence_length, multiplier=multiplier)
-train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
+# train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 # val_dl = DataLoader(val_ds, batch_size=ae_batch_size*2)
 
-train(model, train_dl)
-# model.load_state_dict(torch.load("../models/ravae_5l_ae_0.pt"))
-# real_eval(model, 1)
+# train(model, train_dl)
+model.load_state_dict(torch.load("../models/ravae_5l_ae_0.pt"))
+real_eval(model, 2)
 # print(model)
 
 # pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
