@@ -85,8 +85,7 @@ def get_song_features(model, file):
     data_spec = to_mel(data[:15].unsqueeze(1))
 
     with torch.no_grad():
-        z = model.encode(data_spec)
-        output = model.decode(z)
+        output, kl = model(data_spec)
         output = output.flatten()
         # print(output[:5].shape)
         return output
@@ -107,7 +106,7 @@ def real_eval(model, epoch):
     model.eval()
 
     test_files = [
-        # "Synthwave Coolin'.wav",
+        "Synthwave Coolin'.wav",
         "Waiting For The End [Official Music Video] - Linkin Park-HQ.wav"
     ]
 
@@ -188,9 +187,9 @@ train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 # val_dl = DataLoader(val_ds, batch_size=ae_batch_size*2)
 
 train(model, train_dl)
-# model.load_state_dict(torch.load("../models/ravae_5l_ae_0.pt"))
-# real_eval(model, 2)
+# model.load_state_dict(torch.load("../models/ravae_5l_vae_0.pt"))
+# real_eval(model, 3)
 # print(model)
 
-# pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-# print(pytorch_total_params)
+pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+print(pytorch_total_params)

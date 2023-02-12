@@ -60,6 +60,7 @@ class EncoderStage(nn.Module):
                     kernel,
                     seq_len,
                     layers_per_block,
+                    dilation_factor=2 if not last_stage else 1,
                     se_ratio=se_ratio
                 )
             )
@@ -78,7 +79,7 @@ class EncoderBlock(nn.Module):
         kernel,
         seq_len,
         num_layers,
-        dilation_factor=2,
+        dilation_factor=1,
         se_ratio=None
     ):
         super().__init__()
@@ -87,7 +88,7 @@ class EncoderBlock(nn.Module):
 
         for i in range(num_layers):
             dilation = dilation_factor ** (i+1)
-            conv.append(MBConv(channels, channels, kernel_size=kernel, dilation=1, shrinkage_rate=se_ratio))
+            conv.append(MBConv(channels, channels, kernel_size=kernel, padding="same", dilation=dilation, shrinkage_rate=se_ratio))
 
         self.conv = nn.Sequential(*conv)
 

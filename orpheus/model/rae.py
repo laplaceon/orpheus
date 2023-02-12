@@ -11,10 +11,10 @@ class Orpheus(nn.Module):
     def __init__(
         self,
         sequence_length,
-        h_dims=(1, 8, 16, 32, 64, 128),
-        scales=(2, 2, 2, 2, 2),
-        blocks_per_stages=(2, 2, 2, 2, 2),
-        layers_per_blocks=(2, 2, 2, 2, 2),
+        h_dims=(1, 8, 16, 32, 64),
+        scales=(2, 2, 2, 2),
+        blocks_per_stages=(3, 2, 2, 2),
+        layers_per_blocks=(4, 3, 3, 2),
         se_ratio=0.25,
         codebook_width=256
     ):
@@ -35,7 +35,7 @@ class Orpheus(nn.Module):
 
         # self.decoder = Decoder(sequence_length, h_dims_dec, scales_dec, blocks_per_stages_dec, layers_per_blocks_dec, se_ratio)
         # self.decoder = Decoder(sequence_length, h_dims[::-1], scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1], se_ratio)
-        self.decoder = SynthDecoder(sequence_length, h_dims[-1])
+        self.decoder = SynthDecoder(sequence_length, h_dims[-1], num_bands=8)
 
     def encode(self, x):
         return self.encoder(x)

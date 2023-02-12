@@ -61,6 +61,64 @@ class NewtPath(nn.Module):
 
         self.upscales = nn.ModuleList([
             nn.Sequential(
+                nn.Conv1d(dim, dim // 2, 3, padding=1),
+                nn.BatchNorm1d(dim // 2),
+                nn.LeakyReLU(),
+                ResBlock(dim // 2, dim // 2, activation=nn.LeakyReLU())
+            ),
+            nn.Sequential(
+                nn.Conv1d(dim // 2, dim // 4, 3, padding=1),
+                nn.BatchNorm1d(dim // 4),
+                nn.LeakyReLU(),
+                ResBlock(dim // 4, dim // 4, activation=nn.LeakyReLU())
+            ),
+            nn.Sequential(
+                nn.Conv1d(dim // 4, dim // 16, 3, padding=1),
+                nn.BatchNorm1d(dim // 16),
+                nn.LeakyReLU(),
+                ResBlock(dim // 16, dim // 16, activation=nn.LeakyReLU())
+            ),
+            nn.Sequential(
+                nn.Conv1d(dim // 16, dim // 64, 3, padding=1),
+                nn.BatchNorm1d(dim // 64),
+                nn.LeakyReLU(),
+                ResBlock(dim // 64, dim // 64, activation=nn.LeakyReLU())
+            ),
+            nn.Sequential(
+                nn.Conv1d(dim // 64, dim // 128, 3, padding=1),
+                nn.BatchNorm1d(dim // 128),
+                nn.LeakyReLU(),
+                ResBlock(dim // 128, dim // 128, activation=nn.Tanh())
+            )
+        ])
+
+    def forward(self, x):
+        # print("x", x.shape)
+        out = F.interpolate(x, scale_factor=4, mode="linear")
+        out = self.upscales[0](out)
+        out = F.interpolate(out, scale_factor=4, mode="linear")
+        out = self.upscales[1](out)
+        out = F.interpolate(out, scale_factor=4, mode="linear")
+        out = self.upscales[2](out)
+        out = F.interpolate(out, scale_factor=2, mode="linear")
+        out = self.upscales[3](out)
+        out = F.interpolate(out, scale_factor=2, mode="linear")
+        out = self.upscales[4](out)
+
+        return out
+
+class NewtPath2(nn.Module):
+    def __init__(
+        self,
+        num_waveshapers,
+        dim
+    ):
+        super().__init__()
+
+        # self.newt = NEWT(num_waveshapers, dim)
+
+        self.upscales = nn.ModuleList([
+            nn.Sequential(
                 nn.Conv1d(dim, dim, 3, padding=1),
                 nn.BatchNorm1d(dim),
                 nn.LeakyReLU()
@@ -98,7 +156,6 @@ class NewtPath(nn.Module):
         ])
 
     def forward(self, x):
-        # print("x", x.shape)
         out = F.interpolate(x, scale_factor=4, mode="linear")
         out = self.upscales[0](out)
         out = F.interpolate(out, scale_factor=4, mode="linear")
