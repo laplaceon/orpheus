@@ -95,7 +95,7 @@ class NEWT(nn.Module):
             film_params, self.n_waveshapers, 1
         )
 
-        # print(film_params.shape, exciter.shape, gamma_index.shape, beta_index.shape, gamma_norm.shape, beta_norm.shape)
+        print(film_params.shape, exciter.shape, gamma_index.shape, beta_index.shape, gamma_norm.shape, beta_norm.shape)
 
         x = self.waveshaping_index(exciter, gamma_index, beta_index)
         x = self.shaping_fn(x)

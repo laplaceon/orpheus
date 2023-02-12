@@ -21,8 +21,7 @@ class Encoder(nn.Module):
             in_channels, out_channels = h_dims[i], h_dims[i+1]
 
             sequence_length = int(sequence_length / scales[i])
-            encoder_stage = EncoderStage(in_channels, out_channels, 3, scales[i], sequence_length, blocks_per_stages[i], layers_per_blocks[i], se_ratio, first_stage=(i == 0))
-            # last_stage=(i+1 == len(h_dims) - 1)
+            encoder_stage = EncoderStage(in_channels, out_channels, 3, scales[i], sequence_length, blocks_per_stages[i], layers_per_blocks[i], se_ratio, first_stage=(i == 0), last_stage=(i+1 == len(h_dims) - 1))
             stages.append(encoder_stage)
 
         self.conv = nn.Sequential(*stages)
@@ -41,11 +40,15 @@ class EncoderStage(nn.Module):
         num_blocks,
         layers_per_block,
         se_ratio,
-        first_stage=False
+        first_stage = False,
+        last_stage = False
     ):
         super().__init__()
 
         padding = 1 if not first_stage else (1, 0)
+
+        if last_stage:
+            out_channels = out_channels * 2
 
         self.downscale = MBConv(in_channels, out_channels, kernel_size=scale+1, padding=padding, downsample_factor=scale, shrinkage_rate=se_ratio)
 
@@ -62,7 +65,6 @@ class EncoderStage(nn.Module):
             )
 
         self.blocks = nn.Sequential(*blocks)
-        # self.activation = nn.Tanh() if last_stage else nn.SiLU()
 
     def forward(self, x):
         out = self.downscale(x)

@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 from .blocks_1d import MBConv, DepthwiseSeparableConv, ResBlock
 from .synth import SinusoidalSynthesizer, FIRNoiseSynth, Reverb
+from .pqmf_old import PQMF
 from .newt import NEWT
 
 class SynthDecoder(nn.Module):
@@ -11,63 +12,107 @@ class SynthDecoder(nn.Module):
         self,
         sequence_length,
         dim,
-        se_ratio,
-        num_waveshapers = 48,
-        sinusoidal_multiplier = 2
+        num_bands = 4,
+        num_waveshapers = 32
     ):
         super().__init__()
 
+        self.pqmf = PQMF(num_bands)
+        # self.filter = FIRNoiseSynth(510, dim*2)
+
         self.net1 = nn.Sequential(
             nn.Conv1d(dim, dim*2, 3, padding=1),
-            nn.SiLU(),
+            nn.LeakyReLU(),
             nn.BatchNorm1d(dim*2),
             MBConv(dim*2, dim*2, dim*2),
-            nn.Tanh()
+            nn.LeakyReLU()
         )
 
-        self.net2 = nn.Sequential(
-            nn.Conv1d(dim, dim*2, 3, padding=1),
-            nn.SiLU(),
-            nn.BatchNorm1d(dim*2),
-            MBConv(dim*2, dim*2, dim*2, se_ratio=se_ratio),
-            nn.ReLU()
-        )
-
-        self.net3 = nn.Sequential(
-            nn.Conv1d(dim, dim*2, 3, padding=1),
-            nn.SiLU(),
-            nn.BatchNorm1d(dim*2),
-            MBConv(dim*2, dim*2, dim*2),
-            nn.ReLU()
-        )
-
-        self.newt = NEWT(num_waveshapers, dim)
-
-        self.synth = SinusoidalSynthesizer(sequence_length // (sinusoidal_multiplier * 2), 44100)
-        self.filter = FIRNoiseSynth(510, dim*2)
-        self.reverb = Reverb(sequence_length, 44100)
-
-        self.sinusoidal_multiplier = sinusoidal_multiplier
+        paths = [NewtPath(num_waveshapers, dim*2)] * num_bands
+        self.paths = nn.ModuleList(paths)
 
     def forward(self, z):
         z = z.view(z.shape[0], z.shape[1], -1)
 
-        net1_out = self.net1(z)
+        z_n = self.net1(z)
 
-        amplitudes = F.interpolate(net1_out, scale_factor=self.sinusoidal_multiplier)
-        frequencies = F.interpolate(self.net2(z), scale_factor=self.sinusoidal_multiplier)
-        filter_in = self.net3(z)
-        noise = self.filter(filter_in)
-        noise = F.interpolate(noise, scale_factor=32, mode="linear").squeeze(1)
+        bands = []
+        
+        for path in self.paths:
+            bands.append(path(z_n))
 
-        controls = self.synth.get_controls(amplitudes, frequencies)
-        synth_out = self.synth.get_signal(controls["amplitudes"], controls["frequencies"])
-        newt_out = self.newt(synth_out.unsqueeze(1), z).squeeze(1)
-        # print(newt_out.shape, noise.shape)
+        fused = torch.cat(bands, dim=1)
 
-        audio = self.reverb(newt_out + noise)
+        # print(fused.shape)
 
-        return audio
+        signal = self.pqmf.synthesis(fused)
+
+        return signal
+
+class NewtPath(nn.Module):
+    def __init__(
+        self,
+        num_waveshapers,
+        dim
+    ):
+        super().__init__()
+
+        # self.newt = NEWT(num_waveshapers, dim)
+
+        self.upscales = nn.ModuleList([
+            nn.Sequential(
+                nn.Conv1d(dim, dim, 3, padding=1),
+                nn.BatchNorm1d(dim),
+                nn.LeakyReLU()
+            ),
+            nn.Sequential(
+                nn.Conv1d(dim, dim // 4, 3, padding=1),
+                nn.BatchNorm1d(dim // 4),
+                nn.LeakyReLU(),
+                ResBlock(dim // 4, dim // 4, activation=nn.LeakyReLU())
+            ),
+            nn.Sequential(
+                nn.Conv1d(dim // 4, dim // 16, 3, padding=1),
+                nn.BatchNorm1d(dim // 16),
+                nn.LeakyReLU(),
+                ResBlock(dim // 16, dim // 16, activation=nn.LeakyReLU())
+            ),
+            nn.Sequential(
+                nn.Conv1d(dim // 16, dim // 64, 3, padding=1),
+                nn.BatchNorm1d(dim // 64),
+                nn.LeakyReLU(),
+                ResBlock(dim // 64, dim // 64, activation=nn.LeakyReLU())
+            ),
+            nn.Sequential(
+                nn.Conv1d(dim // 64, dim // 128, 3, padding=1),
+                nn.BatchNorm1d(dim // 128),
+                nn.LeakyReLU(),
+                ResBlock(dim // 128, dim // 128, activation=nn.LeakyReLU())
+            ),
+            nn.Sequential(
+                nn.Conv1d(dim // 128, dim // 256, 3, padding=1),
+                nn.BatchNorm1d(dim // 256),
+                nn.LeakyReLU(),
+                ResBlock(dim // 256, dim // 256, activation=nn.Tanh())
+            )
+        ])
+
+    def forward(self, x):
+        # print("x", x.shape)
+        out = F.interpolate(x, scale_factor=4, mode="linear")
+        out = self.upscales[0](out)
+        out = F.interpolate(out, scale_factor=4, mode="linear")
+        out = self.upscales[1](out)
+        out = F.interpolate(out, scale_factor=4, mode="linear")
+        out = self.upscales[2](out)
+        out = F.interpolate(out, scale_factor=4, mode="linear")
+        out = self.upscales[3](out)
+        out = F.interpolate(out, scale_factor=4, mode="linear")
+        out = self.upscales[4](out)
+        out = F.interpolate(out, scale_factor=2, mode="linear")
+        out = self.upscales[5](out)
+
+        return out
 
 class Decoder(nn.Module):
     def __init__(

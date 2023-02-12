@@ -142,17 +142,13 @@ def train(model, train_dl, lr=1e-4, beta=1.0):
 
             opt.zero_grad()
 
-            # rec = model(mel_imgs)
-            x_tilde, z_e_x = model(mel_imgs)
+            x_tilde, d_loss = model(mel_imgs)
             r_loss = recons_loss(x_tilde, real_imgs)
-            # r_loss = F.mse_loss(x_tilde, mel_imgs)
-            # loss_vq = F.mse_loss(z_q_x, z_e_x.detach())
-            # loss_commit = F.mse_loss(z_e_x, z_q_x.detach())
             loss = r_loss
 
             # print(r_loss, d_loss)
             r_loss_total += r_loss.item()
-            # d_loss_total += kl.item()
+            d_loss_total += d_loss.item()
 
             loss.backward()
             opt.step()
@@ -186,14 +182,14 @@ X_train, X_test = train_test_split(audio_files, train_size=0.7, random_state=42)
 
 multiplier = 32
 
-# train_ds = AudioFileDataset(X_train, sequence_length, multiplier=multiplier)
+train_ds = AudioFileDataset(X_train, sequence_length, multiplier=multiplier)
 # val_ds = AudioFileDataset(X_test, sequence_length, multiplier=multiplier)
-# train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
+train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 # val_dl = DataLoader(val_ds, batch_size=ae_batch_size*2)
 
-# train(model, train_dl)
-model.load_state_dict(torch.load("../models/ravae_5l_ae_0.pt"))
-real_eval(model, 2)
+train(model, train_dl)
+# model.load_state_dict(torch.load("../models/ravae_5l_ae_0.pt"))
+# real_eval(model, 2)
 # print(model)
 
 # pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)

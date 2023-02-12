@@ -89,21 +89,26 @@ class ResBlock(nn.Module):
     ):
         super().__init__()
 
-        self.conv1 = DepthwiseSeparableConv(in_channels, out_channels, kernel_size=kernel, dilation=dilation, padding="same")
-        self.conv2 = DepthwiseSeparableConv(out_channels, out_channels, kernel_size=kernel, dilation=dilation, padding="same")
-
-        self.norm1 = nn.GroupNorm(groups, out_channels)
-        self.norm2 = nn.GroupNorm(groups, out_channels)
+        self.conv1 = nn.Sequential(
+            DepthwiseSeparableConv(in_channels, out_channels, kernel_size=kernel, dilation=dilation, padding="same"),
+            nn.BatchNorm1d(out_channels),
+            activation
+        )
+        self.conv2 = nn.Sequential(
+            DepthwiseSeparableConv(out_channels, out_channels, kernel_size=kernel, dilation=dilation, padding="same"),
+            nn.BatchNorm1d(out_channels)
+        )
 
         self.conv_res = nn.Conv1d(in_channels, out_channels, kernel_size=1, dilation=dilation, padding="same")
 
         self.activation = activation
 
     def forward(self, x):
-        h = F.silu(self.norm1(self.conv1(x)))
-        h = self.norm2(self.conv2(h))
+        residual = x
+        h = self.conv1(x)
+        h = self.conv2(h)
 
-        return self.activation(h + self.conv_res(x))
+        return self.activation(h + residual)
 
 class ResBlock(nn.Module):
     def __init__(
@@ -118,16 +123,16 @@ class ResBlock(nn.Module):
         super().__init__()
 
         self.conv1 = nn.Sequential(
-            DepthwiseSeparableConv(in_channels, out_channels, kernel_size=kernel, dilation=dilation, padding="same"),
+            DepthwiseSeparableConv(in_channels, out_channels, kernel_size=kernel, dilation=dilation, padding=1),
             nn.BatchNorm1d(out_channels),
             activation
         )
         self.conv2 = nn.Sequential(
-            DepthwiseSeparableConv(out_channels, out_channels, kernel_size=kernel, dilation=dilation, padding="same"),
+            DepthwiseSeparableConv(out_channels, out_channels, kernel_size=kernel, dilation=dilation, padding=1),
             nn.BatchNorm1d(out_channels)
         )
 
-        self.conv_res = nn.Conv1d(in_channels, out_channels, kernel_size=1, dilation=dilation, padding="same")
+        self.conv_res = nn.Conv1d(in_channels, out_channels, kernel_size=1, dilation=dilation, padding=1)
 
         self.activation = activation
 
