@@ -116,6 +116,7 @@ class ResBlock(nn.Module):
         in_channels,
         out_channels,
         kernel=3,
+        padding="same",
         dilation=1,
         groups=8,
         activation=nn.ReLU()
@@ -123,16 +124,16 @@ class ResBlock(nn.Module):
         super().__init__()
 
         self.conv1 = nn.Sequential(
-            DepthwiseSeparableConv(in_channels, out_channels, kernel_size=kernel, dilation=dilation, padding=1),
+            nn.Conv1d(in_channels, out_channels, kernel_size=kernel, dilation=dilation, padding=padding),
             nn.BatchNorm1d(out_channels),
             activation
         )
         self.conv2 = nn.Sequential(
-            DepthwiseSeparableConv(out_channels, out_channels, kernel_size=kernel, dilation=dilation, padding=1),
+            nn.Conv1d(out_channels, out_channels, kernel_size=kernel, dilation=dilation, padding=padding),
             nn.BatchNorm1d(out_channels)
         )
 
-        self.conv_res = nn.Conv1d(in_channels, out_channels, kernel_size=1, dilation=dilation, padding=1)
+        self.conv_res = nn.Conv1d(in_channels, out_channels, kernel_size=1, dilation=dilation, padding=padding)
 
         self.activation = activation
 

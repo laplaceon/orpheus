@@ -12,12 +12,12 @@ class SynthDecoder(nn.Module):
         self,
         sequence_length,
         dim,
-        num_bands = 4,
-        num_waveshapers = 32
+        num_bands = 8,
+        waveshapers_per_band = 6,
+        sample_rate=44100
     ):
         super().__init__()
 
-        self.pqmf = PQMF(num_bands)
         # self.filter = FIRNoiseSynth(510, dim*2)
 
         self.net1 = nn.Sequential(
@@ -28,7 +28,7 @@ class SynthDecoder(nn.Module):
             nn.LeakyReLU()
         )
 
-        paths = [NewtPath(num_waveshapers, dim*2)] * num_bands
+        paths = [NewtPath(sequence_length // num_bands, sample_rate / num_bands, waveshapers_per_band, dim*2)] * num_bands
         self.paths = nn.ModuleList(paths)
 
     def forward(self, z):
@@ -39,7 +39,7 @@ class SynthDecoder(nn.Module):
         bands = []
         
         for path in self.paths:
-            bands.append(path(z_n))
+            bands.append(path(z_n, z))
 
         fused = torch.cat(bands, dim=1)
 
@@ -52,129 +52,31 @@ class SynthDecoder(nn.Module):
 class NewtPath(nn.Module):
     def __init__(
         self,
+        sequence_length,
+        sample_rate,
         num_waveshapers,
-        dim
+        dim,
     ):
         super().__init__()
 
-        # self.newt = NEWT(num_waveshapers, dim)
+        self.linear_synth = SinusoidalSynthesizer(sequence_length, sample_rate)
+        self.newt = NEWT(num_waveshapers, dim // 2)
 
-        self.upscales = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv1d(dim, dim // 2, 3, padding=1),
-                nn.BatchNorm1d(dim // 2),
-                nn.LeakyReLU(),
-                ResBlock(dim // 2, dim // 2, activation=nn.LeakyReLU())
-            ),
-            nn.Sequential(
-                nn.Conv1d(dim // 2, dim // 4, 3, padding=1),
-                nn.BatchNorm1d(dim // 4),
-                nn.LeakyReLU(),
-                ResBlock(dim // 4, dim // 4, activation=nn.LeakyReLU())
-            ),
-            nn.Sequential(
-                nn.Conv1d(dim // 4, dim // 16, 3, padding=1),
-                nn.BatchNorm1d(dim // 16),
-                nn.LeakyReLU(),
-                ResBlock(dim // 16, dim // 16, activation=nn.LeakyReLU())
-            ),
-            nn.Sequential(
-                nn.Conv1d(dim // 16, dim // 64, 3, padding=1),
-                nn.BatchNorm1d(dim // 64),
-                nn.LeakyReLU(),
-                ResBlock(dim // 64, dim // 64, activation=nn.LeakyReLU())
-            ),
-            nn.Sequential(
-                nn.Conv1d(dim // 64, dim // 128, 3, padding=1),
-                nn.BatchNorm1d(dim // 128),
-                nn.LeakyReLU(),
-                ResBlock(dim // 128, dim // 128, activation=nn.Tanh())
-            )
-        ])
+    def forward(self, x, z):
+        amplitudes = x
+        frequencies = x
 
-    def forward(self, x):
-        # print("x", x.shape)
-        out = F.interpolate(x, scale_factor=4, mode="linear")
-        out = self.upscales[0](out)
-        out = F.interpolate(out, scale_factor=4, mode="linear")
-        out = self.upscales[1](out)
-        out = F.interpolate(out, scale_factor=4, mode="linear")
-        out = self.upscales[2](out)
-        out = F.interpolate(out, scale_factor=2, mode="linear")
-        out = self.upscales[3](out)
-        out = F.interpolate(out, scale_factor=2, mode="linear")
-        out = self.upscales[4](out)
+        controls = self.linear_synth.get_controls(amplitudes, frequencies)
+        synth_out = self.linear_synth.get_signal(controls["amplitudes"], controls["frequencies"])
+        newt_out = self.newt(synth_out.unsqueeze(1), z)
 
-        return out
-
-class NewtPath2(nn.Module):
-    def __init__(
-        self,
-        num_waveshapers,
-        dim
-    ):
-        super().__init__()
-
-        # self.newt = NEWT(num_waveshapers, dim)
-
-        self.upscales = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv1d(dim, dim, 3, padding=1),
-                nn.BatchNorm1d(dim),
-                nn.LeakyReLU()
-            ),
-            nn.Sequential(
-                nn.Conv1d(dim, dim // 4, 3, padding=1),
-                nn.BatchNorm1d(dim // 4),
-                nn.LeakyReLU(),
-                ResBlock(dim // 4, dim // 4, activation=nn.LeakyReLU())
-            ),
-            nn.Sequential(
-                nn.Conv1d(dim // 4, dim // 16, 3, padding=1),
-                nn.BatchNorm1d(dim // 16),
-                nn.LeakyReLU(),
-                ResBlock(dim // 16, dim // 16, activation=nn.LeakyReLU())
-            ),
-            nn.Sequential(
-                nn.Conv1d(dim // 16, dim // 64, 3, padding=1),
-                nn.BatchNorm1d(dim // 64),
-                nn.LeakyReLU(),
-                ResBlock(dim // 64, dim // 64, activation=nn.LeakyReLU())
-            ),
-            nn.Sequential(
-                nn.Conv1d(dim // 64, dim // 128, 3, padding=1),
-                nn.BatchNorm1d(dim // 128),
-                nn.LeakyReLU(),
-                ResBlock(dim // 128, dim // 128, activation=nn.LeakyReLU())
-            ),
-            nn.Sequential(
-                nn.Conv1d(dim // 128, dim // 256, 3, padding=1),
-                nn.BatchNorm1d(dim // 256),
-                nn.LeakyReLU(),
-                ResBlock(dim // 256, dim // 256, activation=nn.Tanh())
-            )
-        ])
-
-    def forward(self, x):
-        out = F.interpolate(x, scale_factor=4, mode="linear")
-        out = self.upscales[0](out)
-        out = F.interpolate(out, scale_factor=4, mode="linear")
-        out = self.upscales[1](out)
-        out = F.interpolate(out, scale_factor=4, mode="linear")
-        out = self.upscales[2](out)
-        out = F.interpolate(out, scale_factor=4, mode="linear")
-        out = self.upscales[3](out)
-        out = F.interpolate(out, scale_factor=4, mode="linear")
-        out = self.upscales[4](out)
-        out = F.interpolate(out, scale_factor=2, mode="linear")
-        out = self.upscales[5](out)
-
-        return out
+        return torch.tanh(newt_out)
 
 class Decoder(nn.Module):
     def __init__(
         self,
         sequence_length,
+        latent_dim,
         h_dims,
         scales,
         blocks_per_stage,
@@ -183,18 +85,30 @@ class Decoder(nn.Module):
     ):
         super().__init__()
 
+        self.from_latent = nn.Sequential(
+            nn.Conv1d(latent_dim, h_dims[0] * 2, kernel_size=3, padding="same", bias=False),
+            nn.LeakyReLU(negative_slope=0.2)
+        )
+
+        self.to_h_dims = nn.Sequential(
+            nn.Conv1d(h_dims[0] * 2, h_dims[0], 3, padding="same", bias=False),
+            nn.LeakyReLU(negative_slope=0.2)
+        )
+
         stages = []
         for i in range(len(h_dims)-1):
             in_channels, out_channels = h_dims[i], h_dims[i+1]
 
-            decoder_stage = DecoderStage(in_channels, out_channels, 3, scales[i], blocks_per_stage[i], layers_per_blocks[i], se_ratio, i+1 == len(h_dims) - 1)
+            decoder_stage = DecoderStage(in_channels, out_channels, scales[i], blocks_per_stage[i], layers_per_blocks[i], se_ratio, i+1 == len(h_dims) - 1)
             stages.append(decoder_stage)
 
         self.conv = nn.Sequential(*stages)
 
     def forward(self, z):
-        # z = z.view(z.shape[0], z.shape[1], -1)
-        return self.conv(z)
+        out = self.from_latent(z)
+        out = self.to_h_dims(F.interpolate(out, scale_factor=2))
+
+        return self.conv(out)
 
 
 class DecoderStage(nn.Module):
@@ -202,7 +116,6 @@ class DecoderStage(nn.Module):
         self,
         in_channels,
         out_channels,
-        kernel,
         scale,
         num_blocks,
         layers_per_block,
@@ -216,7 +129,7 @@ class DecoderStage(nn.Module):
             blocks.append(
                 DecoderBlock(
                     in_channels,
-                    kernel,
+                    3,
                     layers_per_block,
                     se_ratio=se_ratio
                 )
@@ -224,8 +137,8 @@ class DecoderStage(nn.Module):
 
         self.blocks = nn.Sequential(*blocks)
 
-        self.post_upscale = DepthwiseSeparableConv(in_channels, out_channels, 3, padding="same", bias=True)
-        self.activation = nn.Tanh() if last_stage else nn.SiLU()
+        self.post_upscale = DepthwiseSeparableConv(in_channels, out_channels, 7 if last_stage else 3, padding="same")
+        self.activation = nn.Tanh() if last_stage else nn.LeakyReLU()
 
         self.scale = scale
 
@@ -233,9 +146,9 @@ class DecoderStage(nn.Module):
 
     def forward(self, x):
         out = self.blocks(x)
-        out = self.post_upscale(F.interpolate(out, scale_factor=self.scale))
-        if self.last_stage:
-            out = F.pad(out, (0, 1))
+        if not self.last_stage:
+            out = F.interpolate(out, scale_factor=self.scale)
+        out = self.post_upscale(out)
         return self.activation(out)
 
 class DecoderBlock(nn.Module):
@@ -243,22 +156,17 @@ class DecoderBlock(nn.Module):
         self,
         channels,
         kernel,
-        num_layers,
-        default_num_layers=4,
+        num_layers=4,
         dilation_factor=3,
         se_ratio=None
     ):
         super().__init__()
 
-        if num_layers is None:
-            num_layers = default_num_layers
+        conv = []
 
-        dilate = 1
-        conv = [ResBlock(channels, channels, kernel)]
-
-        for i in range(num_layers-1):
-            dilation = dilation_factor ** (i+1)
-            conv.append(ResBlock(channels, channels, kernel, dilation=1))
+        for i in range(num_layers):
+            dilation = dilation_factor ** i
+            conv.append(ResBlock(channels, channels, kernel, dilation=dilation, activation=nn.LeakyReLU(negative_slope=0.2)))
 
         self.conv = nn.Sequential(*conv)
 

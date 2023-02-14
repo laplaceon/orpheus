@@ -47,8 +47,8 @@ class EncoderStage(nn.Module):
 
         padding = 1 if not first_stage else (1, 0)
 
-        if last_stage:
-            out_channels = out_channels * 2
+        # if last_stage:
+        #     out_channels = out_channels * 2
 
         self.downscale = MBConv(in_channels, out_channels, kernel_size=scale+1, padding=padding, downsample_factor=scale, shrinkage_rate=se_ratio)
 

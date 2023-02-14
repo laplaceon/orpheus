@@ -7,7 +7,7 @@ class Encoder(nn.Module):
     def __init__(
         self,
         sequence_length,
-        codebook_width,
+        latent_dim,
         h_dims,
         scales,
         blocks_per_stages,
@@ -20,9 +20,17 @@ class Encoder(nn.Module):
         for i in range(len(h_dims)-1):
             in_channels, out_channels = h_dims[i], h_dims[i+1]
 
-            sequence_length = int(sequence_length / scales[i])
-            encoder_stage = EncoderStage(in_channels, out_channels, 3, scales[i], sequence_length, blocks_per_stages[i], layers_per_blocks[i], se_ratio, first_stage=(i == 0), last_stage=(i+1 == len(h_dims) - 1))
+            encoder_stage = EncoderStage(in_channels, out_channels, scales[i], blocks_per_stages[i], layers_per_blocks[i], se_ratio, first_stage=(i == 0), last_stage=(i+1 == len(h_dims) - 1))
             stages.append(encoder_stage)
+
+        to_latent = nn.Sequential(
+            nn.Conv1d(h_dims[-1], h_dims[-1] * 2, 4, 2, 1),
+            nn.LeakyReLU(negative_slope=0.2),
+            nn.Conv1d(h_dims[-1] * 2, latent_dim * 2, 3, padding="same"),
+            nn.Tanh()
+        )
+
+        stages.append(to_latent)
 
         self.conv = nn.Sequential(*stages)
 
@@ -34,9 +42,7 @@ class EncoderStage(nn.Module):
         self,
         in_channels,
         out_channels,
-        kernel,
         scale,
-        seq_len,
         num_blocks,
         layers_per_block,
         se_ratio,
@@ -45,17 +51,21 @@ class EncoderStage(nn.Module):
     ):
         super().__init__()
 
-        padding = 0 if first_stage else 1
-
-        self.downscale = nn.Conv1d(in_channels, out_channels, kernel_size=scale+1, stride=scale, padding=padding)
-
         blocks = []
-        for i in range(num_blocks):
+
+        if first_stage:
+            kernel = out_channels // in_channels
+            expand = nn.Conv1d(in_channels, out_channels, kernel_size=kernel+1, padding=kernel//2)
+            blocks.append(expand)
+        else:
+            downscale = nn.Conv1d(in_channels, out_channels, kernel_size=scale*2, stride=scale, padding=scale//2)
+            blocks.append(downscale)
+
+        for _ in range(num_blocks):
             blocks.append(
                 EncoderBlock(
                     out_channels,
-                    kernel,
-                    seq_len,
+                    3,
                     layers_per_block,
                     se_ratio=se_ratio
                 )
@@ -64,9 +74,7 @@ class EncoderStage(nn.Module):
         self.blocks = nn.Sequential(*blocks)
 
     def forward(self, x):
-        out = self.downscale(x)
-        print(x.shape, out.shape)
-        out = self.blocks(out)
+        out = self.blocks(x)
         return out
 
 class EncoderBlock(nn.Module):
@@ -74,18 +82,17 @@ class EncoderBlock(nn.Module):
         self,
         channels,
         kernel,
-        seq_len,
         num_layers,
-        dilation_factor=2,
+        dilation_factor=3,
         se_ratio=None
     ):
         super().__init__()
 
-        conv = [ResBlock(channels, channels, kernel)]
+        conv = []
 
         for i in range(num_layers):
-            dilation = dilation_factor ** (i+1)
-            conv.append(ResBlock(channels, channels, kernel, dilation=dilation))
+            dilation = dilation_factor ** i
+            conv.append(ResBlock(channels, channels, kernel, dilation=dilation, activation=nn.LeakyReLU(negative_slope=0.2)))
 
         self.conv = nn.Sequential(*conv)
 
