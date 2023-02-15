@@ -55,7 +55,7 @@ class EncoderStage(nn.Module):
 
         if first_stage:
             kernel = out_channels // in_channels
-            expand = nn.Conv1d(in_channels, out_channels, kernel_size=kernel+1, padding=kernel//2)
+            expand = nn.Conv1d(in_channels, out_channels, kernel_size=kernel+1, padding=3)
             blocks.append(expand)
         else:
             downscale = nn.Conv1d(in_channels, out_channels, kernel_size=scale*2, stride=scale, padding=scale//2)

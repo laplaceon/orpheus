@@ -183,13 +183,13 @@ multiplier = 32
 
 train_ds = AudioFileDataset(X_train, sequence_length, multiplier=multiplier)
 # val_ds = AudioFileDataset(X_test, sequence_length, multiplier=multiplier)
-# train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
+train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 # val_dl = DataLoader(val_ds, batch_size=ae_batch_size*2)
 
-# train(model, train_dl)
+train(model, train_dl)
 # model.load_state_dict(torch.load("../models/ravae_5l_vae_0.pt"))
 # real_eval(model, 3)
 # print(model)
 
-pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-print(pytorch_total_params)
+# pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+# print(pytorch_total_params)

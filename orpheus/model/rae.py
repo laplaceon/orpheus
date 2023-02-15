@@ -13,7 +13,7 @@ class Orpheus(nn.Module):
         self,
         sequence_length,
         latent_dim=128,
-        h_dims=(16, 96, 192, 384, 768),
+        h_dims=(16, 80, 160, 320, 640),
         scales=(4, 4, 4, 4),
         blocks_per_stages=(1, 1, 1, 1),
         layers_per_blocks=(3, 3, 3, 3),
@@ -27,11 +27,12 @@ class Orpheus(nn.Module):
         self.decoder = Decoder(sequence_length, latent_dim, h_dims[::-1], scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1], se_ratio)
 
     def encode(self, x):
-        return self.encoder(x)
+        x_s = self.pqmf.analysis(x)
+        return self.encoder(x_s)
 
     def decode(self, z):
-        out = self.decoder(z)
-        return out
+        out_s = self.decoder(z)
+        return self.pqmf.synthesis(out_s)
 
     def reparametrize(self, z):
         mean, scale = z.chunk(2, dim=1)
@@ -47,12 +48,8 @@ class Orpheus(nn.Module):
 
 
     def forward(self, x):
-        x_s = self.pqmf.analysis(x)
-        encoded = self.encode(x_s)
+        encoded = self.encode(x)
         z, kl = self.reparametrize(encoded)
-        out_s = self.decode(z)
-        out = self.pqmf.synthesis(out_s)
-
-        # print("z_out", z.shape, out_s.shape, out.shape)
+        out = self.decode(z)
 
         return out, kl

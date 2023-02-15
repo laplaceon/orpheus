@@ -119,21 +119,22 @@ class ResBlock(nn.Module):
         padding="same",
         dilation=1,
         groups=8,
+        bias=False,
         activation=nn.ReLU()
     ):
         super().__init__()
 
         self.conv1 = nn.Sequential(
-            nn.Conv1d(in_channels, out_channels, kernel_size=kernel, dilation=dilation, padding=padding),
+            nn.Conv1d(in_channels, out_channels, kernel_size=kernel, dilation=dilation, padding=padding, bias=bias),
             nn.BatchNorm1d(out_channels),
             activation
         )
         self.conv2 = nn.Sequential(
-            nn.Conv1d(out_channels, out_channels, kernel_size=kernel, dilation=dilation, padding=padding),
+            nn.Conv1d(out_channels, out_channels, kernel_size=kernel, dilation=dilation, padding=padding, bias=bias),
             nn.BatchNorm1d(out_channels)
         )
 
-        self.conv_res = nn.Conv1d(in_channels, out_channels, kernel_size=1, dilation=dilation, padding=padding)
+        self.conv_res = nn.Conv1d(in_channels, out_channels, kernel_size=1, dilation=dilation, padding=padding, bias=bias)
 
         self.activation = activation
 
