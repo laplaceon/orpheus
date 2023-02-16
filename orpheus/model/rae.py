@@ -28,8 +28,7 @@ class Orpheus(nn.Module):
 
     def encode(self, x):
         x_s = self.pqmf.analysis(x)
-        z = self.encoder(x_s)
-        return 
+        return self.encoder(x_s)
 
     def decode(self, z):
         out_s = self.decoder(z)
