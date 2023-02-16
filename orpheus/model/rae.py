@@ -28,13 +28,14 @@ class Orpheus(nn.Module):
 
     def encode(self, x):
         x_s = self.pqmf.analysis(x)
-        return self.encoder(x_s)
+        z = self.encoder(x_s)
+        return 
 
     def decode(self, z):
         out_s = self.decoder(z)
         return self.pqmf.synthesis(out_s)
 
-    def reparametrize(self, z):
+    def reparameterize(self, z, return_vars=False):
         mean, scale = z.chunk(2, dim=1)
 
         std = F.softplus(scale) + 1e-4
@@ -43,6 +44,9 @@ class Orpheus(nn.Module):
 
         z = torch.randn_like(mean) * std + mean
         kl = (mean ** 2 + var - logvar - 1).sum(1).mean()
+
+        if return_vars:
+            return z, kl, mean, logvar
 
         return z, kl
 
