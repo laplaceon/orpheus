@@ -45,7 +45,7 @@ class Orpheus(nn.Module):
         kl = (mean ** 2 + var - logvar - 1).sum(1).mean()
 
         if return_vars:
-            return z, kl, mean, logvar
+            return z, kl, mean, std
 
         return z, kl
 
