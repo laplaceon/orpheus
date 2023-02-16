@@ -3,18 +3,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 from .pqmf_old import PQMF
 
-import math
-
 from .encoder_1d import Encoder
-from .decoder import Decoder, SynthDecoder
+from .decoder import Decoder
 
 class Orpheus(nn.Module):
     def __init__(
         self,
         sequence_length,
-        latent_dim=128,
         h_dims=(16, 80, 160, 320, 640),
-        scales=(4, 4, 4, 4),
+        latent_dim=128,
+        scales=(None, 4, 4, 4),
         blocks_per_stages=(1, 1, 1, 1),
         layers_per_blocks=(3, 3, 3, 3),
         se_ratio=0.25
@@ -23,8 +21,8 @@ class Orpheus(nn.Module):
 
         self.pqmf = PQMF(h_dims[0])
 
-        self.encoder = Encoder(sequence_length, latent_dim, h_dims, scales, blocks_per_stages, layers_per_blocks, se_ratio)
-        self.decoder = Decoder(sequence_length, latent_dim, h_dims[::-1], scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1], se_ratio)
+        self.encoder = Encoder(h_dims, latent_dim, scales, blocks_per_stages, layers_per_blocks, se_ratio)
+        self.decoder = Decoder(h_dims[::-1], latent_dim, scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1], se_ratio)
 
     def encode(self, x):
         x_s = self.pqmf.analysis(x)
@@ -52,7 +50,7 @@ class Orpheus(nn.Module):
 
     def forward(self, x):
         encoded = self.encode(x)
-        z, kl = self.reparametrize(encoded)
+        z, kl = self.reparameterize(encoded)
         out = self.decode(z)
 
         return out, kl

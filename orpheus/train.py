@@ -182,8 +182,8 @@ X_train, X_test = train_test_split(audio_files, train_size=0.7, random_state=42)
 multiplier = 32
 
 train_ds = AudioFileDataset(X_train, sequence_length, multiplier=multiplier)
-# val_ds = AudioFileDataset(X_test, sequence_length, multiplier=multiplier)
 train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
+# val_ds = AudioFileDataset(X_test, sequence_length, multiplier=multiplier)
 # val_dl = DataLoader(val_ds, batch_size=ae_batch_size*2)
 
 train(model, train_dl)

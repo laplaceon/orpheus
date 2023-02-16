@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .blocks_1d import MBConv, DepthwiseSeparableConv, ResBlock
+from .blocks_1d import MBConv, DepthwiseSeparableConv, ResBlock, Upsample
 from .synth import SinusoidalSynthesizer, FIRNoiseSynth, Reverb
 from .pqmf_old import PQMF
 from .newt import NEWT
@@ -75,9 +75,8 @@ class NewtPath(nn.Module):
 class Decoder(nn.Module):
     def __init__(
         self,
-        sequence_length,
-        latent_dim,
         h_dims,
+        latent_dim,
         scales,
         blocks_per_stage,
         layers_per_blocks,
@@ -86,13 +85,9 @@ class Decoder(nn.Module):
         super().__init__()
 
         self.from_latent = nn.Sequential(
-            nn.Conv1d(latent_dim, h_dims[0] * 2, kernel_size=3, padding="same", bias=False),
-            nn.LeakyReLU(negative_slope=0.2)
-        )
-
-        self.to_h_dims = nn.Sequential(
-            nn.Conv1d(h_dims[0] * 2, h_dims[0], 3, padding="same", bias=False),
-            nn.LeakyReLU(negative_slope=0.2)
+            MBConv(latent_dim, h_dims[0] * 2, kernel_size=3, padding="same", activation=nn.LeakyReLU(negative_slope=0.2)),
+            Upsample(scale_factor=2),
+            MBConv(h_dims[0] * 2, h_dims[0], kernel_size=3, padding="same", activation=nn.LeakyReLU(negative_slope=0.2))
         )
 
         stages = []
@@ -106,7 +101,6 @@ class Decoder(nn.Module):
 
     def forward(self, z):
         out = self.from_latent(z)
-        out = self.to_h_dims(F.interpolate(out, scale_factor=2))
 
         return self.conv(out)
 
@@ -134,22 +128,19 @@ class DecoderStage(nn.Module):
                     se_ratio=se_ratio
                 )
             )
+        
+        blocks.append(
+            nn.Sequential(
+                Upsample(scale_factor=scale) if scale is not None else nn.Identity(),
+                DepthwiseSeparableConv(in_channels, out_channels, 7 if last_stage else 3, padding="same"),
+                nn.Tanh() if last_stage else nn.LeakyReLU(negative_slope=0.2)
+            )
+        )
 
         self.blocks = nn.Sequential(*blocks)
 
-        self.post_upscale = DepthwiseSeparableConv(in_channels, out_channels, 7 if last_stage else 3, padding="same")
-        self.activation = nn.Tanh() if last_stage else nn.LeakyReLU()
-
-        self.scale = scale
-
-        self.last_stage = last_stage
-
     def forward(self, x):
-        out = self.blocks(x)
-        if not self.last_stage:
-            out = F.interpolate(out, scale_factor=self.scale)
-        out = self.post_upscale(out)
-        return self.activation(out)
+        return self.blocks(x)
 
 class DecoderBlock(nn.Module):
     def __init__(
@@ -166,7 +157,18 @@ class DecoderBlock(nn.Module):
 
         for i in range(num_layers):
             dilation = dilation_factor ** i
-            conv.append(ResBlock(channels, channels, kernel, dilation=dilation, activation=nn.LeakyReLU(negative_slope=0.2)))
+            conv.append(
+                MBConv(
+                    channels,
+                    channels,
+                    kernel,
+                    padding = "same",
+                    dilation = dilation,
+                    expansion_rate = 1.5,
+                    se_ratio = se_ratio,
+                    activation = nn.LeakyReLU(negative_slope=0.2)
+                )
+            )
 
         self.conv = nn.Sequential(*conv)
 

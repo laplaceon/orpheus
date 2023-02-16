@@ -2,21 +2,20 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# from attention import window_partition, window_reverse
-
 class DepthwiseSeparableConv(nn.Module):
     def __init__(
         self,
         in_channels,
         out_channels,
         kernel_size,
+        stride=1,
         dilation=1,
         padding=1,
         bias=False
     ):
         super().__init__()
 
-        self.depthwise = nn.Conv1d(in_channels, in_channels, kernel_size=kernel_size, dilation=dilation, padding=padding, groups=in_channels, bias=bias)
+        self.depthwise = nn.Conv1d(in_channels, in_channels, kernel_size=kernel_size, stride=stride, dilation=dilation, padding=padding, groups=in_channels, bias=bias)
         self.pointwise = nn.Conv1d(in_channels, out_channels, kernel_size=1, dilation=1, bias=bias)
 
     def forward(self, x):
@@ -29,7 +28,6 @@ class PointwiseConv(nn.Module):
         self,
         in_channels,
         out_channels,
-        kernel_size,
         bias=False
     ):
         super().__init__()
@@ -42,35 +40,45 @@ class PointwiseConv(nn.Module):
 class DepthwiseConv(nn.Module):
     def __init__(
         self,
-        in_channels,
-        out_channels,
+        channels,
         kernel_size,
+        stride=1,
         dilation=1,
         padding=1,
         bias=False
     ):
         super().__init__()
 
-        self.depthwise = nn.Conv1d(in_channels, in_channels, kernel_size=kernel_size, dilation=dilation, padding=padding, groups=in_channels, bias=bias)
+        self.depthwise = nn.Conv1d(channels, channels, kernel_size=kernel_size, stride=stride, dilation=dilation, padding=padding, groups=channels, bias=bias)
 
     def forward(self, x):
         return self.depthwise(x)
 
+class Upsample(nn.Module):
+    def __init__(self, scale_factor, mode="linear"):
+        super().__init__()
+        
+        self.scale_factor = scale_factor
+        self.mode = mode
+
+    def forward(self, x):
+        return F.interpolate(x, scale_factor=self.scale_factor, mode="linear")
+
 class SqueezeExcite(nn.Module):
     def __init__(
         self,
-        in_channels,
+        channels,
         rd_ratio=0.25
     ):
         super().__init__()
 
-        rd_channels = int(in_channels * rd_ratio)
+        rd_channels = int(channels * rd_ratio)
 
         self.gate = nn.Sequential(
             nn.AdaptiveAvgPool1d(1),
-            nn.Conv1d(in_channels, rd_channels, 1),
+            nn.Conv1d(channels, rd_channels, 1),
             nn.ReLU(inplace=True),
-            nn.Conv1d(rd_channels, in_channels, 1),
+            nn.Conv1d(rd_channels, channels, 1),
             nn.Hardsigmoid()
         )
 
@@ -145,59 +153,60 @@ class ResBlock(nn.Module):
 
         return self.activation(h + residual)
 
-class MBConv(nn.Module):
-    def __init__(
-        self,
-        in_channels,
-        hidden_channels,
-        out_channels,
-        kernel=3,
-        dilation=1,
-        groups=8,
-        se_ratio=None,
-        activation=nn.SiLU()
-    ):
+class MBConvResidual(nn.Module):
+    def __init__(self, fn, dropout = 0.):
         super().__init__()
-
-        self.conv = nn.Sequential(
-            PointwiseConv(in_channels, hidden_channels, kernel_size=1),
-            nn.BatchNorm1d(hidden_channels),
-            activation,
-            DepthwiseConv(hidden_channels, hidden_channels, kernel_size=kernel, dilation=dilation, padding="same"),
-            nn.BatchNorm1d(hidden_channels),
-            activation,
-            SqueezeExcite(hidden_channels, rd_ratio=se_ratio) if se_ratio is not None else nn.Identity(),
-            PointwiseConv(hidden_channels, out_channels, kernel_size=1),
-            nn.BatchNorm1d(out_channels)
-        )
+        self.fn = fn
+        self.dropsample = Dropsample(dropout)
 
     def forward(self, x):
-        residual = x
+        out = self.fn(x)
+        out = self.dropsample(out)
+        return out + x
 
-        return self.conv(x) + residual
+class Dropsample(nn.Module):
+    def __init__(self, prob = 0):
+        super().__init__()
+        self.prob = prob
+  
+    def forward(self, x):
+        device = x.device
 
-# class AttentionLayer(nn.Module):
-#     def __init__(
-#         self,
-#         dim,
-#         max_seq_len,
-#         dim_head = 64,
-#         heads = 8,
-#         causal = False,
-#         dropout = 0.0,
-#         window_len = 32
-#     ):
-#         super().__init__()
+        if self.prob == 0. or (not self.training):
+            return x
 
-#         self.attn = AttentionLayers(dim, 1, rel_pos_bias=True)
+        keep_mask = torch.FloatTensor((x.shape[0], 1, 1, 1), device = device).uniform_() > self.prob
+        return x * keep_mask / (1 - self.prob)
 
-#         self.attn_window_len = window_len
+def MBConv(
+    dim_in,
+    dim_out,
+    kernel_size = 3,
+    padding = 1,
+    dilation = 1,
+    downsample_factor = None,
+    expansion_rate = 1,
+    se_ratio = 0.25,
+    dropout = 0.,
+    bias=False,
+    activation=nn.ReLU()
+):
+    hidden_dim = int(expansion_rate * dim_out)
+    stride = downsample_factor if downsample_factor is not None else 1
 
-#     def forward(self, x):
-#         seq_len = x.shape[-1]
+    net = nn.Sequential(
+        PointwiseConv(dim_in, hidden_dim, bias=bias),
+        nn.BatchNorm1d(hidden_dim),
+        activation,
+        DepthwiseConv(hidden_dim, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias),
+        nn.BatchNorm1d(hidden_dim),
+        activation,
+        SqueezeExcite(hidden_dim, rd_ratio=se_ratio) if se_ratio is not None else nn.Identity(),
+        PointwiseConv(hidden_dim, dim_out, bias=bias),
+        nn.BatchNorm1d(dim_out)
+    )
 
-#         x = window_partition(x, window_size=self.attn_window_len)
-#         x = self.attn(x)
-#         x = window_reverse(x, seq_len, window_size=self.attn_window_len)
+    if dim_in == dim_out and downsample_factor is None:
+        net = MBConvResidual(net, dropout = dropout)
 
-#         return x
+    return net

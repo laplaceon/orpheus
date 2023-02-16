@@ -1,14 +1,13 @@
 import torch
 import torch.nn as nn
 
-from .blocks_1d import MBConv, ResBlock
+from .blocks_1d import MBConv, DepthwiseSeparableConv
 
 class Encoder(nn.Module):
     def __init__(
         self,
-        sequence_length,
-        latent_dim,
         h_dims,
+        latent_dim,
         scales,
         blocks_per_stages,
         layers_per_blocks,
@@ -20,13 +19,12 @@ class Encoder(nn.Module):
         for i in range(len(h_dims)-1):
             in_channels, out_channels = h_dims[i], h_dims[i+1]
 
-            encoder_stage = EncoderStage(in_channels, out_channels, scales[i], blocks_per_stages[i], layers_per_blocks[i], se_ratio, first_stage=(i == 0), last_stage=(i+1 == len(h_dims) - 1))
+            encoder_stage = EncoderStage(in_channels, out_channels, scales[i], blocks_per_stages[i], layers_per_blocks[i], se_ratio, last_stage=(i+1 == len(h_dims) - 1))
             stages.append(encoder_stage)
 
         to_latent = nn.Sequential(
-            nn.Conv1d(h_dims[-1], h_dims[-1] * 2, 4, 2, 1),
-            nn.LeakyReLU(negative_slope=0.2),
-            nn.Conv1d(h_dims[-1] * 2, latent_dim * 2, 3, padding="same"),
+            MBConv(h_dims[-1], h_dims[-1] * 2, kernel_size=4, downsample_factor=2, padding=1, activation=nn.LeakyReLU(negative_slope=0.2)),
+            MBConv(h_dims[-1] * 2, latent_dim * 2, kernel_size=3, padding="same", activation=nn.LeakyReLU(negative_slope=0.2)),
             nn.Tanh()
         )
 
@@ -46,36 +44,45 @@ class EncoderStage(nn.Module):
         num_blocks,
         layers_per_block,
         se_ratio,
-        first_stage=False,
         last_stage=False
     ):
         super().__init__()
 
         blocks = []
 
-        if first_stage:
-            kernel = out_channels // in_channels
-            expand = nn.Conv1d(in_channels, out_channels, kernel_size=kernel+1, padding=3)
+        if scale is None:
+            kernel_size = (out_channels // in_channels) + 1
+            expand = MBConv(in_channels, out_channels, kernel_size, padding="same", activation=nn.LeakyReLU(negative_slope=0.2))
+            
             blocks.append(expand)
         else:
-            downscale = nn.Conv1d(in_channels, out_channels, kernel_size=scale*2, stride=scale, padding=scale//2)
+            downscale = MBConv(in_channels, out_channels, kernel_size=scale*2, downsample_factor=scale, padding=scale//2, activation=nn.LeakyReLU(negative_slope=0.2))
             blocks.append(downscale)
 
-        for _ in range(num_blocks):
+        blocks.append(
+            EncoderBlock(
+                out_channels,
+                3,
+                layers_per_block - 1,
+                se_ratio = se_ratio,
+                first_block = True
+            )
+        )
+
+        for _ in range(num_blocks - 1):
             blocks.append(
                 EncoderBlock(
                     out_channels,
                     3,
                     layers_per_block,
-                    se_ratio=se_ratio
+                    se_ratio = se_ratio
                 )
             )
 
         self.blocks = nn.Sequential(*blocks)
 
     def forward(self, x):
-        out = self.blocks(x)
-        return out
+        return self.blocks(x)
 
 class EncoderBlock(nn.Module):
     def __init__(
@@ -83,16 +90,30 @@ class EncoderBlock(nn.Module):
         channels,
         kernel,
         num_layers,
-        dilation_factor=3,
-        se_ratio=None
+        dilation_factor = 3,
+        se_ratio = None,
+        first_block = False
     ):
         super().__init__()
 
         conv = []
 
+        offset = 1 if first_block else 0
+
         for i in range(num_layers):
-            dilation = dilation_factor ** i
-            conv.append(ResBlock(channels, channels, kernel, dilation=dilation, activation=nn.LeakyReLU(negative_slope=0.2)))
+            dilation = dilation_factor ** (i + offset)
+            conv.append(
+                MBConv(
+                    channels,
+                    channels,
+                    kernel,
+                    padding = "same",
+                    dilation = dilation,
+                    expansion_rate = 2,
+                    se_ratio = se_ratio,
+                    activation = nn.LeakyReLU(negative_slope=0.2)
+                )
+            )
 
         self.conv = nn.Sequential(*conv)
 
