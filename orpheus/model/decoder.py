@@ -85,9 +85,11 @@ class Decoder(nn.Module):
         super().__init__()
 
         self.from_latent = nn.Sequential(
-            MBConv(latent_dim, h_dims[0] * 2, kernel_size=3, padding="same", activation=nn.LeakyReLU(negative_slope=0.2)),
+            nn.Conv1d(latent_dim, h_dims[0] * 2, kernel_size=3, padding="same"),
+            nn.LeakyReLU(negative_slope=0.2),
             Upsample(scale_factor=2),
-            MBConv(h_dims[0] * 2, h_dims[0], kernel_size=3, padding="same", activation=nn.LeakyReLU(negative_slope=0.2))
+            nn.Conv1d(h_dims[0] * 2, h_dims[0], kernel_size=3, padding="same"),
+            nn.LeakyReLU(negative_slope=0.2)
         )
 
         stages = []
@@ -164,7 +166,6 @@ class DecoderBlock(nn.Module):
                     kernel,
                     padding = "same",
                     dilation = dilation,
-                    expansion_rate = 1.5,
                     se_ratio = se_ratio,
                     activation = nn.LeakyReLU(negative_slope=0.2)
                 )

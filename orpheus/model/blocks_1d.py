@@ -118,40 +118,31 @@ class ResBlock(nn.Module):
 
         return self.activation(h + residual)
 
-class ResBlock(nn.Module):
+class EnhancedResBlock(nn.Module):
     def __init__(
         self,
-        in_channels,
-        out_channels,
-        kernel=3,
-        padding="same",
+        channels,
+        kernel_size,
+        padding=1,
         dilation=1,
-        groups=8,
         bias=False,
+        se_ratio=None,
         activation=nn.ReLU()
     ):
         super().__init__()
 
-        self.conv1 = nn.Sequential(
-            nn.Conv1d(in_channels, out_channels, kernel_size=kernel, dilation=dilation, padding=padding, bias=bias),
-            nn.BatchNorm1d(out_channels),
-            activation
+        self.net = nn.Sequential(
+            nn.BatchNorm1d(channels),
+            activation,
+            nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
+            nn.BatchNorm1d(channels),
+            activation,
+            nn.Conv1d(channels, channels, kernel_size=1, padding=padding, dilation=dilation, bias=bias),
+            SqueezeExcite(channels, se_ratio) if se_ratio is not None else nn.Identity()
         )
-        self.conv2 = nn.Sequential(
-            nn.Conv1d(out_channels, out_channels, kernel_size=kernel, dilation=dilation, padding=padding, bias=bias),
-            nn.BatchNorm1d(out_channels)
-        )
-
-        self.conv_res = nn.Conv1d(in_channels, out_channels, kernel_size=1, dilation=dilation, padding=padding, bias=bias)
-
-        self.activation = activation
 
     def forward(self, x):
-        residual = x
-        h = self.conv1(x)
-        h = self.conv2(h)
-
-        return self.activation(h + residual)
+        return x + self.net(x)
 
 class MBConvResidual(nn.Module):
     def __init__(self, fn, dropout = 0.):

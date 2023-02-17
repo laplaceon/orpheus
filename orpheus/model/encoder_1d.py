@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from .blocks_1d import MBConv, DepthwiseSeparableConv
+from .blocks_1d import MBConv, DepthwiseSeparableConv, EnhancedResBlock
 
 class Encoder(nn.Module):
     def __init__(
@@ -23,8 +23,10 @@ class Encoder(nn.Module):
             stages.append(encoder_stage)
 
         to_latent = nn.Sequential(
-            MBConv(h_dims[-1], h_dims[-1] * 2, kernel_size=4, downsample_factor=2, padding=1, activation=nn.LeakyReLU(negative_slope=0.2)),
-            MBConv(h_dims[-1] * 2, latent_dim * 2, kernel_size=3, padding="same", activation=nn.LeakyReLU(negative_slope=0.2)),
+            nn.LeakyReLU(negative_slope=0.2),
+            nn.Conv1d(h_dims[-1], h_dims[-1] * 2, kernel_size=4, stride=2, padding=1),
+            nn.LeakyReLU(negative_slope=0.2),
+            nn.Conv1d(h_dims[-1] * 2, latent_dim * 2, kernel_size=3, padding="same"),
             nn.Tanh()
         )
 
@@ -52,24 +54,16 @@ class EncoderStage(nn.Module):
 
         if scale is None:
             kernel_size = (out_channels // in_channels) + 1
-            expand = MBConv(in_channels, out_channels, kernel_size, padding="same", activation=nn.LeakyReLU(negative_slope=0.2))
-            
+            expand = nn.Conv1d(in_channels, out_channels, kernel_size, padding="same")
             blocks.append(expand)
         else:
-            downscale = MBConv(in_channels, out_channels, kernel_size=scale*2, downsample_factor=scale, padding=scale//2, activation=nn.LeakyReLU(negative_slope=0.2))
+            downscale = nn.Sequential(
+                nn.LeakyReLU(negative_slope=0.2),
+                nn.Conv1d(in_channels, out_channels, kernel_size=scale*2, stride=scale, padding=scale//2)
+            )
             blocks.append(downscale)
 
-        blocks.append(
-            EncoderBlock(
-                out_channels,
-                3,
-                layers_per_block - 1,
-                se_ratio = se_ratio,
-                first_block = True
-            )
-        )
-
-        for _ in range(num_blocks - 1):
+        for _ in range(num_blocks):
             blocks.append(
                 EncoderBlock(
                     out_channels,
@@ -91,25 +85,21 @@ class EncoderBlock(nn.Module):
         kernel,
         num_layers,
         dilation_factor = 3,
-        se_ratio = None,
-        first_block = False
+        se_ratio = None
     ):
         super().__init__()
 
         conv = []
 
-        offset = 1 if first_block else 0
-
         for i in range(num_layers):
-            dilation = dilation_factor ** (i + offset)
+            dilation = dilation_factor ** i
             conv.append(
-                MBConv(
-                    channels,
+                EnhancedResBlock(
                     channels,
                     kernel,
                     padding = "same",
                     dilation = dilation,
-                    expansion_rate = 2,
+                    bias = False,
                     se_ratio = se_ratio,
                     activation = nn.LeakyReLU(negative_slope=0.2)
                 )

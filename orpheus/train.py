@@ -60,7 +60,7 @@ to_wave = torchaudio.transforms.GriffinLim(n_fft=n_fft).cuda()
 def recons_loss(inp, tgt, time_weight=1.0, freq_weight=1.0, reduction="mean"):
     # lcosh = auraloss.time.LogCoshLoss(reduction=reduction)
 
-    fft_sizes = [2048, 1024, 512, 256, 128, 64]
+    fft_sizes = [2048, 1024, 512, 256, 128]
     hops = [int(0.25*fft) for fft in fft_sizes]
 
     stft = auraloss.freq.MultiResolutionSTFTLoss(fft_sizes=fft_sizes, hop_sizes=hops, win_lengths=fft_sizes, reduction=reduction)
