@@ -79,7 +79,7 @@ class SqueezeExcite(nn.Module):
             nn.Conv1d(channels, rd_channels, 1),
             nn.ReLU(inplace=True),
             nn.Conv1d(rd_channels, channels, 1),
-            nn.Hardsigmoid()
+            nn.Sigmoid()
         )
 
     def forward(self, x):
@@ -137,7 +137,7 @@ class EnhancedResBlock(nn.Module):
             nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
             nn.BatchNorm1d(channels),
             activation,
-            nn.Conv1d(channels, channels, kernel_size=1, padding=padding, dilation=dilation, bias=bias),
+            nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
             SqueezeExcite(channels, se_ratio) if se_ratio is not None else nn.Identity()
         )
 
