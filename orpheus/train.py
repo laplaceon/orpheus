@@ -8,6 +8,7 @@ from slugify import slugify
 import math
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -57,6 +58,69 @@ to_wave = torchaudio.transforms.GriffinLim(n_fft=n_fft).cuda()
 #     ]
 # ).cuda()
 
+class BarlowTwinsVAE(nn.Module):
+    def __init__(self, backbone, batch_size, lambda_coeff=5e-3):
+        super().__init__()
+
+        self.backbone = backbone
+
+        # self.projection = nn.Flatten()
+
+        # self.bn = nn.BatchNorm1d(8192, affine=False)
+
+        self.batch_size = batch_size
+        self.lambd = lambda_coeff
+
+        fft_sizes = [2048, 1024, 512, 256, 128]
+        hops = [int(0.25*fft) for fft in fft_sizes]
+        self.stft_loss = auraloss.freq.MultiResolutionSTFTLoss(fft_sizes=fft_sizes, hop_sizes=hops, win_lengths=fft_sizes, sample_rate=bitrate)
+
+    def off_diagonal(self, x):
+        # taken from: https://github.com/facebookresearch/barlowtwins/blob/main/main.py
+        # return a flattened view of the off-diagonal elements of a square matrix
+        n, m = x.shape
+        assert n == m
+        return x.flatten()[:-1].view(n - 1, n + 1)[:, 1:].flatten()
+
+    def cr_loss(self, mu_1, std_1, mu_2, std_2, gamma=1e-2):
+        """
+        distance between two gaussians
+        """
+
+        cr_loss = 0.5 * torch.sum(2 * torch.log(std_1 / std_2) - \
+                1 + (std_2 ** 2 + (mu_2 - mu_1) ** 2) / std_1 ** 2,
+                dim=1).mean()
+
+        return cr_loss * gamma
+
+    def forward(self, y1, y2, bt=False):
+        z1, kl1, mu1, std1 = self.backbone.reparameterize(self.backbone.encode(y1), return_vars=True)
+        z2, kl2, mu2, std2 = self.backbone.reparameterize(self.backbone.encode(y2), return_vars=True)
+
+        # z1_p = self.projection(z1)
+        # z2_p = self.projection(z2)
+
+        # # empirical cross-correlation matrix
+        # c = self.bn(z1_p).T @ self.bn(z2_p)
+
+        # # sum the cross-correlation matrix between all gpus
+        # c.div_(self.batch_size)
+
+        # on_diag = torch.diagonal(c).add_(-1).pow_(2).sum()
+        # off_diag = self.off_diagonal(c).pow_(2).sum()
+        # bt_loss = on_diag + self.lambd * off_diag
+
+        bt_loss = self.cr_loss(mu1, std1, mu2, std2)
+
+        dist_loss = kl1 + kl2
+
+        out1 = self.backbone.decode(z1)
+        out2 = self.backbone.decode(z2)
+
+        recons_loss = self.stft_loss(out1, y1) + self.stft_loss(out2, y2)
+
+        return (bt_loss, dist_loss, recons_loss)
+
 def recons_loss(inp, tgt, time_weight=1.0, freq_weight=1.0, reduction="mean"):
     # lcosh = auraloss.time.LogCoshLoss(reduction=reduction)
 
@@ -82,7 +146,7 @@ def get_song_features(model, file):
     consumable = data.shape[0] - (data.shape[0] % sequence_length)
 
     data = torch.stack(torch.split(data[:consumable], sequence_length)).cuda()
-    data_spec = to_mel(data[:15].unsqueeze(1))
+    data_spec = data[:15].unsqueeze(1)
 
     with torch.no_grad():
         output, kl = model(data_spec)
@@ -170,7 +234,8 @@ def train(model, train_dl, lr=1e-4, beta=1.0):
         i += 1
 
 
-model = Orpheus(sequence_length).cuda()
+model = Orpheus(sequence_length)
+model_b = BarlowTwinsVAE(model, 2).cuda()
 
 data_folder = "../data"
 
@@ -186,10 +251,12 @@ train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 # val_ds = AudioFileDataset(X_test, sequence_length, multiplier=multiplier)
 # val_dl = DataLoader(val_ds, batch_size=ae_batch_size*2)
 
-train(model, train_dl)
-# model.load_state_dict(torch.load("../models/ravae_5l_vae_0.pt"))
-# real_eval(model, 3)
-# print(model)
+# train(model, train_dl)
+# checkpoint = torch.load("../models/ravae_stage1.pt")
+# model_b.load_state_dict(checkpoint["model"])
+# model = model_b.backbone
+# real_eval(model, 74)
+print(model)
 
-# pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-# print(pytorch_total_params)
+pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+print(pytorch_total_params)
