@@ -132,10 +132,8 @@ class EnhancedResBlock(nn.Module):
         super().__init__()
 
         self.net = nn.Sequential(
-            nn.BatchNorm1d(channels),
             activation,
             nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
-            nn.BatchNorm1d(channels),
             activation,
             nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
             SqueezeExcite(channels, se_ratio) if se_ratio is not None else nn.Identity()
