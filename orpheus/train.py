@@ -206,24 +206,25 @@ def train(model, train_dl, lr=1e-4, beta=1.0):
             opt.zero_grad()
 
             x_subbands = model.decompose(real_imgs)
+            y = model.recompose(x_subbands)
 
             y_subbands, d_loss = model(x_subbands)
             r_loss = recons_loss(y_subbands, x_subbands)
             loss = r_loss[0] + r_loss[1]
 
-            # print(r_loss, d_loss)
-            r_loss_total += r_loss[0].item()
-            d_loss_total += d_loss.item()
+            # # print(r_loss, d_loss)
+            # r_loss_total += r_loss[0].item()
+            # d_loss_total += d_loss.item()
 
-            loss.backward()
-            opt.step()
+            # loss.backward()
+            # opt.step()
             step += 1
 
-            if torch.isnan(r_loss[0]):
-                raise SystemError
+            # if torch.isnan(r_loss[0]):
+            #     raise SystemError
 
             nb += 1
-        lr_scheduler.step(loss)
+        # lr_scheduler.step(loss)
         # while beta_kl <= 1:
         #     beta_kl *= sqrt(10)
         # scheduler steps

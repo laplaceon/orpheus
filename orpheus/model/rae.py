@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .pqmf_old import PQMF
+from .pqmf import PQMF
 
 from .encoder_1d import Encoder
 from .decoder import Decoder
@@ -19,19 +19,19 @@ class Orpheus(nn.Module):
     ):
         super().__init__()
 
-        self.pqmf = PQMF(h_dims[0])
+        self.pqmf = PQMF(h_dims[0], 100, False)
 
         self.encoder = Encoder(h_dims, latent_dim, scales, blocks_per_stages, layers_per_blocks, se_ratio)
         self.decoder = Decoder(h_dims[::-1], latent_dim, scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1], se_ratio)
 
     def decompose(self, x):
-        return self.pqmf.analysis(x)
+        return self.pqmf(x)
 
     def encode(self, x):
         return self.encoder(x)
 
     def recompose(self, x):
-        return self.pqmf.synthesis(x)
+        return self.pqmf.inverse(x)
 
     def decode(self, z):
         return self.decoder(z)

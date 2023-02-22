@@ -60,7 +60,7 @@ class EncoderStage(nn.Module):
             blocks.append(expand)
         else:
             downscale = nn.Sequential(
-                nn.LeakyReLU(negative_slope=0.2),
+                nn.LeakyReLU(0.2),
                 weight_norm(nn.Conv1d(in_channels, out_channels, kernel_size=scale*2, stride=scale, padding=scale//2))
             )
             blocks.append(downscale)
