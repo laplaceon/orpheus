@@ -24,13 +24,17 @@ class Orpheus(nn.Module):
         self.encoder = Encoder(h_dims, latent_dim, scales, blocks_per_stages, layers_per_blocks, se_ratio)
         self.decoder = Decoder(h_dims[::-1], latent_dim, scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1], se_ratio)
 
+    def decompose(self, x):
+        return self.pqmf.analysis(x)
+
     def encode(self, x):
-        x_s = self.pqmf.analysis(x)
-        return self.encoder(x_s)
+        return self.encoder(x)
+
+    def recompose(self, x):
+        return self.pqmf.synthesis(x)
 
     def decode(self, z):
-        out_s = self.decoder(z)
-        return self.pqmf.synthesis(out_s)
+        return self.decoder(z)
 
     def reparameterize(self, z, return_vars=False):
         mean, scale = z.chunk(2, dim=1)

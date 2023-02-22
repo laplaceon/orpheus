@@ -205,8 +205,10 @@ def train(model, train_dl, lr=1e-4, beta=1.0):
 
             opt.zero_grad()
 
-            z, d_loss = model(real_imgs)
-            r_loss = recons_loss(z, real_imgs)
+            x_subbands = model.decompose(real_imgs)
+
+            y_subbands, d_loss = model(x_subbands)
+            r_loss = recons_loss(y_subbands, x_subbands)
             loss = r_loss[0] + r_loss[1]
 
             # print(r_loss, d_loss)

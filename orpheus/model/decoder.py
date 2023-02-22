@@ -20,7 +20,7 @@ class Decoder(nn.Module):
 
         self.from_latent = nn.Sequential(
             weight_norm(nn.Conv1d(latent_dim, h_dims[0] * 2, kernel_size=3, padding="same")),
-            nn.LeakyReLU(negative_slope=0.2),
+            nn.LeakyReLU(0.2),
             Upsample(scale_factor=2),
             weight_norm(nn.Conv1d(h_dims[0] * 2, h_dims[0], kernel_size=3, padding="same"))
         )
@@ -100,7 +100,7 @@ class DecoderBlock(nn.Module):
                     dilation = dilation,
                     bias = False,
                     se_ratio = se_ratio,
-                    activation = nn.LeakyReLU(negative_slope=0.2)
+                    activation = nn.LeakyReLU(0.2)
                 )
             )
 
