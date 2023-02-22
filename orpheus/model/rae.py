@@ -19,7 +19,7 @@ class Orpheus(nn.Module):
     ):
         super().__init__()
 
-        self.pqmf = PQMF(h_dims[0], 100, False)
+        self.pqmf = PQMF(h_dims[0], 100)
 
         self.encoder = Encoder(h_dims, latent_dim, scales, blocks_per_stages, layers_per_blocks, se_ratio)
         self.decoder = Decoder(h_dims[::-1], latent_dim, scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1], se_ratio)
