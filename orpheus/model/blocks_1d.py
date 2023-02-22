@@ -2,6 +2,29 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from torch.nn.utils import weight_norm
+
+class DepthwiseSeparableConvWN(nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride=1,
+        dilation=1,
+        padding=1,
+        bias=False
+    ):
+        super().__init__()
+
+        self.depthwise = weight_norm(nn.Conv1d(in_channels, in_channels, kernel_size=kernel_size, stride=stride, dilation=dilation, padding=padding, groups=in_channels, bias=bias))
+        self.pointwise = weight_norm(nn.Conv1d(in_channels, out_channels, kernel_size=1, dilation=1, bias=bias))
+
+    def forward(self, x):
+        x = self.depthwise(x)
+        x = self.pointwise(x)
+        return x
+
 class DepthwiseSeparableConv(nn.Module):
     def __init__(
         self,
@@ -85,39 +108,6 @@ class SqueezeExcite(nn.Module):
     def forward(self, x):
         return x * self.gate(x)
 
-class ResBlock(nn.Module):
-    def __init__(
-        self,
-        in_channels,
-        out_channels,
-        kernel=3,
-        dilation=1,
-        groups=8,
-        activation=nn.SiLU()
-    ):
-        super().__init__()
-
-        self.conv1 = nn.Sequential(
-            DepthwiseSeparableConv(in_channels, out_channels, kernel_size=kernel, dilation=dilation, padding="same"),
-            nn.BatchNorm1d(out_channels),
-            activation
-        )
-        self.conv2 = nn.Sequential(
-            DepthwiseSeparableConv(out_channels, out_channels, kernel_size=kernel, dilation=dilation, padding="same"),
-            nn.BatchNorm1d(out_channels)
-        )
-
-        self.conv_res = nn.Conv1d(in_channels, out_channels, kernel_size=1, dilation=dilation, padding="same")
-
-        self.activation = activation
-
-    def forward(self, x):
-        residual = x
-        h = self.conv1(x)
-        h = self.conv2(h)
-
-        return self.activation(h + residual)
-
 class EnhancedResBlock(nn.Module):
     def __init__(
         self,
@@ -127,15 +117,18 @@ class EnhancedResBlock(nn.Module):
         dilation=1,
         bias=False,
         se_ratio=None,
+        num_groups=8,
         activation=nn.ReLU()
     ):
         super().__init__()
 
         self.net = nn.Sequential(
+            # nn.GroupNorm(num_groups, channels),
             activation,
-            nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
+            weight_norm(nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias)),
+            # nn.GroupNorm(num_groups, channels),
             activation,
-            nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
+            weight_norm(nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias)),
             SqueezeExcite(channels, se_ratio) if se_ratio is not None else nn.Identity()
         )
 

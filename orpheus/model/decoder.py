@@ -2,7 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .blocks_1d import MBConv, DepthwiseSeparableConv, EnhancedResBlock, Upsample
+from torch.nn.utils import weight_norm
+
+from .blocks_1d import MBConv, DepthwiseSeparableConvWN, EnhancedResBlock, Upsample
 
 class Decoder(nn.Module):
     def __init__(
@@ -17,10 +19,10 @@ class Decoder(nn.Module):
         super().__init__()
 
         self.from_latent = nn.Sequential(
-            nn.Conv1d(latent_dim, h_dims[0] * 2, kernel_size=3, padding="same"),
+            weight_norm(nn.Conv1d(latent_dim, h_dims[0] * 2, kernel_size=3, padding="same")),
             nn.LeakyReLU(negative_slope=0.2),
             Upsample(scale_factor=2),
-            nn.Conv1d(h_dims[0] * 2, h_dims[0], kernel_size=3, padding="same")
+            weight_norm(nn.Conv1d(h_dims[0] * 2, h_dims[0], kernel_size=3, padding="same"))
         )
 
         stages = []
@@ -65,7 +67,7 @@ class DecoderStage(nn.Module):
         blocks.append(
             nn.Sequential(
                 Upsample(scale_factor=scale) if scale is not None else nn.Identity(),
-                DepthwiseSeparableConv(in_channels, out_channels, (in_channels // out_channels) + 1 if last_stage else 3, padding="same"),
+                DepthwiseSeparableConvWN(in_channels, out_channels, (in_channels // out_channels) + 1 if last_stage else 3, padding="same"),
                 nn.Tanh() if last_stage else nn.Identity()
             )
         )

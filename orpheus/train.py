@@ -255,8 +255,8 @@ train(model, train_dl)
 # checkpoint = torch.load("../models/ravae_stage1.pt")
 # model_b.load_state_dict(checkpoint["model"])
 # model = model_b.backbone
-# real_eval(model, 100)
+# real_eval(model, 202)
 # print(model)
 
-# pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-# print(pytorch_total_params)
+pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+print(pytorch_total_params)
