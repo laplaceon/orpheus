@@ -37,7 +37,7 @@ class Decoder(nn.Module):
     def forward(self, z):
         out = self.from_latent(z)
 
-        return self.conv(out)
+        return torch.tanh(self.conv(out))
 
 
 class DecoderStage(nn.Module):
@@ -67,8 +67,7 @@ class DecoderStage(nn.Module):
         blocks.append(
             nn.Sequential(
                 Upsample(scale_factor=scale) if scale is not None else nn.Identity(),
-                DepthwiseSeparableConvWN(in_channels, out_channels, (in_channels // out_channels) + 1 if last_stage else 3, padding="same"),
-                nn.Tanh() if last_stage else nn.Identity()
+                DepthwiseSeparableConvWN(in_channels, out_channels, (in_channels // out_channels) + 1 if last_stage else 3, padding="same")
             )
         )
 

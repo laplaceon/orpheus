@@ -149,8 +149,8 @@ def get_song_features(model, file):
     data_spec = data[:15].unsqueeze(1)
 
     with torch.no_grad():
-        output, kl = model(data_spec)
-        output = output.flatten()
+        output, kl = model(model.decompose(data_spec))
+        output = model.recompose(output).flatten()
         # print(output[:5].shape)
         return output
 
@@ -182,7 +182,6 @@ def real_eval(model, epoch):
 
 def train(model, train_dl, lr=1e-4, beta=1.0):
     opt = Adam(model.parameters(), lr)
-    lr_scheduler = ReduceLROnPlateau(opt, factor=0.5, patience=10, verbose=True)
 
     step = 0
 
@@ -206,18 +205,18 @@ def train(model, train_dl, lr=1e-4, beta=1.0):
             opt.zero_grad()
 
             x_subbands = model.decompose(real_imgs)
-            y = model.recompose(x_subbands)
 
             y_subbands, d_loss = model(x_subbands)
-            r_loss = recons_loss(y_subbands, x_subbands)
-            loss = r_loss[0] + r_loss[1]
+            r_loss = F.mse_loss(y_subbands, x_subbands)
+            # loss = r_loss[0] + r_loss[1]
+            loss = r_loss
 
             # # print(r_loss, d_loss)
-            # r_loss_total += r_loss[0].item()
-            # d_loss_total += d_loss.item()
+            r_loss_total += r_loss.item()
+            d_loss_total += d_loss.item()
 
-            # loss.backward()
-            # opt.step()
+            loss.backward()
+            opt.step()
             step += 1
 
             # if torch.isnan(r_loss[0]):
@@ -230,8 +229,8 @@ def train(model, train_dl, lr=1e-4, beta=1.0):
         # scheduler steps
         print(f"D Loss: {d_loss_total/nb}, R Loss: {r_loss_total/nb}")
 
-        if (i+1) % 4 == 0:
-            torch.save(model.state_dict(), f"../models/rae_{i+1}.pt")
+        # if (i+1) % 4 == 0:
+            # torch.save(model.state_dict(), f"../models/rae_{i+1}.pt")
         #     real_eval(model, i)
 
         i += 1
@@ -255,10 +254,10 @@ train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 # val_dl = DataLoader(val_ds, batch_size=ae_batch_size*2)
 
 train(model, train_dl)
-# checkpoint = torch.load("../models/ravae_stage1.pt")
-# model_b.load_state_dict(checkpoint["model"])
+checkpoint = torch.load("../models/ravae_stage1.pt")
+model_b.load_state_dict(checkpoint["model"])
 # model = model_b.backbone
-# real_eval(model, 202)
+real_eval(model, 299)
 # print(model)
 
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
