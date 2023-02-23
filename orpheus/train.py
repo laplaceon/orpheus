@@ -30,7 +30,7 @@ torchaudio.USE_SOUNDFILE_LEGACY_INTERFACE = False
 torchaudio.set_audio_backend("soundfile")
 
 # Hyperparams
-batch_size = 4
+batch_size = 8
 
 # Params
 bitrate = 44100
@@ -129,7 +129,8 @@ def recons_loss(inp, tgt, time_weight=1.0, freq_weight=1.0, reduction="mean"):
 
     stft = auraloss.freq.MultiResolutionSTFTLoss(fft_sizes=fft_sizes, hop_sizes=hops, win_lengths=fft_sizes, reduction=reduction)
 
-    time_loss = F.mse_loss(inp, tgt)
+    with torch.no_grad():
+        time_loss = F.mse_loss(inp, tgt)
     freq_loss = stft(inp, tgt)
 
     return (time_loss, freq_loss)
@@ -179,8 +180,11 @@ def real_eval(model, epoch):
         print(out)
         torchaudio.save(f"../output/{slugify(test_file)}_epoch{epoch+1}.wav", out.cpu().unsqueeze(0), bitrate)
 
+def cyclic_kl(step, cycle_len, maxp=0.5, min_beta=0, max_beta=1):
+    div_shift = 1 / (1 - min_beta/max_beta)
+    return min(((step % cycle_len) / (cycle_len * maxp * div_shift)) + (min_beta / max_beta), 1) * max_beta
 
-def train(model, train_dl, lr=1e-4, beta=1.0):
+def train(model, train_dl, lr=1e-3, beta=1.0):
     opt = Adam(model.parameters(), lr)
 
     step = 0
@@ -207,36 +211,37 @@ def train(model, train_dl, lr=1e-4, beta=1.0):
             x_subbands = model.decompose(real_imgs)
 
             y_subbands, d_loss = model(x_subbands)
-            r_loss = F.mse_loss(y_subbands, x_subbands)
+            r_loss = recons_loss(y_subbands, x_subbands)
+            fb_loss = recons_loss(model.recompose(y_subbands), real_imgs)
             # loss = r_loss[0] + r_loss[1]
-            loss = r_loss
+            loss = r_loss[1] + fb_loss[1] + d_loss * cyclic_kl(step, 540, min_beta=1e-4, max_beta=0.1)
 
             # # print(r_loss, d_loss)
-            r_loss_total += r_loss.item()
+            r_loss_total += r_loss[1].item()
             d_loss_total += d_loss.item()
 
             loss.backward()
             opt.step()
-            step += 1
 
             # if torch.isnan(r_loss[0]):
             #     raise SystemError
 
             nb += 1
+            step += 1
         # lr_scheduler.step(loss)
         # while beta_kl <= 1:
         #     beta_kl *= sqrt(10)
         # scheduler steps
         print(f"D Loss: {d_loss_total/nb}, R Loss: {r_loss_total/nb}")
 
-        # if (i+1) % 4 == 0:
-            # torch.save(model.state_dict(), f"../models/rae_{i+1}.pt")
-        #     real_eval(model, i)
+        if (i+1) % 4 == 0:
+            torch.save(model.state_dict(), f"../models/rae_{i+1}.pt")
+            real_eval(model, i)
 
         i += 1
 
 
-model = Orpheus(sequence_length)
+model = Orpheus(sequence_length, fast_recompose=False)
 model_b = BarlowTwinsVAE(model, 2).cuda()
 
 data_folder = "../data"
@@ -254,10 +259,10 @@ train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 # val_dl = DataLoader(val_ds, batch_size=ae_batch_size*2)
 
 train(model, train_dl)
-checkpoint = torch.load("../models/ravae_stage1.pt")
-model_b.load_state_dict(checkpoint["model"])
+# checkpoint = torch.load("../models/ravae_stage1.pt")
+# model_b.load_state_dict(checkpoint["model"])
 # model = model_b.backbone
-real_eval(model, 299)
+# real_eval(model, 300)
 # print(model)
 
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)

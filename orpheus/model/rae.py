@@ -10,7 +10,7 @@ class Orpheus(nn.Module):
     def __init__(
         self,
         sequence_length,
-        h_dims=(16, 64, 128, 256, 512),
+        h_dims=(16, 80, 160, 320, 640),
         latent_dim=128,
         scales=(None, 4, 4, 4),
         blocks_per_stages=(1, 1, 1, 1),

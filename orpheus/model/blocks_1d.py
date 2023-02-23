@@ -135,6 +135,44 @@ class EnhancedResBlock(nn.Module):
     def forward(self, x):
         return x + self.net(x)
 
+class UpResBlock(nn.Module):
+    def __init__(
+        self,
+        channels,
+        kernel_size,
+        padding=1,
+        dilation=1,
+        bias=False,
+        se_ratio=None,
+        num_groups=8,
+        activation=nn.ReLU()
+    ):
+        super().__init__()
+
+        self.net = nn.Sequential(
+            # nn.GroupNorm(num_groups, channels),
+            activation,
+            weight_norm(nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias)),
+            # nn.GroupNorm(num_groups, channels),
+            activation,
+            weight_norm(nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias)),
+            SqueezeExcite(channels, se_ratio) if se_ratio is not None else nn.Identity()
+        )
+
+        hidden_dim = int(4 * channels)
+
+        self.net = nn.Sequential(
+            PointwiseConv(channels, hidden_dim, bias=bias),
+            activation,
+            DepthwiseConv(hidden_dim, kernel_size, padding=padding, dilation=dilation, bias=bias),
+            activation,
+            PointwiseConv(hidden_dim, channels, bias=bias),
+            SqueezeExcite(hidden_dim, rd_ratio=se_ratio) if se_ratio is not None else nn.Identity()
+        )
+
+    def forward(self, x):
+        return x + self.net(x)
+
 class MBConvResidual(nn.Module):
     def __init__(self, fn, dropout = 0.):
         super().__init__()
