@@ -123,12 +123,12 @@ class EnhancedResBlock(nn.Module):
         super().__init__()
 
         self.net = nn.Sequential(
-            # nn.GroupNorm(num_groups, channels),
+            nn.BatchNorm1d(channels, momentum=0.05),
             activation,
-            weight_norm(nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias)),
-            # nn.GroupNorm(num_groups, channels),
+            nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
+            nn.BatchNorm1d(channels, momentum=0.05),
             activation,
-            weight_norm(nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias)),
+            nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, bias=bias),
             SqueezeExcite(channels, se_ratio) if se_ratio is not None else nn.Identity()
         )
 
@@ -158,7 +158,7 @@ class UpResBlock(nn.Module):
             nn.BatchNorm1d(channels, momentum=0.05),
             activation,
             nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
-            SqueezeExcite(channels, se_ratio) if se_ratio is not None else nn.Identity()
+            # SqueezeExcite(channels, se_ratio) if se_ratio is not None else nn.Identity()
         )
 
         hidden_dim = int(4 * channels)

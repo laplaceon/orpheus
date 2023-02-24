@@ -43,20 +43,20 @@ to_mel = torchaudio.transforms.MelSpectrogram(sample_rate=bitrate, n_fft=n_fft, 
 from_mel = torchaudio.transforms.InverseMelScale(n_stft=n_fft // 2 + 1, n_mels=n_mels, sample_rate=bitrate).cuda()
 to_db = torchaudio.transforms.AmplitudeToDB(top_db=80).cuda()
 to_wave = torchaudio.transforms.GriffinLim(n_fft=n_fft).cuda()
-# apply_augmentations = SomeOf(
-#     num_transforms = (1, 3),
-#     transforms = [
-#         PolarityInversion(),
-#         AddColoredNoise(),
-#         Gain(),
-#         OneOf(
-#             transforms = [
-#                 HighPassFilter(),
-#                 LowPassFilter()
-#             ]
-#         )
-#     ]
-# ).cuda()
+apply_augmentations = SomeOf(
+    num_transforms = (1, 3),
+    transforms = [
+        PolarityInversion(),
+        AddColoredNoise(),
+        Gain(),
+        OneOf(
+            transforms = [
+                HighPassFilter(),
+                LowPassFilter()
+            ]
+        )
+    ]
+).cuda()
 
 class BarlowTwinsVAE(nn.Module):
     def __init__(self, backbone, batch_size, lambda_coeff=5e-3):
@@ -201,14 +201,14 @@ def train(model, train_dl, lr=3e-4, beta=1.0):
             # print(real_imgs.shape)
             bs = real_imgs.shape[0]
 
-            # with torch.no_grad():
-                # modded = apply_augmentations(real_imgs.unsqueeze(1), sample_rate=bitrate)
+            with torch.no_grad():
+                modded = apply_augmentations(real_imgs, sample_rate=bitrate)
                 # mel_imgs = to_db(to_mel(modded.squeeze(1)))
                 # mel_imgs = to_db(to_mel(real_imgs))
 
             opt.zero_grad()
 
-            x_subbands = model.decompose(real_imgs)
+            x_subbands = model.decompose(modded)
 
             y_subbands, d_loss = model(x_subbands)
             r_loss = recons_loss(y_subbands, x_subbands)
@@ -247,7 +247,7 @@ model_b = BarlowTwinsVAE(model, 2).cuda()
 data_folder = "../data"
 
 # audio_files = [f"{data_folder}/2000s/{x}" for x in os.listdir(f"{data_folder}/2000s") if x.endswith(".wav")] + [f"{data_folder}/2010s/{x}" for x in os.listdir(f"{data_folder}/2010s") if x.endswith(".wav")]
-audio_files = [f"{data_folder}/{x}" for x in os.listdir(f"{data_folder}") if x.endswith(".wav")][:65]
+audio_files = [f"{data_folder}/{x}" for x in os.listdir(f"{data_folder}") if x.endswith(".wav")][:130]
 
 X_train, X_test = train_test_split(audio_files, train_size=0.7, random_state=42)
 
