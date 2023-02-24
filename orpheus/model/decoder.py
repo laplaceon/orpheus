@@ -22,7 +22,7 @@ class Decoder(nn.Module):
             weight_norm(nn.Conv1d(latent_dim, h_dims[0] * 2, kernel_size=3, padding="same")),
             nn.LeakyReLU(0.2),
             Upsample(scale_factor=2),
-            weight_norm(nn.Conv1d(h_dims[0] * 2, h_dims[0], kernel_size=3, padding="same"))
+            nn.Conv1d(h_dims[0] * 2, h_dims[0], kernel_size=3, padding="same")
         )
 
         stages = []
