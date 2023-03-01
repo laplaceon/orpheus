@@ -7,6 +7,8 @@ from slugify import slugify
 
 import math
 
+import core
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -39,24 +41,24 @@ sequence_length = 131072
 
 n_fft = 1024
 n_mels = 64
-to_mel = torchaudio.transforms.MelSpectrogram(sample_rate=bitrate, n_fft=n_fft, n_mels=n_mels).cuda()
-from_mel = torchaudio.transforms.InverseMelScale(n_stft=n_fft // 2 + 1, n_mels=n_mels, sample_rate=bitrate).cuda()
-to_db = torchaudio.transforms.AmplitudeToDB(top_db=80).cuda()
-to_wave = torchaudio.transforms.GriffinLim(n_fft=n_fft).cuda()
-apply_augmentations = SomeOf(
-    num_transforms = (1, 3),
-    transforms = [
-        PolarityInversion(),
-        AddColoredNoise(),
-        Gain(),
-        OneOf(
-            transforms = [
-                HighPassFilter(),
-                LowPassFilter()
-            ]
-        )
-    ]
-).cuda()
+# to_mel = torchaudio.transforms.MelSpectrogram(sample_rate=bitrate, n_fft=n_fft, n_mels=n_mels).cuda()
+# from_mel = torchaudio.transforms.InverseMelScale(n_stft=n_fft // 2 + 1, n_mels=n_mels, sample_rate=bitrate).cuda()
+# to_db = torchaudio.transforms.AmplitudeToDB(top_db=80).cuda()
+# to_wave = torchaudio.transforms.GriffinLim(n_fft=n_fft).cuda()
+# apply_augmentations = SomeOf(
+#     num_transforms = (1, 3),
+#     transforms = [
+#         PolarityInversion(),
+#         AddColoredNoise(),
+#         Gain(),
+#         OneOf(
+#             transforms = [
+#                 HighPassFilter(),
+#                 LowPassFilter()
+#             ]
+#         )
+#     ]
+# ).cuda()
 
 class BarlowTwinsVAE(nn.Module):
     def __init__(self, backbone, batch_size, lambda_coeff=5e-3):
@@ -172,20 +174,23 @@ def real_eval(model, epoch):
 
     test_files = [
         "Synthwave Coolin'.wav",
-        "Waiting For The End [Official Music Video] - Linkin Park-HQ.wav"
+        "Waiting For The End [Official Music Video] - Linkin Park-HQ.wav",
+        "q1.wav"
     ]
 
     for test_file in test_files:
         out = get_song_features(model, f"../input/{test_file}")
         print(out)
-        torchaudio.save(f"../output/{slugify(test_file)}_epoch{epoch+1}.wav", out.cpu().unsqueeze(0), bitrate)
+        torchaudio.save(f"../output/{slugify(test_file)}_epoch{epoch+1}_cnxt.wav", out.cpu().unsqueeze(0), bitrate)
 
 def cyclic_kl(step, cycle_len, maxp=0.5, min_beta=0, max_beta=1):
     div_shift = 1 / (1 - min_beta/max_beta)
     return min(((step % cycle_len) / (cycle_len * maxp * div_shift)) + (min_beta / max_beta), 1) * max_beta
 
-def train(model, train_dl, lr=3e-4, beta=1.0):
+def train(model, train_dl, lr=1e-4):
     opt = Adam(model.parameters(), lr)
+    stft = core.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
+    distance = core.AudioDistanceV1(stft, 1e-7).cuda()
 
     step = 0
 
@@ -196,13 +201,15 @@ def train(model, train_dl, lr=3e-4, beta=1.0):
         nb = 0
         r_loss_total = 0
         d_loss_total = 0
+        total_batch = len(train_dl)
         for batch in tqdm(train_dl, position=0, leave=True):
             real_imgs = batch["input"].unsqueeze(1).cuda()
             # print(real_imgs.shape)
             bs = real_imgs.shape[0]
 
-            with torch.no_grad():
-                modded = apply_augmentations(real_imgs, sample_rate=bitrate)
+            # with torch.no_grad():
+                # modded = apply_augmentations(real_imgs, sample_rate=bitrate)
+            modded = real_imgs
                 # mel_imgs = to_db(to_mel(modded.squeeze(1)))
                 # mel_imgs = to_db(to_mel(real_imgs))
 
@@ -211,13 +218,15 @@ def train(model, train_dl, lr=3e-4, beta=1.0):
             x_subbands = model.decompose(modded)
 
             y_subbands, d_loss = model(x_subbands)
-            r_loss = recons_loss(y_subbands, x_subbands)
-            fb_loss = recons_loss(model.recompose(y_subbands), real_imgs)
+            r_loss = distance(y_subbands, x_subbands)["spectral_distance"]
+            fb_loss = distance(model.recompose(y_subbands), real_imgs)["spectral_distance"]
             # loss = r_loss[0] + r_loss[1]
-            loss = r_loss[1] + fb_loss[1] + d_loss * cyclic_kl(step, 180 * 8, maxp=0.75, min_beta=1e-4, max_beta=0.5)
+            loss = r_loss + fb_loss
+
+            #  + d_loss * cyclic_kl(step, total_batch * 8, maxp=0.75, max_beta=0.3)
 
             # # print(r_loss, d_loss)
-            r_loss_total += r_loss[1].item()
+            r_loss_total += r_loss.item()
             d_loss_total += d_loss.item()
 
             loss.backward()
@@ -247,7 +256,7 @@ model_b = BarlowTwinsVAE(model, 2).cuda()
 data_folder = "../data"
 
 # audio_files = [f"{data_folder}/2000s/{x}" for x in os.listdir(f"{data_folder}/2000s") if x.endswith(".wav")] + [f"{data_folder}/2010s/{x}" for x in os.listdir(f"{data_folder}/2010s") if x.endswith(".wav")]
-audio_files = [f"{data_folder}/{x}" for x in os.listdir(f"{data_folder}") if x.endswith(".wav")][:130]
+audio_files = [f"{data_folder}/{x}" for x in os.listdir(f"{data_folder}") if x.endswith(".wav")][:80]
 
 X_train, X_test = train_test_split(audio_files, train_size=0.7, random_state=42)
 
@@ -262,8 +271,8 @@ train(model, train_dl)
 # checkpoint = torch.load("../models/ravae_stage1.pt")
 # model_b.load_state_dict(checkpoint["model"])
 # model = model_b.backbone
-# real_eval(model, 400)
+# real_eval(model, 500)
 # print(model)
 
-pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-print(pytorch_total_params)
+# pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+# print(pytorch_total_params)

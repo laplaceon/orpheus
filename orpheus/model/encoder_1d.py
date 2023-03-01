@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from torch.nn.utils import weight_norm
 
-from .blocks_1d import MBConv, EnhancedResBlock
+from .blocks_1d import MBConv, EnhancedResBlock, EBlockV2
 
 class Encoder(nn.Module):
     def __init__(
@@ -56,12 +56,12 @@ class EncoderStage(nn.Module):
 
         if scale is None:
             kernel_size = (out_channels // in_channels) + 1
-            expand = weight_norm(nn.Conv1d(in_channels, out_channels, kernel_size, padding="same"))
+            expand = nn.Conv1d(in_channels, out_channels, kernel_size, padding="same", bias=False)
             blocks.append(expand)
         else:
             downscale = nn.Sequential(
                 nn.LeakyReLU(0.2),
-                weight_norm(nn.Conv1d(in_channels, out_channels, kernel_size=scale*2, stride=scale, padding=scale//2))
+                nn.Conv1d(in_channels, out_channels, kernel_size=scale*2, stride=scale, padding=scale//2, bias=False)
             )
             blocks.append(downscale)
 
@@ -105,6 +105,16 @@ class EncoderBlock(nn.Module):
                     se_ratio = se_ratio,
                     activation = nn.LeakyReLU(0.2)
                 )
+
+                # EBlockV2(
+                #     channels,
+                #     kernel,
+                #     padding = "same",
+                #     dilation = dilation,
+                #     bias = False,
+                #     se_ratio = se_ratio,
+                #     activation = nn.LeakyReLU(0.2)
+                # )
             )
 
         self.conv = nn.Sequential(*conv)

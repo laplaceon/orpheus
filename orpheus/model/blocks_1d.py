@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from torch.nn.utils import weight_norm
+from einops.layers.torch import Rearrange
 
 class DepthwiseSeparableConvWN(nn.Module):
     def __init__(
@@ -108,6 +109,55 @@ class SqueezeExcite(nn.Module):
     def forward(self, x):
         return x * self.gate(x)
 
+class SqueezeExciteWN(nn.Module):
+    def __init__(
+        self,
+        channels,
+        rd_ratio=0.25
+    ):
+        super().__init__()
+
+        rd_channels = int(channels * rd_ratio)
+
+        self.gate = nn.Sequential(
+            nn.AdaptiveAvgPool1d(1),
+            weight_norm(nn.Conv1d(channels, rd_channels, 1)),
+            nn.ReLU(inplace=True),
+            weight_norm(nn.Conv1d(rd_channels, channels, 1)),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        return x * self.gate(x)
+
+class EBlockV2(nn.Module):
+    def __init__(
+        self,
+        channels,
+        kernel_size,
+        stride=1,
+        padding=1,
+        dilation=1,
+        bias=False,
+        se_ratio=None,
+        num_groups=8,
+        expansion_factor=2,
+        activation=nn.GELU()
+    ):
+        super().__init__()
+
+        self.net = nn.Sequential(
+            nn.BatchNorm1d(channels, momentum=0.05),
+            activation,
+            nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
+            GRN(channels),
+            activation,
+            nn.Conv1d(channels, channels, kernel_size=1, padding=padding, bias=bias)
+        )
+    
+    def forward(self, x):
+        return x + self.net(x)
+
 class EnhancedResBlock(nn.Module):
     def __init__(
         self,
@@ -128,12 +178,27 @@ class EnhancedResBlock(nn.Module):
             nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
             nn.BatchNorm1d(channels, momentum=0.05),
             activation,
-            nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, bias=bias),
+            nn.Conv1d(channels, channels, kernel_size=1, padding=padding, bias=bias),
             SqueezeExcite(channels, se_ratio) if se_ratio is not None else nn.Identity()
         )
 
     def forward(self, x):
         return x + self.net(x)
+
+class GRN(nn.Module):
+    """ GRN (Global Response Normalization) layer
+    """
+    def __init__(self, dim):
+        super().__init__()
+        self.gamma = nn.Parameter(torch.zeros(1, 1, dim))
+        self.beta = nn.Parameter(torch.zeros(1, 1, dim))
+
+    def forward(self, x):
+        x = x.transpose(1, 2)
+        Gx = torch.norm(x, p=2, dim=1, keepdim=True)
+        Nx = Gx / (Gx.mean(dim=-1, keepdim=True) + 1e-6)
+        normed = self.gamma * (x * Nx) + self.beta + x
+        return normed.transpose(1, 2)
 
 class UpResBlock(nn.Module):
     def __init__(
@@ -148,18 +213,6 @@ class UpResBlock(nn.Module):
         activation=nn.ReLU()
     ):
         super().__init__()
-
-        self.net = nn.Sequential(
-            # nn.GroupNorm(num_groups, channels),
-            nn.BatchNorm1d(channels, momentum=0.05),
-            activation,
-            nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
-            # nn.GroupNorm(num_groups, channels),
-            nn.BatchNorm1d(channels, momentum=0.05),
-            activation,
-            nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
-            # SqueezeExcite(channels, se_ratio) if se_ratio is not None else nn.Identity()
-        )
 
         hidden_dim = int(4 * channels)
 

@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 from torch.nn.utils import weight_norm
 
-from .blocks_1d import MBConv, DepthwiseSeparableConvWN, EnhancedResBlock, Upsample
+from .blocks_1d import MBConv, DepthwiseSeparableConvWN, DepthwiseSeparableConv, EnhancedResBlock, Upsample
 
 class Decoder(nn.Module):
     def __init__(
@@ -18,26 +18,29 @@ class Decoder(nn.Module):
     ):
         super().__init__()
 
-        self.from_latent = nn.Sequential(
-            weight_norm(nn.Conv1d(latent_dim, h_dims[0] * 2, kernel_size=3, padding="same")),
-            nn.LeakyReLU(0.2),
-            Upsample(scale_factor=2),
-            nn.Conv1d(h_dims[0] * 2, h_dims[0], kernel_size=3, padding="same")
-        )
+        self.from_latent = weight_norm(nn.Conv1d(latent_dim, h_dims[0] * 2, kernel_size=3, padding="same"))
 
         stages = []
+        h_dims_new = [h_dims[0] * 2] + h_dims[:-1]
         for i in range(len(h_dims)-1):
-            in_channels, out_channels = h_dims[i], h_dims[i+1]
+            in_channels, out_channels = h_dims_new[i], h_dims_new[i+1]
 
             decoder_stage = DecoderStage(in_channels, out_channels, scales[i], blocks_per_stage[i], layers_per_blocks[i], se_ratio, i+1 == len(h_dims) - 1)
             stages.append(decoder_stage)
+
+        final_conv = nn.Sequential(
+            nn.LeakyReLU(0.2),
+            weight_norm(nn.Conv1d(h_dims[-2], h_dims[-1], (h_dims[-2] // h_dims[-1]) + 1, padding="same")),
+            nn.Tanh()
+        )
+
+        stages.append(final_conv)
 
         self.conv = nn.Sequential(*stages)
 
     def forward(self, z):
         out = self.from_latent(z)
-
-        return torch.tanh(self.conv(out))
+        return self.conv(out)
 
 
 class DecoderStage(nn.Module):
@@ -54,22 +57,26 @@ class DecoderStage(nn.Module):
         super().__init__()
 
         blocks = []
+
+        blocks.append(
+            nn.Sequential(
+                nn.LeakyReLU(0.2),
+                # Upsample(scale_factor=scale),
+                # DepthwiseSeparableConvWN(in_channels, out_channels, scale * 2, padding="same")
+                nn.ConvTranspose1d(in_channels, out_channels, scale * 2, stride=scale, padding=scale//2, bias=False)
+                # DepthwiseSeparableConvWN(in_channels, out_channels, (in_channels // out_channels) + 1 if last_stage else 3, padding="same")
+            )
+        )
+
         for _ in range(num_blocks):
             blocks.append(
                 DecoderBlock(
-                    in_channels,
+                    out_channels,
                     3,
                     layers_per_block,
                     se_ratio=se_ratio
                 )
             )
-        
-        blocks.append(
-            nn.Sequential(
-                Upsample(scale_factor=scale) if scale is not None else nn.Identity(),
-                DepthwiseSeparableConvWN(in_channels, out_channels, (in_channels // out_channels) + 1 if last_stage else 3, padding="same")
-            )
-        )
 
         self.blocks = nn.Sequential(*blocks)
 

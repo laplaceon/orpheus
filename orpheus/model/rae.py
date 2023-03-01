@@ -10,11 +10,11 @@ class Orpheus(nn.Module):
     def __init__(
         self,
         sequence_length,
-        h_dims=(16, 80, 160, 320, 640),
+        h_dims=[16, 80, 160, 320, 640],
         latent_dim=128,
-        scales=(None, 4, 4, 4),
-        blocks_per_stages=(1, 1, 1, 1),
-        layers_per_blocks=(3, 3, 3, 3),
+        scales=[4, 4, 4, 2],
+        blocks_per_stages=[1, 1, 1, 1],
+        layers_per_blocks=[3, 3, 3, 3],
         se_ratio=0.25,
         fast_recompose=True
     ):
@@ -22,7 +22,7 @@ class Orpheus(nn.Module):
 
         self.pqmf = PQMF(h_dims[0], 100, fast_recompose)
 
-        self.encoder = Encoder(h_dims, latent_dim, scales, blocks_per_stages, layers_per_blocks, se_ratio)
+        self.encoder = Encoder(h_dims, latent_dim, [None] + scales, blocks_per_stages, layers_per_blocks, se_ratio)
         self.decoder = Decoder(h_dims[::-1], latent_dim, scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1], se_ratio)
 
     def decompose(self, x):
