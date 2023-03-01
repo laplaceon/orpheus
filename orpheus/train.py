@@ -7,7 +7,7 @@ from slugify import slugify
 
 import math
 
-import core
+import core.loss as closs
 
 import torch
 import torch.nn as nn
@@ -189,8 +189,8 @@ def cyclic_kl(step, cycle_len, maxp=0.5, min_beta=0, max_beta=1):
 
 def train(model, train_dl, lr=1e-4):
     opt = Adam(model.parameters(), lr)
-    stft = core.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
-    distance = core.AudioDistanceV1(stft, 1e-7).cuda()
+    stft = closs.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
+    distance = closs.AudioDistanceV1(stft, 1e-7).cuda()
 
     step = 0
 
