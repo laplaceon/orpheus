@@ -1,13 +1,10 @@
 import torch
 from torch import nn, einsum
 from functools import partial
-from torch.utils.checkpoint import checkpoint
 
 import math
 
 from einops import rearrange
-
-from x_transformers.x_transformers import AttentionLayers
 
 # helper functions
 

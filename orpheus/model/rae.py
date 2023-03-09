@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from .pqmf import PQMF
 
 from .encoder_1d import Encoder
-from .decoder import Decoder
+from .decoder import Decoder, FutureDecoder
 
 class Orpheus(nn.Module):
     def __init__(
@@ -15,15 +15,16 @@ class Orpheus(nn.Module):
         scales=[4, 4, 4, 2],
         blocks_per_stages=[1, 1, 1, 1],
         layers_per_blocks=[3, 3, 3, 3],
-        se_ratio=0.25,
         fast_recompose=True
     ):
         super().__init__()
 
         self.pqmf = PQMF(h_dims[0], 100, fast_recompose)
 
-        self.encoder = Encoder(h_dims, latent_dim, [None] + scales, blocks_per_stages, layers_per_blocks, se_ratio)
-        self.decoder = Decoder(h_dims[::-1], latent_dim, scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1], se_ratio)
+        self.encoder = Encoder(h_dims, latent_dim, [None] + scales, blocks_per_stages, layers_per_blocks)
+        self.decoder = Decoder(h_dims[::-1], latent_dim, scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1])
+
+        # self.future_decoder = FutureDecoder(h_dims[::-1], latent_dim, scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1])
 
     def decompose(self, x):
         return self.pqmf(x)
@@ -52,6 +53,8 @@ class Orpheus(nn.Module):
 
         return z, kl
 
+    # def predict_future(self, z):
+    #     return self.future_decoder(z)
 
     def forward(self, x):
         encoded = self.encode(x)

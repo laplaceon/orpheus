@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 from torch.nn.utils import weight_norm
 
-from .blocks_1d import MBConv, DepthwiseSeparableConvWN, DepthwiseSeparableConv, EnhancedResBlock, Upsample
+from .blocks_1d import MBConv, DepthwiseSeparableConvWN, DepthwiseSeparableConv, EnhancedResBlock, Upsample, DBlockV2
 
 class Decoder(nn.Module):
     def __init__(
@@ -13,8 +13,7 @@ class Decoder(nn.Module):
         latent_dim,
         scales,
         blocks_per_stage,
-        layers_per_blocks,
-        se_ratio=None
+        layers_per_blocks
     ):
         super().__init__()
 
@@ -25,12 +24,12 @@ class Decoder(nn.Module):
         for i in range(len(h_dims)-1):
             in_channels, out_channels = h_dims_new[i], h_dims_new[i+1]
 
-            decoder_stage = DecoderStage(in_channels, out_channels, scales[i], blocks_per_stage[i], layers_per_blocks[i], se_ratio, i+1 == len(h_dims) - 1)
+            decoder_stage = DecoderStage(in_channels, out_channels, scales[i], blocks_per_stage[i], layers_per_blocks[i], i+1 == len(h_dims) - 1)
             stages.append(decoder_stage)
 
         final_conv = nn.Sequential(
             nn.LeakyReLU(0.2),
-            weight_norm(nn.Conv1d(h_dims[-2], h_dims[-1], (h_dims[-2] // h_dims[-1]) + 1, padding="same")),
+            weight_norm(nn.Conv1d(h_dims[-2], h_dims[-1], 7, padding="same")),
             nn.Tanh()
         )
 
@@ -42,7 +41,6 @@ class Decoder(nn.Module):
         out = self.from_latent(z)
         return self.conv(out)
 
-
 class DecoderStage(nn.Module):
     def __init__(
         self,
@@ -51,7 +49,6 @@ class DecoderStage(nn.Module):
         scale,
         num_blocks,
         layers_per_block,
-        se_ratio,
         last_stage=False
     ):
         super().__init__()
@@ -73,8 +70,7 @@ class DecoderStage(nn.Module):
                 DecoderBlock(
                     out_channels,
                     3,
-                    layers_per_block,
-                    se_ratio=se_ratio
+                    layers_per_block
                 )
             )
 
@@ -89,8 +85,7 @@ class DecoderBlock(nn.Module):
         channels,
         kernel,
         num_layers=4,
-        dilation_factor=3,
-        se_ratio=None
+        dilation_factor=3
     ):
         super().__init__()
 
@@ -99,16 +94,43 @@ class DecoderBlock(nn.Module):
         for i in range(num_layers):
             dilation = dilation_factor ** i
             conv.append(
-                EnhancedResBlock(
+                # EnhancedResBlock(
+                #     channels,
+                #     kernel,
+                #     padding = "same",
+                #     dilation = dilation,
+                #     bias = False,
+                #     se_ratio = se_ratio,
+                #     activation = nn.LeakyReLU(0.2)
+                # )
+
+                DBlockV2(
                     channels,
                     kernel,
                     padding = "same",
                     dilation = dilation,
                     bias = False,
-                    se_ratio = se_ratio,
                     activation = nn.LeakyReLU(0.2)
                 )
             )
+
+        self.conv = nn.Sequential(*conv)
+
+    def forward(self, x):
+        return self.conv(x)
+
+class FutureDecoder(nn.Module):
+    def __init__(
+        self,
+        h_dims,
+        latent_dim,
+        scales,
+        blocks_per_stage,
+        layers_per_blocks
+    ):
+        super().__init__()
+
+        conv = [Decoder([x//2 for x in h_dims[:-1]] + [h_dims[-1]], latent_dim, scales[:-1] + [scales[-1]//2], blocks_per_stage, layers_per_blocks)]
 
         self.conv = nn.Sequential(*conv)
 

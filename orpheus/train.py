@@ -32,19 +32,16 @@ torchaudio.USE_SOUNDFILE_LEGACY_INTERFACE = False
 torchaudio.set_audio_backend("soundfile")
 
 # Hyperparams
-batch_size = 8
+batch_size = 6
 
 # Params
 bitrate = 44100
 sequence_length = 131072
-# sequence_length = 131072
+future_sequence_length = 0
 
 n_fft = 1024
 n_mels = 64
-# to_mel = torchaudio.transforms.MelSpectrogram(sample_rate=bitrate, n_fft=n_fft, n_mels=n_mels).cuda()
-# from_mel = torchaudio.transforms.InverseMelScale(n_stft=n_fft // 2 + 1, n_mels=n_mels, sample_rate=bitrate).cuda()
-# to_db = torchaudio.transforms.AmplitudeToDB(top_db=80).cuda()
-# to_wave = torchaudio.transforms.GriffinLim(n_fft=n_fft).cuda()
+
 # apply_augmentations = SomeOf(
 #     num_transforms = (1, 3),
 #     transforms = [
@@ -181,7 +178,7 @@ def real_eval(model, epoch):
     for test_file in test_files:
         out = get_song_features(model, f"../input/{test_file}")
         print(out)
-        torchaudio.save(f"../output/{slugify(test_file)}_epoch{epoch+1}_cnxt.wav", out.cpu().unsqueeze(0), bitrate)
+        torchaudio.save(f"../output/{slugify(test_file)}_epoch{epoch+1}.wav", out.cpu().unsqueeze(0), bitrate)
 
 def cyclic_kl(step, cycle_len, maxp=0.5, min_beta=0, max_beta=1):
     div_shift = 1 / (1 - min_beta/max_beta)
@@ -200,6 +197,7 @@ def train(model, train_dl, lr=1e-4):
 
         nb = 0
         r_loss_total = 0
+        f_loss_total = 0
         d_loss_total = 0
         total_batch = len(train_dl)
         for batch in tqdm(train_dl, position=0, leave=True):
@@ -207,9 +205,12 @@ def train(model, train_dl, lr=1e-4):
             # print(real_imgs.shape)
             bs = real_imgs.shape[0]
 
-            # with torch.no_grad():
+            with torch.no_grad():
+                modded = real_imgs
                 # modded = apply_augmentations(real_imgs, sample_rate=bitrate)
-            modded = real_imgs
+                # modded = real_imgs[:, :, :sequence_length]
+                # future = real_imgs[:, :, sequence_length:]
+                # future_subbands = model.decompose(future)
                 # mel_imgs = to_db(to_mel(modded.squeeze(1)))
                 # mel_imgs = to_db(to_mel(real_imgs))
 
@@ -217,9 +218,14 @@ def train(model, train_dl, lr=1e-4):
 
             x_subbands = model.decompose(modded)
 
-            y_subbands, d_loss = model(x_subbands)
+            z, d_loss = model.reparameterize(model.encode(x_subbands))
+
+            y_subbands = model.decode(z)
+            # predicted_subbands = model.predict_future(z)
             r_loss = distance(y_subbands, x_subbands)["spectral_distance"]
-            fb_loss = distance(model.recompose(y_subbands), real_imgs)["spectral_distance"]
+            fb_loss = distance(model.recompose(y_subbands), modded)["spectral_distance"]
+            # future_loss = distance(predicted_subbands, future_subbands)["spectral_distance"] + distance(model.recompose(predicted_subbands), future)["spectral_distance"]
+
             # loss = r_loss[0] + r_loss[1]
             loss = r_loss + fb_loss
 
@@ -227,6 +233,7 @@ def train(model, train_dl, lr=1e-4):
 
             # # print(r_loss, d_loss)
             r_loss_total += r_loss.item()
+            f_loss_total += 0
             d_loss_total += d_loss.item()
 
             loss.backward()
@@ -241,9 +248,9 @@ def train(model, train_dl, lr=1e-4):
         # while beta_kl <= 1:
         #     beta_kl *= sqrt(10)
         # scheduler steps
-        print(f"D Loss: {d_loss_total/nb}, R Loss: {r_loss_total/nb}")
+        print(f"D Loss: {d_loss_total/nb}, R Loss: {r_loss_total/nb}, F Loss: {f_loss_total/nb}")
 
-        if (i+1) % 4 == 0:
+        if (i+1) % 8 == 0:
             torch.save(model.state_dict(), f"../models/rae_{i+1}.pt")
             real_eval(model, i)
 
@@ -262,7 +269,7 @@ X_train, X_test = train_test_split(audio_files, train_size=0.7, random_state=42)
 
 multiplier = 32
 
-train_ds = AudioFileDataset(X_train, sequence_length, multiplier=multiplier)
+train_ds = AudioFileDataset(X_train, sequence_length+future_sequence_length, multiplier=multiplier)
 train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 # val_ds = AudioFileDataset(X_test, sequence_length, multiplier=multiplier)
 # val_dl = DataLoader(val_ds, batch_size=ae_batch_size*2)
@@ -272,7 +279,7 @@ train(model, train_dl)
 # model_b.load_state_dict(checkpoint["model"])
 # model = model_b.backbone
 # real_eval(model, 500)
-# print(model)
+print(model)
 
-# pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-# print(pytorch_total_params)
+pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+print(pytorch_total_params)
