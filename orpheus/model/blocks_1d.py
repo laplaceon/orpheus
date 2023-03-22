@@ -12,10 +12,6 @@ from .mem_attn import Attention
 
 from einops import rearrange
 
-from x_transformers.x_transformers import AttentionLayers
-
-from cape import CAPE1d
-
 class DepthwiseSeparableConvWN(nn.Module):
     def __init__(
         self,
