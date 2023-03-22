@@ -1,9 +1,20 @@
 import torch
 import torch.nn as nn
+from torch import einsum
 import torch.nn.functional as F
 
 from torch.nn.utils import weight_norm
 from einops.layers.torch import Rearrange
+# from memory_efficient_attention_pytorch import Attention
+from .mem_attn import Attention
+# from xformers.components import MultiHeadDispatch
+# from xformers.components.attention import ScaledDotProduct
+
+from einops import rearrange
+
+from x_transformers.x_transformers import AttentionLayers
+
+from cape import CAPE1d
 
 class DepthwiseSeparableConvWN(nn.Module):
     def __init__(
@@ -130,7 +141,53 @@ class SqueezeExciteWN(nn.Module):
     def forward(self, x):
         return x * self.gate(x)
 
-class EBlockV2(nn.Module):
+class ChannelRMSNorm(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.scale = dim ** 0.5
+        self.gamma = nn.Parameter(torch.ones(dim, 1, 1))
+
+    def forward(self, x):
+        normed = F.normalize(x, dim = 1)
+        return normed * self.scale * self.gamma
+
+class RMSNorm(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.scale = dim ** 0.5
+        self.gamma = nn.Parameter(torch.ones(dim))
+
+    def forward(self, x):
+        normed = F.normalize(x, dim = -1)
+        return normed * self.scale * self.gamma
+
+class EBlockV2_R(nn.Module):
+    def __init__(
+        self,
+        channels,
+        kernel_size,
+        stride=1,
+        padding=1,
+        dilation=1,
+        bias=False,
+        num_groups=8,
+        activation=nn.GELU()
+    ):
+        super().__init__()
+
+        self.net = nn.Sequential(
+            activation,
+            nn.GroupNorm(num_groups, channels),
+            nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
+            activation,
+            GRN(channels),
+            nn.Conv1d(channels, channels, kernel_size=1, bias=bias)
+        )
+    
+    def forward(self, x):
+        return x + self.net(x)
+
+class EBlockV2_DS(nn.Module):
     def __init__(
         self,
         channels,
@@ -145,38 +202,11 @@ class EBlockV2(nn.Module):
     ):
         super().__init__()
 
-        self.net = nn.Sequential(
-            activation,
-            nn.BatchNorm1d(channels, momentum=0.05),
-            nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
-            activation,
-            GRN(channels),
-            nn.Conv1d(channels, channels, kernel_size=1, padding=padding, bias=bias)
-        )
-    
-    def forward(self, x):
-        return x + self.net(x)
-
-class EBlockV2_dw(nn.Module):
-    def __init__(
-        self,
-        channels,
-        kernel_size,
-        stride=1,
-        padding=1,
-        dilation=1,
-        bias=False,
-        num_groups=8,
-        expansion_factor=1.5,
-        activation=nn.GELU()
-    ):
-        super().__init__()
-
         hidden_channels = int(channels * expansion_factor)
 
         self.net = nn.Sequential(
             activation,
-            nn.GroupNorm(num_groups, channels) if num_groups is not None else nn.Identity(),
+            nn.GroupNorm(num_groups, channels),
             nn.Conv1d(channels, hidden_channels, kernel_size=1, bias=bias),
             activation,
             nn.Conv1d(hidden_channels, hidden_channels, kernel_size=kernel_size, padding=padding, dilation=dilation, groups=hidden_channels, bias=bias),
@@ -188,7 +218,107 @@ class EBlockV2_dw(nn.Module):
     def forward(self, x):
         return x + self.net(x)
 
-class DBlockV2(nn.Module):
+class EBlockV2_DOWN(nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        scale,
+        bias=False,
+        num_groups=8,
+        expansion_factor=2,
+        activation=nn.GELU()
+    ):
+        super().__init__()
+
+        hidden_channels = int(out_channels * expansion_factor)
+
+        self.net = nn.Sequential(
+            activation,
+            nn.GroupNorm(num_groups, in_channels),
+            nn.Conv1d(in_channels, hidden_channels, kernel_size=1, bias=bias),
+            activation,
+            nn.Conv1d(hidden_channels, hidden_channels, kernel_size=scale*2, stride=scale, padding=scale//2, groups=hidden_channels, bias=bias),
+            activation,
+            GRN(hidden_channels),
+            nn.Conv1d(hidden_channels, out_channels, kernel_size=1, bias=bias)
+        )
+    
+    def forward(self, x):
+        return self.net(x)
+
+class PosEncodingC(nn.Module):
+    def __init__(
+        self,
+        channels,
+        kernel_size = 64
+    ):
+        super().__init__()
+
+        self.net = nn.Sequential(
+            nn.Conv1d(channels, channels, kernel_size, groups=channels, padding="same", bias=False),
+            nn.GELU()
+        )
+
+        self.norm = RMSNorm(channels)
+    
+    def forward(self, x):
+        out = x + self.net(x)
+        return self.norm(out.transpose(1, 2))
+        
+
+class AttnBlock(nn.Module):
+    def __init__(
+        self,
+        channels,
+        bucket = 2048,
+        num_heads = 4,
+        expansion_factor_feedforward = 1.5,
+        bias_feedforward = False,
+        dropout = 0
+    ):
+        super().__init__()
+
+        dim_head = channels // num_heads
+
+        self.attn = nn.Sequential(
+            # Rearrange('b c l -> b l c'),
+            RMSNorm(channels),
+            # Rearrange('b l c -> b c l'),
+            # nn.LayerNorm(channels),
+            # PosEncodingC(channels),
+            Attention(
+                dim = channels,
+                dim_head = dim_head,
+                heads = num_heads,
+                causal = False,
+                memory_efficient = True,
+                q_bucket_size = bucket // 2,
+                k_bucket_size = bucket,
+                dropout = dropout
+            )
+        )
+
+        dim_feedforward = int(channels * expansion_factor_feedforward)
+
+        self.ff = nn.Sequential(
+            RMSNorm(channels),
+            nn.Linear(channels, dim_feedforward, bias=bias_feedforward),
+            nn.GELU(),
+            nn.Linear(dim_feedforward, channels, bias=bias_feedforward)
+        )
+
+        # self.attn = AttentionLayers(channels, 1, heads=num_heads, rel_pos_bias=True, use_rms_norm=True)
+    
+    def forward(self, x):
+        x = x.transpose(1, 2)
+
+        x = x + self.attn(x)
+        x = x + self.ff(x)
+
+        return x.transpose(1, 2)
+
+class DBlockV2_R(nn.Module):
     def __init__(
         self,
         channels,
@@ -198,18 +328,48 @@ class DBlockV2(nn.Module):
         dilation=1,
         bias=False,
         num_groups=8,
-        expansion_factor=2,
         activation=nn.GELU()
     ):
         super().__init__()
 
         self.net = nn.Sequential(
-            nn.BatchNorm1d(channels, momentum=0.05),
             activation,
+            nn.GroupNorm(num_groups, channels),
             nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
             activation,
             GRN(channels),
             nn.Conv1d(channels, channels, kernel_size=1, padding=padding, bias=bias)
+        )
+    
+    def forward(self, x):
+        return x + self.net(x)
+
+class DBlockV2_DS(nn.Module):
+    def __init__(
+        self,
+        channels,
+        kernel_size,
+        stride=1,
+        padding=1,
+        dilation=1,
+        bias=False,
+        num_groups=8,
+        expansion_factor=1.25,
+        activation=nn.GELU()
+    ):
+        super().__init__()
+
+        hidden_channels = int(channels * expansion_factor)
+
+        self.net = nn.Sequential(
+            activation,
+            nn.GroupNorm(channels, momentum=0.05),
+            nn.Conv1d(channels, hidden_channels, kernel_size=1, padding=padding, bias=bias),
+            activation,
+            nn.Conv1d(hidden_channels, hidden_channels, kernel_size=kernel_size, padding=padding, dilation=dilation, groups=hidden_channels, bias=bias),
+            activation,
+            GRN(hidden_channels),
+            nn.Conv1d(hidden_channels, channels, kernel_size=1, padding=padding, bias=bias)
         )
     
     def forward(self, x):

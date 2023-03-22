@@ -1,10 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from einops.layers.torch import Rearrange
 
 from torch.nn.utils import weight_norm
 
-from .blocks_1d import MBConv, DepthwiseSeparableConvWN, DepthwiseSeparableConv, EnhancedResBlock, Upsample, DBlockV2
+from .blocks_1d import DepthwiseSeparableConvWN, DepthwiseSeparableConv, EnhancedResBlock, Upsample, DBlockV2_DS, DBlockV2_R
 
 class Decoder(nn.Module):
     def __init__(
@@ -40,6 +41,46 @@ class Decoder(nn.Module):
     def forward(self, z):
         out = self.from_latent(z)
         return self.conv(out)
+
+class DecoderStageFG(nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        scale,
+        num_blocks,
+        layers_per_block,
+        ds_block=False,
+        last_stage=False
+    ):
+        super().__init__()
+
+        blocks = []
+
+        blocks.append(
+            nn.Sequential(
+                nn.LeakyReLU(0.2),
+                Rearrange('b c l -> b l c'),
+                nn.LayerNorm(in_channels),
+                Rearrange('b l c -> b c l'),
+                nn.ConvTranspose1d(in_channels, out_channels, scale * 2, stride=scale, padding=scale//2, bias=False)
+            )
+        )
+
+        for _ in range(num_blocks):
+            blocks.append(
+                DecoderBlock(
+                    out_channels,
+                    3,
+                    layers_per_block,
+                    ds_block=ds_block
+                )
+            )
+
+        self.blocks = nn.Sequential(*blocks)
+
+    def forward(self, x):
+        return self.blocks(x)
 
 class DecoderStage(nn.Module):
     def __init__(
@@ -84,8 +125,9 @@ class DecoderBlock(nn.Module):
         self,
         channels,
         kernel,
-        num_layers=4,
-        dilation_factor=3
+        num_layers=2,
+        dilation_factor=3,
+        ds_block=False
     ):
         super().__init__()
 
@@ -94,17 +136,16 @@ class DecoderBlock(nn.Module):
         for i in range(num_layers):
             dilation = dilation_factor ** i
             conv.append(
-                # EnhancedResBlock(
-                #     channels,
-                #     kernel,
-                #     padding = "same",
-                #     dilation = dilation,
-                #     bias = False,
-                #     se_ratio = se_ratio,
-                #     activation = nn.LeakyReLU(0.2)
-                # )
-
-                DBlockV2(
+                DBlockV2_DS(
+                    channels,
+                    kernel,
+                    padding = "same",
+                    dilation = dilation,
+                    bias = False,
+                    activation = nn.LeakyReLU(0.2)
+                ) if ds_block else
+                
+                DBlockV2_R(
                     channels,
                     kernel,
                     padding = "same",

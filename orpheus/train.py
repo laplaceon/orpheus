@@ -218,13 +218,17 @@ def train(model, train_dl, lr=1e-4):
 
             x_subbands = model.decompose(modded)
 
-            z, d_loss = model.reparameterize(model.encode(x_subbands))
+            z, d_loss = model.reparameterize_wae(model.encode(x_subbands))
 
             y_subbands = model.decode(z)
             # predicted_subbands = model.predict_future(z)
             r_loss = distance(y_subbands, x_subbands)["spectral_distance"]
-            fb_loss = distance(model.recompose(y_subbands), modded)["spectral_distance"]
+            recomposed = model.recompose(y_subbands)
+            fb_loss = distance(recomposed, modded)["spectral_distance"]
             # future_loss = distance(predicted_subbands, future_subbands)["spectral_distance"] + distance(model.recompose(predicted_subbands), future)["spectral_distance"]
+
+            with torch.no_grad():
+                f_loss = F.mse_loss(recomposed, real_imgs)
 
             # loss = r_loss[0] + r_loss[1]
             loss = r_loss + fb_loss
@@ -233,7 +237,7 @@ def train(model, train_dl, lr=1e-4):
 
             # # print(r_loss, d_loss)
             r_loss_total += r_loss.item()
-            f_loss_total += 0
+            f_loss_total += f_loss.item()
             d_loss_total += d_loss.item()
 
             loss.backward()
@@ -274,12 +278,12 @@ train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 # val_ds = AudioFileDataset(X_test, sequence_length, multiplier=multiplier)
 # val_dl = DataLoader(val_ds, batch_size=ae_batch_size*2)
 
+pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+print(pytorch_total_params)
+
 train(model, train_dl)
 # checkpoint = torch.load("../models/ravae_stage1.pt")
 # model_b.load_state_dict(checkpoint["model"])
 # model = model_b.backbone
 # real_eval(model, 500)
 print(model)
-
-pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-print(pytorch_total_params)
