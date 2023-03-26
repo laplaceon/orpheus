@@ -21,7 +21,9 @@ loss_files = {
     # "conv_mhsa_combo4": "E:\Desktop\losses\losses_mhsa_com4.txt",
     # "conv_mhsa_combo6": "E:\Desktop\losses\losses_mhsa_com6.txt",
     # "conv_mhsa_depthwise_pos": "E:\Desktop\losses\losses_mhsa_dwpos.txt"
-    "conv_wae1": "E:\Desktop\losses\wae_conv1.txt"
+    "conv_wae1": "E:\Desktop\losses\wae_conv1.txt",
+    "conv_drae1": "E:\Desktop\losses\drae_conv1.txt",
+    "conv_drae2": "E:\Desktop\losses\drae_conv2.txt",
 }
 
 recons_expr = re.compile("R Loss: (\d{1,2}[.]\d+)")

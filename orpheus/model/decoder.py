@@ -160,7 +160,7 @@ class DecoderBlock(nn.Module):
     def forward(self, x):
         return self.conv(x)
 
-class FutureDecoder(nn.Module):
+class MiddleDecoder(nn.Module):
     def __init__(
         self,
         h_dims,
@@ -171,9 +171,11 @@ class FutureDecoder(nn.Module):
     ):
         super().__init__()
 
-        conv = [Decoder([x//2 for x in h_dims[:-1]] + [h_dims[-1]], latent_dim, scales[:-1] + [scales[-1]//2], blocks_per_stage, layers_per_blocks)]
+        self.decoder = Decoder(h_dims, latent_dim, scales, blocks_per_stage, layers_per_blocks)
 
-        self.conv = nn.Sequential(*conv)
+    def forward(self, x1, x2):
+        combined = torch.stack([x1, x2]).permute(1, 0, 2, 3)
 
-    def forward(self, x):
-        return self.conv(x)
+        print(combined.shape)
+
+        return self.decoder(x1)

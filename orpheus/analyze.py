@@ -86,6 +86,12 @@ def visualize_magnitude_and_phase(c, to_mel, resize):
             
             plt.show()
 
+def count_pos_neg(x):
+    pos = (x >= 0).to(torch.int16)
+    num_pos = (pos == 1).sum()
+    num_neg = (pos == 0).sum()
+    print(x.shape, num_pos.item(), num_neg.item())
+
 def load_audio_clips(l):
     data_map = {}
 
@@ -99,6 +105,8 @@ def load_audio_clips(l):
             data = data[0, :]
     
         data_map[file] = data
+
+        count_pos_neg(data)
     
     return data_map
 
@@ -109,10 +117,12 @@ n_fft = 2048
 n_stft = n_fft // 2 + 1
 n_mels = 64
 
-to_complex = torchaudio.transforms.Spectrogram(n_fft=n_fft, power=None).cuda()
-to_mel = torchaudio.transforms.MelScale(sample_rate=bitrate, n_stft=n_fft // 2 + 1, n_mels=n_mels).cuda()
-resize = torchvision.transforms.Resize((n_stft, n_stft)).cuda()
+# to_complex = torchaudio.transforms.Spectrogram(n_fft=n_fft, power=None).cuda()
+# to_mel = torchaudio.transforms.MelScale(sample_rate=bitrate, n_stft=n_fft // 2 + 1, n_mels=n_mels).cuda()
+# resize = torchvision.transforms.Resize((n_stft, n_stft)).cuda()
 
-clips = load_audio_clips(["../input/Synthwave Coolin'.wav", "../input/Waiting For The End [Official Music Video] - Linkin Park-HQ.wav"])
-spectrograms = get_complex_spectrogram(clips, to_complex)
-visualize_magnitude_and_phase(spectrograms, to_mel, resize)
+# clips = load_audio_clips(["../input/Synthwave Coolin'.wav", "../input/Waiting For The End [Official Music Video] - Linkin Park-HQ.wav"])
+clips = load_audio_clips(["D:\Documents\ML Test\orpheus\output\waiting-for-the-end-official-music-video-linkin-park-hq-wav_epoch104.wav"])
+print(clips)
+# spectrograms = get_complex_spectrogram(clips, to_complex)
+# visualize_magnitude_and_phase(spectrograms, to_mel, resize)

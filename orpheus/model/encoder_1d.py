@@ -23,7 +23,7 @@ class Encoder(nn.Module):
         for i in range(len(h_dims)-1):
             in_channels, out_channels = h_dims[i], h_dims[i+1]
 
-            encoder_stage = EncoderStage(in_channels, out_channels, scales[i], attns[i], blocks_per_stages[i], layers_per_blocks[i], last_stage=(i+1 == len(h_dims) - 1))
+            encoder_stage = EncoderStage(in_channels, out_channels, scales[i], attns[i], blocks_per_stages[i], layers_per_blocks[i], last_stage=(i+1 == len(h_dims) - 1), attn=attn)
             stages.append(encoder_stage)
 
         to_latent = nn.Sequential(
@@ -112,7 +112,7 @@ class EncoderBlock(nn.Module):
             dilation = dilation_factor ** i
 
             if attn:
-                conv.append(AttnBlock(channels, 2048))
+                conv.append(AttnBlock(channels, bucket=2048, expansion_factor_feedforward=1.25, dropout=0.1))
 
             conv.append(
                 EBlockV2_DS(

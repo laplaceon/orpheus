@@ -17,6 +17,10 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 
 from model.rae import Orpheus
+from model.prior import GaussianPrior
+from model.slicer import MPSSlicer
+
+from wasserstein import sliced_fgw_distance
 
 from dataset import AudioFileDataset
 from sklearn.model_selection import train_test_split
@@ -37,7 +41,7 @@ batch_size = 6
 # Params
 bitrate = 44100
 sequence_length = 131072
-future_sequence_length = 0
+middle_sequence_length = sequence_length // 2
 
 n_fft = 1024
 n_mels = 64
@@ -70,9 +74,8 @@ class BarlowTwinsVAE(nn.Module):
         self.batch_size = batch_size
         self.lambd = lambda_coeff
 
-        fft_sizes = [2048, 1024, 512, 256, 128]
-        hops = [int(0.25*fft) for fft in fft_sizes]
-        self.stft_loss = auraloss.freq.MultiResolutionSTFTLoss(fft_sizes=fft_sizes, hop_sizes=hops, win_lengths=fft_sizes, sample_rate=bitrate)
+        stft = closs.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
+        self.distance = closs.AudioDistanceV1(stft, 1e-7)
 
     def off_diagonal(self, x):
         # taken from: https://github.com/facebookresearch/barlowtwins/blob/main/main.py
@@ -178,65 +181,94 @@ def real_eval(model, epoch):
     for test_file in test_files:
         out = get_song_features(model, f"../input/{test_file}")
         print(out)
+        # count_pos_neg(out)
         torchaudio.save(f"../output/{slugify(test_file)}_epoch{epoch+1}.wav", out.cpu().unsqueeze(0), bitrate)
+
+def count_pos_neg(x):
+    pos = (x >= 0).to(torch.int16)
+    num_pos = (pos == 1).sum()
+    num_neg = (pos == 0).sum()
+    print(x.shape, num_pos.item(), num_neg.item())
 
 def cyclic_kl(step, cycle_len, maxp=0.5, min_beta=0, max_beta=1):
     div_shift = 1 / (1 - min_beta/max_beta)
     return min(((step % cycle_len) / (cycle_len * maxp * div_shift)) + (min_beta / max_beta), 1) * max_beta
 
-def train(model, train_dl, lr=1e-4):
-    opt = Adam(model.parameters(), lr)
+def train(model, prior, slicer, train_dl, lr=1e-4, reg_skip=16, reg_loss_cycle=32):
+    opt = Adam(list(model.parameters()) + list(prior.parameters()) + list(slicer.parameters()), lr)
     stft = closs.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
     distance = closs.AudioDistanceV1(stft, 1e-7).cuda()
 
     step = 0
 
     i = 0
+    prior.print_parameters()
+    slicer.print_parameters()
     while True:
         model.train()
+        prior.train()
+        slicer.train()
 
         nb = 0
         r_loss_total = 0
+        c_loss_total = 0
         f_loss_total = 0
         d_loss_total = 0
         total_batch = len(train_dl)
         for batch in tqdm(train_dl, position=0, leave=True):
             real_imgs = batch["input"].unsqueeze(1).cuda()
-            # print(real_imgs.shape)
             bs = real_imgs.shape[0]
 
-            with torch.no_grad():
-                modded = real_imgs
-                # modded = apply_augmentations(real_imgs, sample_rate=bitrate)
-                # modded = real_imgs[:, :, :sequence_length]
-                # future = real_imgs[:, :, sequence_length:]
-                # future_subbands = model.decompose(future)
-                # mel_imgs = to_db(to_mel(modded.squeeze(1)))
-                # mel_imgs = to_db(to_mel(real_imgs))
+            beginning = real_imgs[:, :, :sequence_length]
+            # middle = real_imgs[:, :, sequence_length:sequence_length+middle_sequence_length]
+            # end = real_imgs[:, :, sequence_length+middle_sequence_length:]
+
+            # with torch.no_grad():
+            #     x_subbands_mid = model.decompose(middle)
 
             opt.zero_grad()
 
-            x_subbands = model.decompose(modded)
+            x_subbands_1 = model.decompose(beginning)
+            # x_subbands_2 = model.decompose(end)
 
-            z, d_loss = model.reparameterize_wae(model.encode(x_subbands))
+            z_1 = model.encode(x_subbands_1)
+            # z_2 = model.encode(x_subbands_2)
 
-            y_subbands = model.decode(z)
-            # predicted_subbands = model.predict_future(z)
-            r_loss = distance(y_subbands, x_subbands)["spectral_distance"]
-            recomposed = model.recompose(y_subbands)
-            fb_loss = distance(recomposed, modded)["spectral_distance"]
-            # future_loss = distance(predicted_subbands, future_subbands)["spectral_distance"] + distance(model.recompose(predicted_subbands), future)["spectral_distance"]
+            y_subbands_1 = model.decode(z_1)
+            # y_subbands_2 = model.decode(z_2)
+
+            mb_dist_1 = distance(y_subbands_1, x_subbands_1)["spectral_distance"]
+            # mb_dist_2 = distance(y_subbands_2, x_subbands_2)["spectral_distance"]
+
+            y_1 = model.recompose(y_subbands_1)
+            # y_2 = model.recompose(y_subbands_2)
+            
+            fb_dist_1 = distance(y_1, beginning)["spectral_distance"]
+            # fb_dist_2 = distance(y_2, end)["spectral_distance"]
+
+            r_loss = mb_dist_1 + fb_dist_1
+
+            # y_subbands_pred = model.predict_middle(z_1, z_2)
+
+            # continuity_loss = distance(y_subbands_pred, x_subbands_mid)["spectral_distance"] + \
+            #     distance(model.recompose(y_subbands_pred), middle)["spectral_distance"]
+
+            z_samples_1 = prior.sample(bs * 64)
+            # z_samples_2 = prior.sample(bs * 64)
+
+            d_loss = slicer.fgw_dist(z_1.transpose(1, 2).reshape(-1, z_1.shape[1]), z_samples_1)
+                # slicer.fgw_dist(z_2.transpose(1, 2).reshape(-1, z_2.shape[1]), z_samples_2)
+            
+            c_loss_beta = 0.
+            d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=0.075) if i > reg_skip-1 else 0.
 
             with torch.no_grad():
-                f_loss = F.mse_loss(recomposed, real_imgs)
+                f_loss = F.mse_loss(y_1, beginning)
 
-            # loss = r_loss[0] + r_loss[1]
-            loss = r_loss + fb_loss
+            loss = r_loss + (d_loss_beta * d_loss)
 
-            #  + d_loss * cyclic_kl(step, total_batch * 8, maxp=0.75, max_beta=0.3)
-
-            # # print(r_loss, d_loss)
             r_loss_total += r_loss.item()
+            c_loss_total += 0
             f_loss_total += f_loss.item()
             d_loss_total += d_loss.item()
 
@@ -249,20 +281,23 @@ def train(model, train_dl, lr=1e-4):
             nb += 1
             step += 1
         # lr_scheduler.step(loss)
-        # while beta_kl <= 1:
-        #     beta_kl *= sqrt(10)
-        # scheduler steps
-        print(f"D Loss: {d_loss_total/nb}, R Loss: {r_loss_total/nb}, F Loss: {f_loss_total/nb}")
+        print(f"D Loss: {d_loss_total/nb}, R Loss: {r_loss_total/nb}, C Loss: {c_loss_total/nb}, F Loss: {f_loss_total/nb}")
 
         if (i+1) % 8 == 0:
+            # prior.print_parameters()
+            # slicer.print_parameters()
             torch.save(model.state_dict(), f"../models/rae_{i+1}.pt")
+            torch.save(prior.state_dict(), f"../models/prior_{i+1}.pt")
+            torch.save(opt.state_dict(), f"../models/opt_{i+1}.pt")
             real_eval(model, i)
 
         i += 1
 
 
-model = Orpheus(sequence_length, fast_recompose=False)
-model_b = BarlowTwinsVAE(model, 2).cuda()
+model = Orpheus(sequence_length, fast_recompose=False).cuda()
+prior = GaussianPrior(128, 2).cuda()
+slicer = MPSSlicer(128, 3, 50).cuda()
+# model_b = BarlowTwinsVAE(model, 2).cuda()
 
 data_folder = "../data"
 
@@ -273,7 +308,7 @@ X_train, X_test = train_test_split(audio_files, train_size=0.7, random_state=42)
 
 multiplier = 32
 
-train_ds = AudioFileDataset(X_train, sequence_length+future_sequence_length, multiplier=multiplier)
+train_ds = AudioFileDataset(X_train, sequence_length*1+middle_sequence_length, multiplier=multiplier)
 train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 # val_ds = AudioFileDataset(X_test, sequence_length, multiplier=multiplier)
 # val_dl = DataLoader(val_ds, batch_size=ae_batch_size*2)
@@ -281,9 +316,9 @@ train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(pytorch_total_params)
 
-train(model, train_dl)
+train(model, prior, slicer, train_dl)
 # checkpoint = torch.load("../models/ravae_stage1.pt")
 # model_b.load_state_dict(checkpoint["model"])
 # model = model_b.backbone
 # real_eval(model, 500)
-print(model)
+# print(model)

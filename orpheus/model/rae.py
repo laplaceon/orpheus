@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from .pqmf import PQMF
 
 from .encoder_1d import Encoder
-from .decoder import Decoder, FutureDecoder
+from .decoder import Decoder, MiddleDecoder
 
 class Orpheus(nn.Module):
     def __init__(
@@ -31,7 +31,7 @@ class Orpheus(nn.Module):
         self.encoder = Encoder(enc_h_dims, latent_dim, [None] + enc_scales, [None] + enc_attns, enc_blocks_per_stages, enc_layers_per_blocks, attn=attn)
         self.decoder = Decoder(dec_h_dims, latent_dim, dec_scales, dec_blocks_per_stages, dec_layers_per_blocks)
 
-        # self.future_decoder = FutureDecoder(h_dims[::-1], latent_dim, scales[::-1], blocks_per_stages[::-1], layers_per_blocks[::-1])
+        self.middle_decoder = MiddleDecoder(dec_h_dims[1:], latent_dim, dec_scales[1:], dec_blocks_per_stages[1:], dec_layers_per_blocks[1:])
 
     def decompose(self, x):
         return self.pqmf(x)
@@ -45,50 +45,11 @@ class Orpheus(nn.Module):
     def decode(self, z):
         return self.decoder(z)
 
-    def reparameterize_vae(self, z, return_vars=False):
-        mean, scale = z.chunk(2, dim=1)
-
-        std = F.softplus(scale) + 1e-4
-        var = std ** 2
-        logvar = torch.log(var)
-
-        z = torch.randn_like(mean) * std + mean
-        kl = (mean ** 2 + var - logvar - 1).sum(1).mean()
-
-        if return_vars:
-            return z, kl, mean, std
-
-        return z, kl
-
-    def compute_mean_kernel(self, x, y):
-        kernel_input = (x[:, None] - y[None]).pow(2).mean(2) / x.shape[-1]
-        return torch.exp(-kernel_input).mean()
-
-    def compute_mmd(self, x, y):
-        x_kernel = self.compute_mean_kernel(x, x)
-        y_kernel = self.compute_mean_kernel(y, y)
-        xy_kernel = self.compute_mean_kernel(x, y)
-        mmd = x_kernel + y_kernel - 2 * xy_kernel
-        return mmd
-
-    def reparameterize_wae(self, z):
-        z_reshaped = z.permute(0, 2, 1).reshape(-1, z.shape[1])
-        reg = self.compute_mmd(z_reshaped, torch.randn_like(z_reshaped))
-
-        # if self.noise_augmentation:
-        if False:
-            noise = torch.randn(z.shape[0], self.noise_augmentation,
-                                z.shape[-1]).type_as(z)
-            z = torch.cat([z, noise], 1)
-
-        return z, reg.mean()
-
-    # def predict_future(self, z):
-    #     return self.future_decoder(z)
+    def predict_middle(self, z):
+        return self.middle_decoder(z)
 
     def forward(self, x):
-        encoded = self.encode(x)
-        z, kl = self.reparameterize_wae(encoded)
+        z = self.encode(x)
         out = self.decode(z)
 
-        return out, kl
+        return out
