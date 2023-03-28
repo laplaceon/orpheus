@@ -45,11 +45,11 @@ def interpolate(model, clip1, clip2, weights=[0.5, 0.5]):
     return out, segment_recons[0], segment_recons[1]
 
 model = Orpheus(sequence_length, fast_recompose=True)
-model.load_state_dict(torch.load("../models/rae_128.pt"))
+model.load_state_dict(torch.load("../models/rae_40.pt"))
 model.eval()
 
 with torch.no_grad():
-    fused, segment_1, segment_2 = interpolate(model, "../input/KORDHELL - MURDER IN MY MIND.wav", "../input/lost.wav")
-    torchaudio.save(f"../output/fused5.wav", fused, bitrate)
+    fused, segment_1, segment_2 = interpolate(model, "../input/KORDHELL - MURDER IN MY MIND.wav", "../input/Prodigy  - Out of Space [Breakbeat Remix].wav")
+    torchaudio.save(f"../output/fused7.wav", fused, bitrate)
     torchaudio.save(f"../output/segment1.wav", segment_1, bitrate)
     torchaudio.save(f"../output/segment2.wav", segment_2, bitrate)

@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from torch.nn.utils import weight_norm
 
-from .blocks_1d import MBConv, EnhancedResBlock, EBlockV2_R, EBlockV2_DS, EBlockV2_DOWN, AttnBlock
+from .blocks_1d import EBlockV2_R, EBlockV2_DS, EBlockV2_DOWN, AttnBlock
 from einops.layers.torch import Rearrange
 
 class Encoder(nn.Module):
@@ -28,9 +28,7 @@ class Encoder(nn.Module):
 
         to_latent = nn.Sequential(
             nn.LeakyReLU(0.2),
-            Rearrange('b c l -> b l c'),
-            nn.LayerNorm(h_dims[-1]),
-            Rearrange('b l c -> b c l'),
+            nn.GroupNorm(16, h_dims[-1]),
             nn.Conv1d(h_dims[-1], h_dims[-1] * 2, kernel_size=4, stride=2, padding=1),
             nn.LeakyReLU(0.2),
             weight_norm(nn.Conv1d(h_dims[-1] * 2, latent_dim, kernel_size=3, padding="same")),

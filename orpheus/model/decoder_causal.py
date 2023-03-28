@@ -5,9 +5,9 @@ from einops.layers.torch import Rearrange
 
 from torch.nn.utils import weight_norm
 
-from .blocks_1d import EnhancedResBlock, Upsample, DBlockV2_DS, DBlockV2_R
+from .blocks_1d import DBlockV2_DS, DBlockV2_R, CausalConvTranspose1d, CausalConv1d, LayerNorm
 
-class Decoder(nn.Module):
+class PredictiveDecoder(nn.Module):
     def __init__(
         self,
         h_dims,
@@ -18,7 +18,7 @@ class Decoder(nn.Module):
     ):
         super().__init__()
 
-        self.from_latent = weight_norm(nn.Conv1d(latent_dim, h_dims[0] * 2, kernel_size=3, padding="same"))
+        self.from_latent = weight_norm(CausalConv1d(latent_dim, h_dims[0] * 2, 3))
 
         stages = []
         h_dims_new = [h_dims[0] * 2] + h_dims[:-1]
@@ -30,8 +30,8 @@ class Decoder(nn.Module):
 
         final_conv = nn.Sequential(
             nn.LeakyReLU(0.2),
-            weight_norm(nn.Conv1d(h_dims[-2], h_dims[-1], 7, padding="same")),
-            nn.Tanh()
+            # nn.GroupNorm(16, h_dims[-2]),
+            weight_norm(CausalConv1d(h_dims[-2], h_dims[-1], 7))
         )
 
         stages.append(final_conv)
@@ -41,46 +41,6 @@ class Decoder(nn.Module):
     def forward(self, z):
         out = self.from_latent(z)
         return self.conv(out)
-
-class DecoderStageFG(nn.Module):
-    def __init__(
-        self,
-        in_channels,
-        out_channels,
-        scale,
-        num_blocks,
-        layers_per_block,
-        ds_block=False,
-        last_stage=False
-    ):
-        super().__init__()
-
-        blocks = []
-
-        blocks.append(
-            nn.Sequential(
-                nn.LeakyReLU(0.2),
-                Rearrange('b c l -> b l c'),
-                nn.LayerNorm(in_channels),
-                Rearrange('b l c -> b c l'),
-                nn.ConvTranspose1d(in_channels, out_channels, scale * 2, stride=scale, padding=scale//2, bias=False)
-            )
-        )
-
-        for _ in range(num_blocks):
-            blocks.append(
-                DecoderBlock(
-                    out_channels,
-                    3,
-                    layers_per_block,
-                    ds_block=ds_block
-                )
-            )
-
-        self.blocks = nn.Sequential(*blocks)
-
-    def forward(self, x):
-        return self.blocks(x)
 
 class DecoderStage(nn.Module):
     def __init__(
@@ -99,10 +59,7 @@ class DecoderStage(nn.Module):
         blocks.append(
             nn.Sequential(
                 nn.LeakyReLU(0.2),
-                # Upsample(scale_factor=scale),
-                # DepthwiseSeparableConvWN(in_channels, out_channels, scale * 2, padding="same")
-                nn.ConvTranspose1d(in_channels, out_channels, scale * 2, stride=scale, padding=scale//2, bias=False)
-                # DepthwiseSeparableConvWN(in_channels, out_channels, (in_channels // out_channels) + 1 if last_stage else 3, padding="same")
+                CausalConvTranspose1d(in_channels, out_channels, scale * 2, scale, padding=scale//2, bias=False)
             )
         )
 
@@ -151,7 +108,8 @@ class DecoderBlock(nn.Module):
                     padding = "same",
                     dilation = dilation,
                     bias = False,
-                    activation = nn.LeakyReLU(0.2)
+                    activation = nn.LeakyReLU(0.2),
+                    causal = True
                 )
             )
 

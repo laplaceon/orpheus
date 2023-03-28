@@ -12,78 +12,102 @@ from .mem_attn import Attention
 
 from einops import rearrange
 
-class DepthwiseSeparableConvWN(nn.Module):
-    def __init__(
-        self,
-        in_channels,
-        out_channels,
-        kernel_size,
-        stride=1,
-        dilation=1,
-        padding=1,
-        bias=False
-    ):
-        super().__init__()
+class CausalConv1d(nn.Conv1d):
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size,
+                 stride=1,
+                 dilation=1,
+                 groups=1,
+                 bias=False):
+        self.__padding = (kernel_size - 1) * dilation
 
-        self.depthwise = weight_norm(nn.Conv1d(in_channels, in_channels, kernel_size=kernel_size, stride=stride, dilation=dilation, padding=padding, groups=in_channels, bias=bias))
-        self.pointwise = weight_norm(nn.Conv1d(in_channels, out_channels, kernel_size=1, dilation=1, bias=bias))
+        super(CausalConv1d, self).__init__(
+            in_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=self.__padding,
+            dilation=dilation,
+            groups=groups,
+            bias=bias)
 
-    def forward(self, x):
-        x = self.depthwise(x)
-        x = self.pointwise(x)
-        return x
+    def forward(self, input):
+        result = super(CausalConv1d, self).forward(input)
+        if self.__padding != 0:
+            return result[:, :, :-self.__padding]
+        return result
 
-class DepthwiseSeparableConv(nn.Module):
-    def __init__(
-        self,
-        in_channels,
-        out_channels,
-        kernel_size,
-        stride=1,
-        dilation=1,
-        padding=1,
-        bias=False
-    ):
-        super().__init__()
+class CausalTransposedConv1d(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, dilation=1, padding='causal'):
+        super(CausalTransposedConv1d, self).__init__()
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.dilation = dilation
+        self.padding = padding
+        self.conv = nn.ConvTranspose1d(in_channels, out_channels, kernel_size, stride=stride, dilation=dilation)
+        self.register_buffer('mask', self.conv.weight.data.new(*self.conv.weight.size()).zero_())
+        self.create_mask()
 
-        self.depthwise = nn.Conv1d(in_channels, in_channels, kernel_size=kernel_size, stride=stride, dilation=dilation, padding=padding, groups=in_channels, bias=bias)
-        self.pointwise = nn.Conv1d(in_channels, out_channels, kernel_size=1, dilation=1, bias=bias)
+    def create_mask(self):
+        k = self.kernel_size
+        self.mask[:, :, :k // 2] = 1
+        if k % 2 == 0:
+            self.mask[:, :, k // 2] = 0
 
-    def forward(self, x):
-        x = self.depthwise(x)
-        x = self.pointwise(x)
-        return x
-
-class PointwiseConv(nn.Module):
-    def __init__(
-        self,
-        in_channels,
-        out_channels,
-        bias=False
-    ):
-        super().__init__()
-
-        self.pointwise = nn.Conv1d(in_channels, out_channels, kernel_size=1, dilation=1, bias=bias)
+        if self.padding == 'causal':
+            self.mask[:, :, -1] = 0
 
     def forward(self, x):
-        return self.pointwise(x)
+        self.conv.weight.data *= self.mask
+        output_padding = self.compute_output_padding(x)
+        x = self.conv(x, output_padding=output_padding)
+        return x[:, :, : -self.dilation * (self.kernel_size - 1) - 1]
 
-class DepthwiseConv(nn.Module):
-    def __init__(
-        self,
-        channels,
-        kernel_size,
-        stride=1,
-        dilation=1,
-        padding=1,
-        bias=False
-    ):
+    def compute_output_padding(self, x):
+        if self.padding == 'causal':
+            return (self.stride - x.size(-1) % self.stride) % self.stride
+        else:
+            return 0
+
+# class CausalConvTranspose1d(nn.ConvTranspose1d):
+#     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, output_padding=0, groups=1, bias=True, dilation=1):
+#         super().__init__(in_channels, out_channels, kernel_size, stride, padding, output_padding, groups, bias, dilation)
+#         self._padding = (kernel_size - 1) * dilation
+
+#     def forward(self, input):
+#         # Add padding to the left side of the input
+#         input = nn.functional.pad(input, (self._padding, 0))
+#         # Compute the convolution
+#         output = super().forward(input)
+#         # Remove the padded values from the output
+#         return output[:, :, :-self._padding]
+
+class CausalConvTranspose1d(nn.Module):
+    def __init__(self, chan_in, chan_out, kernel_size, stride, **kwargs):
         super().__init__()
-
-        self.depthwise = nn.Conv1d(channels, channels, kernel_size=kernel_size, stride=stride, dilation=dilation, padding=padding, groups=channels, bias=bias)
+        self.upsample_factor = stride
+        self.padding = kernel_size - 1
+        self.conv = nn.ConvTranspose1d(chan_in, chan_out, kernel_size, stride, **kwargs)
 
     def forward(self, x):
-        return self.depthwise(x)
+        n = x.shape[-1]
+
+        x = F.pad(x, (self.padding, 0))
+        out = self.conv(x)
+        out = out[..., :(n * self.upsample_factor)]
+
+        return out
+
+class LayerNorm(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.gamma = nn.Parameter(torch.ones(dim))
+        self.register_buffer("beta", torch.zeros(dim))
+
+    def forward(self, x):
+        return F.layer_norm(x, x.shape[-1:], self.gamma, self.beta)
 
 class Upsample(nn.Module):
     def __init__(self, scale_factor, mode="linear"):
@@ -319,19 +343,21 @@ class DBlockV2_R(nn.Module):
         self,
         channels,
         kernel_size,
-        stride=1,
-        padding=1,
-        dilation=1,
-        bias=False,
-        num_groups=8,
-        activation=nn.GELU()
+        stride = 1,
+        padding = 1,
+        dilation = 1,
+        bias = False,
+        num_groups = 8,
+        activation = nn.GELU(),
+        causal = False
     ):
         super().__init__()
 
         self.net = nn.Sequential(
             activation,
             nn.GroupNorm(num_groups, channels),
-            nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
+            nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias) if not causal else 
+            CausalConv1d(channels, channels, kernel_size=kernel_size, stride=stride, dilation=dilation, bias=bias),
             activation,
             GRN(channels),
             nn.Conv1d(channels, channels, kernel_size=1, padding=padding, bias=bias)
@@ -413,34 +439,6 @@ class GRN(nn.Module):
         normed = self.gamma * (x * Nx) + self.beta + x
         return normed.transpose(1, 2)
 
-class UpResBlock(nn.Module):
-    def __init__(
-        self,
-        channels,
-        kernel_size,
-        padding=1,
-        dilation=1,
-        bias=False,
-        se_ratio=None,
-        num_groups=8,
-        activation=nn.ReLU()
-    ):
-        super().__init__()
-
-        hidden_dim = int(4 * channels)
-
-        self.net = nn.Sequential(
-            PointwiseConv(channels, hidden_dim, bias=bias),
-            activation,
-            DepthwiseConv(hidden_dim, kernel_size, padding=padding, dilation=dilation, bias=bias),
-            activation,
-            PointwiseConv(hidden_dim, channels, bias=bias),
-            SqueezeExcite(hidden_dim, rd_ratio=se_ratio) if se_ratio is not None else nn.Identity()
-        )
-
-    def forward(self, x):
-        return x + self.net(x)
-
 class MBConvResidual(nn.Module):
     def __init__(self, fn, dropout = 0.):
         super().__init__()
@@ -465,36 +463,3 @@ class Dropsample(nn.Module):
 
         keep_mask = torch.FloatTensor((x.shape[0], 1, 1, 1), device = device).uniform_() > self.prob
         return x * keep_mask / (1 - self.prob)
-
-def MBConv(
-    dim_in,
-    dim_out,
-    kernel_size = 3,
-    padding = 1,
-    dilation = 1,
-    downsample_factor = None,
-    expansion_rate = 1,
-    se_ratio = 0.25,
-    dropout = 0.,
-    bias=False,
-    activation=nn.ReLU()
-):
-    hidden_dim = int(expansion_rate * dim_out)
-    stride = downsample_factor if downsample_factor is not None else 1
-
-    net = nn.Sequential(
-        PointwiseConv(dim_in, hidden_dim, bias=bias),
-        nn.BatchNorm1d(hidden_dim),
-        activation,
-        DepthwiseConv(hidden_dim, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias),
-        nn.BatchNorm1d(hidden_dim),
-        activation,
-        SqueezeExcite(hidden_dim, rd_ratio=se_ratio) if se_ratio is not None else nn.Identity(),
-        PointwiseConv(hidden_dim, dim_out, bias=bias),
-        nn.BatchNorm1d(dim_out)
-    )
-
-    if dim_in == dim_out and downsample_factor is None:
-        net = MBConvResidual(net, dropout = dropout)
-
-    return net

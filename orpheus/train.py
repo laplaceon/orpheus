@@ -20,7 +20,9 @@ from model.rae import Orpheus
 from model.prior import GaussianPrior
 from model.slicer import MPSSlicer
 
-from wasserstein import sliced_fgw_distance
+# from model.quantizer import mu_law_encoding, mu_law_encode
+
+from torchaudio.functional import mu_law_encoding
 
 from dataset import AudioFileDataset
 from sklearn.model_selection import train_test_split
@@ -36,12 +38,12 @@ torchaudio.USE_SOUNDFILE_LEGACY_INTERFACE = False
 torchaudio.set_audio_backend("soundfile")
 
 # Hyperparams
-batch_size = 6
+batch_size = 4
 
 # Params
 bitrate = 44100
 sequence_length = 131072
-middle_sequence_length = sequence_length // 2
+middle_sequence_length = sequence_length // 8
 
 n_fft = 1024
 n_mels = 64
@@ -152,7 +154,7 @@ def get_song_features(model, file):
     data_spec = data[:15].unsqueeze(1)
 
     with torch.no_grad():
-        output, kl = model(model.decompose(data_spec))
+        output = model(model.decompose(data_spec))
         output = model.recompose(output).flatten()
         # print(output[:5].shape)
         return output
@@ -194,7 +196,7 @@ def cyclic_kl(step, cycle_len, maxp=0.5, min_beta=0, max_beta=1):
     div_shift = 1 / (1 - min_beta/max_beta)
     return min(((step % cycle_len) / (cycle_len * maxp * div_shift)) + (min_beta / max_beta), 1) * max_beta
 
-def train(model, prior, slicer, train_dl, lr=1e-4, reg_skip=16, reg_loss_cycle=32):
+def train(model, prior, slicer, train_dl, lr=1e-4, reg_skip=32, reg_loss_cycle=32, mid_quantize_bins=512):
     opt = Adam(list(model.parameters()) + list(prior.parameters()) + list(slicer.parameters()), lr)
     stft = closs.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
     distance = closs.AudioDistanceV1(stft, 1e-7).cuda()
@@ -220,55 +222,45 @@ def train(model, prior, slicer, train_dl, lr=1e-4, reg_skip=16, reg_loss_cycle=3
             bs = real_imgs.shape[0]
 
             beginning = real_imgs[:, :, :sequence_length]
-            # middle = real_imgs[:, :, sequence_length:sequence_length+middle_sequence_length]
-            # end = real_imgs[:, :, sequence_length+middle_sequence_length:]
+            middle = real_imgs[:, :, sequence_length:sequence_length+middle_sequence_length]
 
-            # with torch.no_grad():
-            #     x_subbands_mid = model.decompose(middle)
+            with torch.no_grad():
+                x_quantized_mid = mu_law_encoding(middle.squeeze(1), mid_quantize_bins)
 
             opt.zero_grad()
 
             x_subbands_1 = model.decompose(beginning)
-            # x_subbands_2 = model.decompose(end)
 
             z_1 = model.encode(x_subbands_1)
-            # z_2 = model.encode(x_subbands_2)
 
             y_subbands_1 = model.decode(z_1)
-            # y_subbands_2 = model.decode(z_2)
 
             mb_dist_1 = distance(y_subbands_1, x_subbands_1)["spectral_distance"]
-            # mb_dist_2 = distance(y_subbands_2, x_subbands_2)["spectral_distance"]
 
             y_1 = model.recompose(y_subbands_1)
-            # y_2 = model.recompose(y_subbands_2)
             
             fb_dist_1 = distance(y_1, beginning)["spectral_distance"]
-            # fb_dist_2 = distance(y_2, end)["spectral_distance"]
 
             r_loss = mb_dist_1 + fb_dist_1
 
-            # y_subbands_pred = model.predict_middle(z_1, z_2)
+            y_pred = model.predict_middle(z_1)
 
-            # continuity_loss = distance(y_subbands_pred, x_subbands_mid)["spectral_distance"] + \
-            #     distance(model.recompose(y_subbands_pred), middle)["spectral_distance"]
+            continuity_loss = F.cross_entropy(y_pred, x_quantized_mid)
 
             z_samples_1 = prior.sample(bs * 64)
-            # z_samples_2 = prior.sample(bs * 64)
 
             d_loss = slicer.fgw_dist(z_1.transpose(1, 2).reshape(-1, z_1.shape[1]), z_samples_1)
-                # slicer.fgw_dist(z_2.transpose(1, 2).reshape(-1, z_2.shape[1]), z_samples_2)
             
-            c_loss_beta = 0.
-            d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=0.075) if i > reg_skip-1 else 0.
+            c_loss_beta = 1.
+            d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=0.02) if i > reg_skip-1 else 0.
 
             with torch.no_grad():
                 f_loss = F.mse_loss(y_1, beginning)
 
-            loss = r_loss + (d_loss_beta * d_loss)
+            loss = r_loss + (c_loss_beta * continuity_loss) + (d_loss_beta * d_loss)
 
-            r_loss_total += r_loss.item()
-            c_loss_total += 0
+            r_loss_total += mb_dist_1.item()
+            c_loss_total += continuity_loss.item()
             f_loss_total += f_loss.item()
             d_loss_total += d_loss.item()
 
@@ -295,7 +287,7 @@ def train(model, prior, slicer, train_dl, lr=1e-4, reg_skip=16, reg_loss_cycle=3
 
 
 model = Orpheus(sequence_length, fast_recompose=False).cuda()
-prior = GaussianPrior(128, 2).cuda()
+prior = GaussianPrior(128, 3).cuda()
 slicer = MPSSlicer(128, 3, 50).cuda()
 # model_b = BarlowTwinsVAE(model, 2).cuda()
 
@@ -321,4 +313,4 @@ train(model, prior, slicer, train_dl)
 # model_b.load_state_dict(checkpoint["model"])
 # model = model_b.backbone
 # real_eval(model, 500)
-# print(model)
+print(model)

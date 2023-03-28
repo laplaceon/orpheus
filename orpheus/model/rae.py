@@ -4,7 +4,8 @@ import torch.nn.functional as F
 from .pqmf import PQMF
 
 from .encoder_1d import Encoder
-from .decoder import Decoder, MiddleDecoder
+from .decoder import Decoder
+from .decoder_causal import PredictiveDecoder
 
 class Orpheus(nn.Module):
     def __init__(
@@ -13,14 +14,17 @@ class Orpheus(nn.Module):
         # enc_h_dims=[16, 64, 128, 256, 512],
         enc_h_dims=[16, 80, 160, 320, 640],
         dec_h_dims=[640, 320, 160, 80, 16],
+        pred_dec_h_dims=[240, 160, 160, 160, 512],
         latent_dim=128,
         enc_scales=[4, 4, 4, 2],
         enc_attns=[[None, None, None], [None, None, None], [True, True, True]],
         dec_scales=[2, 4, 4, 4],
+        pred_dec_scales=[4, 4, 4, 4],
         enc_blocks_per_stages=[1, 1, 1, 1],
         enc_layers_per_blocks=[3, 3, 3, 2],
         dec_blocks_per_stages=[1, 1, 1, 1],
         dec_layers_per_blocks=[2, 3, 3, 3],
+        pred_dec_layers_per_blocks=[2, 3, 3, 3],
         attn=False,
         fast_recompose=True
     ):
@@ -31,7 +35,7 @@ class Orpheus(nn.Module):
         self.encoder = Encoder(enc_h_dims, latent_dim, [None] + enc_scales, [None] + enc_attns, enc_blocks_per_stages, enc_layers_per_blocks, attn=attn)
         self.decoder = Decoder(dec_h_dims, latent_dim, dec_scales, dec_blocks_per_stages, dec_layers_per_blocks)
 
-        self.middle_decoder = MiddleDecoder(dec_h_dims[1:], latent_dim, dec_scales[1:], dec_blocks_per_stages[1:], dec_layers_per_blocks[1:])
+        self.predictive_decoder = PredictiveDecoder(pred_dec_h_dims, latent_dim, pred_dec_scales, [1] * len(pred_dec_scales), pred_dec_layers_per_blocks)
 
     def decompose(self, x):
         return self.pqmf(x)
@@ -46,7 +50,7 @@ class Orpheus(nn.Module):
         return self.decoder(z)
 
     def predict_middle(self, z):
-        return self.middle_decoder(z)
+        return self.predictive_decoder(z)
 
     def forward(self, x):
         z = self.encode(x)
