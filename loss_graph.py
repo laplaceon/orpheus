@@ -21,6 +21,7 @@ loss_files = {
     "conv_drae2": "E:\Desktop\losses\drae_conv2.txt",
     # "conv1_drae2": "E:\Desktop\losses\drae_ssl_conv.txt",
     "conv_ssl_drae2": "E:\Desktop\losses\drae_ssl_conv_2.txt",
+    "conv_ssl_drae3": "E:\Desktop\losses\drae_ssl_conv_3.txt",
     "conv_ssl_drae2_zero_pc": "E:\Desktop\losses\drae_ssl_conv_zeropc.txt",
     "mhsa_drae2": "E:\Desktop\losses\drae_ssl_mhsa.txt",
 }

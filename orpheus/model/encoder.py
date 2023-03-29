@@ -3,7 +3,8 @@ import torch.nn as nn
 
 from torch.nn.utils import weight_norm
 
-from .blocks_1d import EBlockV2_R, EBlockV2_DS, EBlockV2_DOWN, AttnBlock
+from .blocks.enc import EBlockV2_R, EBlockV2_DS, EBlockV2_DOWN
+from .blocks.attn import AttnBlock
 from einops.layers.torch import Rearrange
 
 class Encoder(nn.Module):
@@ -14,8 +15,7 @@ class Encoder(nn.Module):
         scales,
         attns,
         blocks_per_stages,
-        layers_per_blocks,
-        attn = False
+        layers_per_blocks
     ):
         super().__init__()
 
@@ -23,7 +23,7 @@ class Encoder(nn.Module):
         for i in range(len(h_dims)-1):
             in_channels, out_channels = h_dims[i], h_dims[i+1]
 
-            encoder_stage = EncoderStage(in_channels, out_channels, scales[i], attns[i], blocks_per_stages[i], layers_per_blocks[i], last_stage=(i+1 == len(h_dims) - 1), attn=attn)
+            encoder_stage = EncoderStage(in_channels, out_channels, scales[i], attns[i], blocks_per_stages[i], layers_per_blocks[i], last_stage=(i+1 == len(h_dims) - 1))
             stages.append(encoder_stage)
 
         to_latent = nn.Sequential(
@@ -51,8 +51,7 @@ class EncoderStage(nn.Module):
         attns,
         num_blocks,
         layers_per_block,
-        last_stage=False,
-        attn=False
+        last_stage=False
     ):
         super().__init__()
 
@@ -75,14 +74,14 @@ class EncoderStage(nn.Module):
 
             blocks.append(downscale)
 
-            for _ in range(num_blocks):
+            for i in range(num_blocks):
                 blocks.append(
                     EncoderBlock(
                         out_channels,
                         3,
                         layers_per_block,
                         ds = True,
-                        attn = attn
+                        attn = attns[i]
                     )
                 )
             
@@ -109,9 +108,6 @@ class EncoderBlock(nn.Module):
         for i in range(num_layers):
             dilation = dilation_factor ** i
 
-            if attn:
-                conv.append(AttnBlock(channels, bucket=2048, expansion_factor_feedforward=1.25, dropout=0.1))
-
             conv.append(
                 EBlockV2_DS(
                     channels,
@@ -119,7 +115,7 @@ class EncoderBlock(nn.Module):
                     padding = "same",
                     dilation = dilation,
                     bias = False,
-                    expansion_factor = 2,
+                    expansion_factor = 2.,
                     activation = nn.LeakyReLU(0.2)
                 ) if ds else
 
@@ -132,6 +128,9 @@ class EncoderBlock(nn.Module):
                     activation = nn.LeakyReLU(0.2)
                 )
             )
+
+            if attn:
+                conv.append(AttnBlock(channels, bucket=2048, expansion_factor_feedforward=1., dropout=0.1))
 
         self.conv = nn.Sequential(*conv)
 

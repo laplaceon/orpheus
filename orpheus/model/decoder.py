@@ -5,7 +5,7 @@ from einops.layers.torch import Rearrange
 
 from torch.nn.utils import weight_norm
 
-from .blocks_1d import EnhancedResBlock, Upsample, DBlockV2_DS, DBlockV2_R
+from .blocks.dec import  Upsample, DBlockV2_DS, DBlockV2_R
 
 class Decoder(nn.Module):
     def __init__(
@@ -159,3 +159,10 @@ class DecoderBlock(nn.Module):
 
     def forward(self, x):
         return self.conv(x)
+
+class AugmentDiscriminator(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        return x

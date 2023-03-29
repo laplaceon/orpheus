@@ -251,13 +251,13 @@ def train(model, prior, slicer, train_dl, lr=1e-4, reg_skip=32, reg_loss_cycle=3
 
             d_loss = slicer.fgw_dist(z_1.transpose(1, 2).reshape(-1, z_1.shape[1]), z_samples_1)
             
-            c_loss_beta = 1.
+            r_loss_beta, c_loss_beta = 1., 4.
             d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=0.02) if i > reg_skip-1 else 0.
 
             with torch.no_grad():
                 f_loss = F.mse_loss(y_1, beginning)
 
-            loss = r_loss + (c_loss_beta * continuity_loss) + (d_loss_beta * d_loss)
+            loss = (r_loss_beta * r_loss) + (c_loss_beta * continuity_loss) + (d_loss_beta * d_loss)
 
             r_loss_total += mb_dist_1.item()
             c_loss_total += continuity_loss.item()
