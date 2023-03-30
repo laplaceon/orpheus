@@ -6,7 +6,7 @@ setup(
     description='A neural network for music representation learning',
     url='https://github.com/laplaceon/orpheus',
     author='Riyadh Rahman',
-    packages=['orpheus.core', 'orpheus.model'],
+    packages=['orpheus.core', 'orpheus.model', 'orpheus.model.blocks'],
     install_requires=[
         'torch',
         'numpy',
