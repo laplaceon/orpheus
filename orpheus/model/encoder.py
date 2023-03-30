@@ -3,7 +3,8 @@ import torch.nn as nn
 
 from torch.nn.utils import weight_norm
 
-from .blocks.enc import EBlockV2_R, EBlockV2_DS, EBlockV2_DOWN
+from .blocks.odconv import ODConv1d as DyConv1d
+from .blocks.enc import EBlock_R, EBlock_DS, EBlock_DOWN
 from .blocks.attn import AttnBlock
 from einops.layers.torch import Rearrange
 
@@ -31,6 +32,7 @@ class Encoder(nn.Module):
             nn.GroupNorm(16, h_dims[-1]),
             nn.Conv1d(h_dims[-1], h_dims[-1] * 2, kernel_size=4, stride=2, padding=1),
             nn.LeakyReLU(0.2),
+            # nn.GroupNorm(16, h_dims[-1] * 2),
             weight_norm(nn.Conv1d(h_dims[-1] * 2, latent_dim, kernel_size=3, padding="same")),
             nn.Tanh()
         )
@@ -70,7 +72,7 @@ class EncoderStage(nn.Module):
                     )
                 )
         else:
-            downscale = EBlockV2_DOWN(in_channels, out_channels, scale, expansion_factor=1.5, activation=nn.LeakyReLU(0.2))
+            downscale = EBlock_DOWN(in_channels, out_channels, scale, expansion_factor=1.4, activation=nn.LeakyReLU(0.2))
 
             blocks.append(downscale)
 
@@ -97,7 +99,7 @@ class EncoderBlock(nn.Module):
         channels,
         kernel,
         num_layers,
-        dilation_factor = 3,
+        dilation_factor = 2,
         ds = False,
         attn = False
     ):
@@ -109,23 +111,25 @@ class EncoderBlock(nn.Module):
             dilation = dilation_factor ** i
 
             conv.append(
-                EBlockV2_DS(
+                EBlock_DS(
                     channels,
                     kernel,
                     padding = "same",
                     dilation = dilation,
                     bias = False,
-                    expansion_factor = 2.,
-                    activation = nn.LeakyReLU(0.2)
+                    expansion_factor = 1.4,
+                    activation = nn.LeakyReLU(0.2),
+                    dynamic = True
                 ) if ds else
 
-                EBlockV2_R(
+                EBlock_R(
                     channels,
                     kernel,
                     padding = "same",
                     dilation = dilation,
                     bias = False,
-                    activation = nn.LeakyReLU(0.2)
+                    activation = nn.LeakyReLU(0.2),
+                    dynamic = False
                 )
             )
 

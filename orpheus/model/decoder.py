@@ -5,7 +5,7 @@ from einops.layers.torch import Rearrange
 
 from torch.nn.utils import weight_norm
 
-from .blocks.dec import  Upsample, DBlockV2_DS, DBlockV2_R
+from .blocks.dec import  Upsample, DBlock_DS, DBlock_R
 
 class Decoder(nn.Module):
     def __init__(
@@ -102,7 +102,6 @@ class DecoderStage(nn.Module):
                 # Upsample(scale_factor=scale),
                 # DepthwiseSeparableConvWN(in_channels, out_channels, scale * 2, padding="same")
                 nn.ConvTranspose1d(in_channels, out_channels, scale * 2, stride=scale, padding=scale//2, bias=False)
-                # DepthwiseSeparableConvWN(in_channels, out_channels, (in_channels // out_channels) + 1 if last_stage else 3, padding="same")
             )
         )
 
@@ -111,7 +110,8 @@ class DecoderStage(nn.Module):
                 DecoderBlock(
                     out_channels,
                     3,
-                    layers_per_block
+                    layers_per_block,
+                    ds = True
                 )
             )
 
@@ -125,9 +125,9 @@ class DecoderBlock(nn.Module):
         self,
         channels,
         kernel,
-        num_layers=2,
-        dilation_factor=3,
-        ds_block=False
+        num_layers = 2,
+        dilation_factor = 2,
+        ds = False
     ):
         super().__init__()
 
@@ -136,16 +136,18 @@ class DecoderBlock(nn.Module):
         for i in range(num_layers):
             dilation = dilation_factor ** i
             conv.append(
-                DBlockV2_DS(
+                DBlock_DS(
                     channels,
                     kernel,
                     padding = "same",
                     dilation = dilation,
                     bias = False,
-                    activation = nn.LeakyReLU(0.2)
-                ) if ds_block else
+                    expansion_factor = 1.4,
+                    activation = nn.LeakyReLU(0.2),
+                    dynamic = True
+                ) if ds else
                 
-                DBlockV2_R(
+                DBlock_R(
                     channels,
                     kernel,
                     padding = "same",
@@ -159,10 +161,3 @@ class DecoderBlock(nn.Module):
 
     def forward(self, x):
         return self.conv(x)
-
-class AugmentDiscriminator(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, x):
-        return x

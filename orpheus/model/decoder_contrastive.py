@@ -37,14 +37,3 @@ class ContrastiveDecoder(nn.Module):
         z = z + self.fe(z)
         
         return self.fc(self.pool(z).squeeze(2))
-
-bs = 4
-latent_size = 128
-seq_len = 64
-
-z1 = torch.rand(bs, latent_size, seq_len)
-z2 = torch.rand(bs, latent_size, seq_len)
-
-decoder_contrastive = ContrastiveDecoder(latent_size)
-out = decoder_contrastive(z1, z2)
-print(out.shape)

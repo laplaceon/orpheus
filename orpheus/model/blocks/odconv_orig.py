@@ -13,7 +13,7 @@ class Attention(nn.Module):
 
         self.avgpool = nn.AdaptiveAvgPool1d(1)
         self.fc = nn.Conv1d(in_planes, attention_channel, 1, bias=False)
-        self.bn = nn.GroupNorm(2, attention_channel)
+        self.bn = nn.BatchNorm1d(attention_channel)
         self.relu = nn.ReLU(inplace=True)
 
         self.channel_fc = nn.Conv1d(attention_channel, in_planes, 1, bias=True)
@@ -45,7 +45,7 @@ class Attention(nn.Module):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
-            if isinstance(m, nn.GroupNorm):
+            if isinstance(m, nn.BatchNorm1d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 

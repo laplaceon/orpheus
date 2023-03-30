@@ -44,8 +44,8 @@ def interpolate(model, clip1, clip2, weights=[0.5, 0.5]):
 
     return out, segment_recons[0], segment_recons[1]
 
-model = Orpheus(sequence_length, fast_recompose=True)
-model.load_state_dict(torch.load("../models/rae_40.pt"))
+model = Orpheus(fast_recompose=True)
+model.load_state_dict(torch.load("../models/rae_32.pt"))
 model.eval()
 
 with torch.no_grad():

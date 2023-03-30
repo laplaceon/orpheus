@@ -5,7 +5,7 @@ from einops.layers.torch import Rearrange
 
 from torch.nn.utils import weight_norm
 
-from .blocks.dec import DBlockV2_DS, DBlockV2_R, CausalConv1d
+from .blocks.dec import CausalDBlock, CausalConv1d
 from .blocks.conv import CausalConvTranspose1d
 
 class PredictiveDecoder(nn.Module):
@@ -84,8 +84,7 @@ class DecoderBlock(nn.Module):
         channels,
         kernel,
         num_layers=2,
-        dilation_factor=2,
-        ds_block=False
+        dilation_factor=2
     ):
         super().__init__()
 
@@ -94,24 +93,13 @@ class DecoderBlock(nn.Module):
         for i in range(num_layers):
             dilation = dilation_factor ** i
             conv.append(
-                DBlockV2_DS(
+                CausalDBlock(
                     channels,
                     kernel,
                     padding = "same",
                     dilation = dilation,
                     bias = False,
-                    activation = nn.LeakyReLU(0.2),
-                    causal = True
-                ) if ds_block else
-                
-                DBlockV2_R(
-                    channels,
-                    kernel,
-                    padding = "same",
-                    dilation = dilation,
-                    bias = False,
-                    activation = nn.LeakyReLU(0.2),
-                    causal = True
+                    activation = nn.LeakyReLU(0.2)
                 )
             )
 

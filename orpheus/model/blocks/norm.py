@@ -1,5 +1,6 @@
 import torch
-from torch import nn, functional as F
+from torch import nn
+import torch.nn.functional as F
 
 class ChannelRMSNorm(nn.Module):
     def __init__(self, dim):

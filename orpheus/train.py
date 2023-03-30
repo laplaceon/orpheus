@@ -44,6 +44,7 @@ batch_size = 4
 bitrate = 44100
 sequence_length = 131072
 middle_sequence_length = sequence_length // 8
+skip_max = 10
 
 n_fft = 1024
 n_mels = 64
@@ -125,17 +126,27 @@ class BarlowTwinsVAE(nn.Module):
 
         return (bt_loss, dist_loss, recons_loss)
 
-def recons_loss(inp, tgt, time_weight=1.0, freq_weight=1.0, reduction="mean"):
-    # lcosh = auraloss.time.LogCoshLoss(reduction=reduction)
+def skip_predict(x, length, future_len, skip_max=10):
+    """
+    Takes a tensor x of shape (N, C, L) and returns two slices of the tensor.
+    The first slice is the first length timesteps of x.
+    The second slice is a random skip from 1 to skip_max followed by future_len timesteps.
+    """
+    N, _, L = x.shape
+    assert length + future_len <= L, "The sum of length and future_len cannot be greater than the sequence length."
+    assert skip_max <= L - length - future_len, "skip_max must be smaller than the number of timesteps left in the sequence."
+    
+    # Choose a random skip between 1 and skip_max
+    skip = torch.randint(1, skip_max+1, size=(N,))
+    
+    seqs = []
+    future_seqs = []
 
-    fft_sizes = [2048, 1024, 512, 256, 128]
-    hops = [int(0.25*fft) for fft in fft_sizes]
-
-    stft = auraloss.freq.MultiResolutionSTFTLoss(fft_sizes=fft_sizes, hop_sizes=hops, win_lengths=fft_sizes, reduction=reduction)
-
-    with torch.no_grad():
-        time_loss = F.mse_loss(inp, tgt)
-    freq_loss = stft(inp, tgt)
+    for i in range(N):
+        seqs.append(x[i, :, :length])
+        future_seqs.append(x[i, :, length+skip[i]:length+skip[i]+future_len])
+    
+    return torch.stack(seqs), torch.stack(future_seqs), skip.unsqueeze(1).float()
 
     return (time_loss, freq_loss)
 
@@ -168,9 +179,6 @@ def get_song_features(model, file):
 
     #     return output
 
-def eval(model, val_dl):
-    a = 1
-
 def real_eval(model, epoch):
     model.eval()
 
@@ -196,7 +204,7 @@ def cyclic_kl(step, cycle_len, maxp=0.5, min_beta=0, max_beta=1):
     div_shift = 1 / (1 - min_beta/max_beta)
     return min(((step % cycle_len) / (cycle_len * maxp * div_shift)) + (min_beta / max_beta), 1) * max_beta
 
-def train(model, prior, slicer, train_dl, lr=1e-4, reg_skip=32, reg_loss_cycle=32, mid_quantize_bins=512):
+def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss_cycle=32, mid_quantize_bins=512):
     opt = Adam(list(model.parameters()) + list(prior.parameters()) + list(slicer.parameters()), lr)
     stft = closs.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
     distance = closs.AudioDistanceV1(stft, 1e-7).cuda()
@@ -219,10 +227,8 @@ def train(model, prior, slicer, train_dl, lr=1e-4, reg_skip=32, reg_loss_cycle=3
         total_batch = len(train_dl)
         for batch in tqdm(train_dl, position=0, leave=True):
             real_imgs = batch["input"].unsqueeze(1).cuda()
-            bs = real_imgs.shape[0]
 
-            beginning = real_imgs[:, :, :sequence_length]
-            middle = real_imgs[:, :, sequence_length:sequence_length+middle_sequence_length]
+            beginning, middle, skips = skip_predict(real_imgs, sequence_length, middle_sequence_length, skip_max)
 
             with torch.no_grad():
                 x_quantized_mid = mu_law_encoding(middle.squeeze(1), mid_quantize_bins)
@@ -247,12 +253,13 @@ def train(model, prior, slicer, train_dl, lr=1e-4, reg_skip=32, reg_loss_cycle=3
 
             continuity_loss = F.cross_entropy(y_pred, x_quantized_mid)
 
-            z_samples_1 = prior.sample(bs * 64)
+            z_samples_1 = prior.sample(batch_size * 64)
 
             d_loss = slicer.fgw_dist(z_1.transpose(1, 2).reshape(-1, z_1.shape[1]), z_samples_1)
             
             r_loss_beta, c_loss_beta = 1., 4.
-            d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=0.02) if i > reg_skip-1 else 0.
+            d_loss_beta = 0.
+            # d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=1e-5) if i > reg_skip-1 else 0.
 
             with torch.no_grad():
                 f_loss = F.mse_loss(y_1, beginning)
@@ -286,7 +293,7 @@ def train(model, prior, slicer, train_dl, lr=1e-4, reg_skip=32, reg_loss_cycle=3
         i += 1
 
 
-model = Orpheus(sequence_length, fast_recompose=False).cuda()
+model = Orpheus(aug_classes=5, fast_recompose=False).cuda()
 prior = GaussianPrior(128, 3).cuda()
 slicer = MPSSlicer(128, 3, 50).cuda()
 # model_b = BarlowTwinsVAE(model, 2).cuda()
@@ -300,15 +307,16 @@ X_train, X_test = train_test_split(audio_files, train_size=0.7, random_state=42)
 
 multiplier = 32
 
-train_ds = AudioFileDataset(X_train, sequence_length*1+middle_sequence_length, multiplier=multiplier)
+train_ds = AudioFileDataset(X_train, sequence_length*1+middle_sequence_length+skip_max, multiplier=multiplier)
 train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
+train_dl_neg = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 # val_ds = AudioFileDataset(X_test, sequence_length, multiplier=multiplier)
 # val_dl = DataLoader(val_ds, batch_size=ae_batch_size*2)
 
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(pytorch_total_params)
 
-train(model, prior, slicer, train_dl)
+train(model, prior, slicer, train_dl, train_dl_neg)
 # checkpoint = torch.load("../models/ravae_stage1.pt")
 # model_b.load_state_dict(checkpoint["model"])
 # model = model_b.backbone
