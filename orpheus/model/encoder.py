@@ -117,7 +117,7 @@ class EncoderBlock(nn.Module):
                     padding = "same",
                     dilation = dilation,
                     bias = False,
-                    expansion_factor = 1.4,
+                    expansion_factor = 1.6,
                     activation = nn.LeakyReLU(0.2),
                     dynamic = True
                 ) if ds else
