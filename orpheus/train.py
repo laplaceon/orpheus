@@ -87,17 +87,6 @@ class BarlowTwinsVAE(nn.Module):
         assert n == m
         return x.flatten()[:-1].view(n - 1, n + 1)[:, 1:].flatten()
 
-    def cr_loss(self, mu_1, std_1, mu_2, std_2, gamma=1e-2):
-        """
-        distance between two gaussians
-        """
-
-        cr_loss = 0.5 * torch.sum(2 * torch.log(std_1 / std_2) - \
-                1 + (std_2 ** 2 + (mu_2 - mu_1) ** 2) / std_1 ** 2,
-                dim=1).mean()
-
-        return cr_loss * gamma
-
     def forward(self, y1, y2, bt=False):
         z1, kl1, mu1, std1 = self.backbone.reparameterize(self.backbone.encode(y1), return_vars=True)
         z2, kl2, mu2, std2 = self.backbone.reparameterize(self.backbone.encode(y2), return_vars=True)
@@ -147,8 +136,6 @@ def skip_predict(x, length, future_len, skip_max=10):
         future_seqs.append(x[i, :, length+skip[i]:length+skip[i]+future_len])
     
     return torch.stack(seqs), torch.stack(future_seqs), skip.unsqueeze(1).float()
-
-    return (time_loss, freq_loss)
 
 def get_song_features(model, file):
     data, rate = torchaudio.load(file)
@@ -225,6 +212,13 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
         f_loss_total = 0
         d_loss_total = 0
         total_batch = len(train_dl)
+        for batch, batch_neg in tqdm(zip(train_dl, neg_dl), position=0, leave=True):
+            print("inp", batch["input"])
+            print("mod", batch_neg["input"])
+
+        break
+
+
         for batch in tqdm(train_dl, position=0, leave=True):
             real_imgs = batch["input"].unsqueeze(1).cuda()
 

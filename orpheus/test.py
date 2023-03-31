@@ -39,22 +39,22 @@ audio_samples_1 = torch.rand(size=(bs, 2, 32000), dtype=torch.float32, device=to
 audio_samples_2 = torch.rand(size=(bs, 2, 32000), dtype=torch.float32, device=torch_device) - 0.5
 
 def augment_to_label(augments, bs, neg_indices):
-    labels = torch.zeros((bs, 5), dtype=torch.int)
+    labels = torch.zeros((bs, 5), dtype=torch.float)
 
     tp = augments.transforms[0].transform_parameters
     if len(tp) != 0:
         # print("polarity inversion applied")
-        labels[:, 1][tp["should_apply"]] = 1
+        labels[:, 1][tp["should_apply"]] = 1.
     
     tp = augments.transforms[1].transform_parameters
     if len(tp) != 0:
         # print("noise added")
-        labels[:, 2][tp["should_apply"]] = 1
+        labels[:, 2][tp["should_apply"]] = 1.
 
     tp = augments.transforms[2].transform_parameters
     if len(tp) != 0:
         # print("volume modulation applied")
-        labels[:, 3][tp["should_apply"]] = 1
+        labels[:, 3][tp["should_apply"]] = 1.
 
     freq_transforms = augments.transforms[3].transforms
 
@@ -62,15 +62,12 @@ def augment_to_label(augments, bs, neg_indices):
         tp = transform.transform_parameters
         if len(tp) != 0:
             # print("frequency modulation applied")
-            labels[:, 4][tp["should_apply"]] = 1
+            labels[:, 4][tp["should_apply"]] = 1.
 
             break
-    
-    print(labels)
-    print(neg_indices)
 
-    labels[neg_indices] = torch.zeros((5,), dtype=torch.int)
-    labels[neg_indices, 0] = 1
+    labels[neg_indices] = torch.zeros((5,), dtype=torch.float)
+    labels[neg_indices, 0] = 1.
     
     return labels
 
@@ -88,5 +85,5 @@ audio_samples_1[indices] = audio_samples_2[indices]
 perturbed_audio_samples = apply_augmentations(audio_samples_1, sample_rate=16000)
 aug_labels = augment_to_label(apply_augmentations, bs, indices)
 
-loss = 2 * F.multilabel_soft_margin_loss(torch.randn(bs, 5), aug_labels)
+loss = 2 * F.binary_cross_entropy_with_logits(torch.rand(bs, 5) * 10, aug_labels.float())
 print(loss)
