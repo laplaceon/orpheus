@@ -34,6 +34,7 @@ class ContrastiveDecoder(nn.Module):
 
     def forward(self, z1, z2):
         z_p = torch.stack([z1, z2], dim=2)
+        print(z1.shape, z2.shape, z_p.shape)
         with torch.backends.cudnn.flags(benchmark=False):
             z = self.mixer(z_p).squeeze(2)
 
