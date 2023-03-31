@@ -11,7 +11,7 @@ class ContrastiveDecoder(nn.Module):
         super().__init__()
 
         self.mixer = nn.Sequential(
-            nn.Conv1d(latent_dim * 2, latent_dim, kernel, padding=kernel // 2, bias=False),
+            nn.Conv2d(latent_dim, latent_dim, (2, kernel), padding=(0, kernel // 2), bias=False),
             nn.GELU()
         )
 
@@ -31,20 +31,22 @@ class ContrastiveDecoder(nn.Module):
         self.fc = nn.Linear(latent_dim, num_classes)
 
     def forward(self, z1, z2):
-        z_p = torch.cat([z1, z2], dim=1)
-        z = self.mixer(z_p)
+        z_p = torch.stack([z1, z2], dim=2)
+        with torch.backends.cudnn.flags(benchmark=False):
+            z = self.mixer(z_p).squeeze(2)
 
-        z = z + self.fe(z)
+            z = z + self.fe(z)
         
         return self.fc(self.pool(z).squeeze(2))
 
-bs = 4
-latent_size = 128
-seq_len = 64
+# bs = 4
+# latent_size = 128
+# seq_len = 64
 
-z1 = torch.rand(bs, latent_size, seq_len)
-z2 = torch.rand(bs, latent_size, seq_len)
+# z1 = torch.rand(bs, latent_size, seq_len)
+# z2 = torch.rand(bs, latent_size, seq_len)
 
-decoder_contrastive = ContrastiveDecoder(latent_size, num_classes=5)
-out = decoder_contrastive(z1, z2)
-print(out.shape)
+# decoder_contrastive = ContrastiveDecoder(latent_size, num_classes=5)
+# out = decoder_contrastive(z1, z2)
+# print(out.shape)
+# print(torch.__version__)
