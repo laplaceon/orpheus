@@ -64,6 +64,37 @@ class EBlock_DS(nn.Module):
     def forward(self, x):
         return x + self.net(x)
 
+# class EBlock_DOWN(nn.Module):
+#     def __init__(
+#         self,
+#         in_channels,
+#         out_channels,
+#         scale,
+#         bias=False,
+#         num_groups=8,
+#         expansion_factor=2,
+#         activation=nn.GELU(),
+#         dynamic=False
+#     ):
+#         super().__init__()
+
+#         hidden_channels = int(out_channels * expansion_factor)
+
+#         self.net = nn.Sequential(
+#             activation,
+#             nn.GroupNorm(num_groups, in_channels),
+#             nn.Conv1d(in_channels, hidden_channels, kernel_size=1, bias=bias),
+#             activation,
+#             DyConv1d(hidden_channels, hidden_channels, kernel_size=scale*2, padding=scale//2, groups=hidden_channels) if dynamic else 
+#             nn.Conv1d(hidden_channels, hidden_channels, kernel_size=scale*2, stride=scale, padding=scale//2, groups=hidden_channels, bias=bias),
+#             activation,
+#             GRN(hidden_channels),
+#             nn.Conv1d(hidden_channels, out_channels, kernel_size=1, bias=bias)
+#         )
+    
+#     def forward(self, x):
+#         return self.net(x)
+
 class EBlock_DOWN(nn.Module):
     def __init__(
         self,
@@ -72,7 +103,7 @@ class EBlock_DOWN(nn.Module):
         scale,
         bias=False,
         num_groups=8,
-        expansion_factor=2,
+        expansion_factor=2.,
         activation=nn.GELU(),
         dynamic=False
     ):
@@ -83,13 +114,7 @@ class EBlock_DOWN(nn.Module):
         self.net = nn.Sequential(
             activation,
             nn.GroupNorm(num_groups, in_channels),
-            nn.Conv1d(in_channels, hidden_channels, kernel_size=1, bias=bias),
-            activation,
-            DyConv1d(hidden_channels, hidden_channels, kernel_size=scale*2, padding=scale//2, groups=hidden_channels) if dynamic else 
-            nn.Conv1d(hidden_channels, hidden_channels, kernel_size=scale*2, stride=scale, padding=scale//2, groups=hidden_channels, bias=bias),
-            activation,
-            GRN(hidden_channels),
-            nn.Conv1d(hidden_channels, out_channels, kernel_size=1, bias=bias)
+            nn.Conv1d(in_channels, out_channels, kernel_size=scale*2, stride=scale, padding=scale//2, bias=bias)
         )
     
     def forward(self, x):

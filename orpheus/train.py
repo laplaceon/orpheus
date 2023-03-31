@@ -68,7 +68,7 @@ apply_augmentations = SomeOf(
     ]
 ).cuda()
 
-peak_norm = PeakNormalization(apply_to="only_too_loud_sounds", p=1.).cuda()
+peak_norm = PeakNormalization(apply_to="only_too_loud_sounds", p=1., sample_rate=bitrate).cuda()
 
 def skip_predict(x, length, future_len, skip_max=10):
     """
@@ -151,12 +151,12 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
     stft = closs.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
     distance = closs.AudioDistanceV1(stft, 1e-7).cuda()
 
-    model.load_state_dict(torch.load("../models/rae_96.pt"))
-    opt.load_state_dict(torch.load("../models/opt_96.pt"))
+    # model.load_state_dict(torch.load("../models/rae_96.pt"))
+    # opt.load_state_dict(torch.load("../models/opt_96.pt"))
 
     step = 0
 
-    i = 96
+    i = 0
     prior.print_parameters()
     slicer.print_parameters()
     while True:
@@ -174,7 +174,8 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
             real_imgs = batch["input"].unsqueeze(1).cuda()
 
             with torch.no_grad():
-                mod = peak_norm(apply_augmentations(real_imgs, sample_rate=bitrate))
+                # mod = peak_norm(apply_augmentations(real_imgs, sample_rate=bitrate))
+                mod = real_imgs
                 beginning, middle, skips = skip_predict(mod, sequence_length, middle_sequence_length, skip_max)
                 x_quantized_mid = mu_law_encoding(middle.squeeze(1), mid_quantize_bins)
 

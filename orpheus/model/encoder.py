@@ -72,7 +72,8 @@ class EncoderStage(nn.Module):
                     )
                 )
         else:
-            downscale = EBlock_DOWN(in_channels, out_channels, scale, expansion_factor=1.4, activation=nn.LeakyReLU(0.2))
+            # downscale = EBlock_DOWN(in_channels, out_channels, scale, expansion_factor=1.4, activation=nn.LeakyReLU(0.2))
+            downscale = EBlock_DOWN(in_channels, out_channels, scale, activation=nn.LeakyReLU(0.2))
 
             blocks.append(downscale)
 
