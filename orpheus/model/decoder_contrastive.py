@@ -1,6 +1,8 @@
 import torch
 from torch import nn
 
+from torch.nn.utils import weight_norm
+
 class ContrastiveDecoder(nn.Module):
     def __init__(
         self,
@@ -11,7 +13,7 @@ class ContrastiveDecoder(nn.Module):
         super().__init__()
 
         self.mixer = nn.Sequential(
-            nn.Conv2d(latent_dim, latent_dim, (2, kernel), padding=(0, kernel // 2), bias=False),
+            weight_norm(nn.Conv2d(latent_dim, latent_dim, (2, kernel), padding=(0, kernel // 2), bias=False)),
             nn.GELU()
         )
 
