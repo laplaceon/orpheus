@@ -13,7 +13,7 @@ setup(
         'torchaudio',
         'x-transformers',
         'einops',
-        'git+https://github.com/nicola-decao/power_spherical'
+        'power_spherical @ git+https://github.com/nicola-decao/power_spherical'
     ],
 
     classifiers=[
