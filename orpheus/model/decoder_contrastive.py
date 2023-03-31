@@ -34,21 +34,7 @@ class ContrastiveDecoder(nn.Module):
 
     def forward(self, z1, z2):
         z_p = torch.stack([z1, z2], dim=2)
-        print(z1.shape, z2.shape, z_p.shape)
-        with torch.backends.cudnn.flags(enabled=False):
-            z = self.mixer(z_p).squeeze(2)
-
-            z = z + self.fe(z)
+        z = self.mixer(z_p).squeeze(2)
+        z = z + self.fe(z)
         
         return self.fc(self.pool(z).squeeze(2))
-
-bs = 4
-latent_size = 128
-seq_len = 64
-
-z1 = torch.rand(bs, latent_size, seq_len)
-z2 = torch.rand(bs, latent_size, seq_len)
-
-decoder_contrastive = ContrastiveDecoder(latent_size, num_classes=5)
-out = decoder_contrastive(z1, z2)
-print(out.shape)
