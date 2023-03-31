@@ -1,6 +1,6 @@
-import pprint
+from pprint import pprint
 import torch
-from torch_audiomentations import SomeOf, OneOf, PolarityInversion, AddColoredNoise, Gain, HighPassFilter, LowPassFilter
+from torch_audiomentations import SomeOf, OneOf, PolarityInversion, AddColoredNoise, Gain, HighPassFilter, LowPassFilter, PeakNormalization
 import torch.nn.functional as F
 
 
@@ -20,6 +20,8 @@ apply_augmentations = SomeOf(
     ]
 )
 
+peak_norm = PeakNormalization(apply_to="only_too_loud_sounds", p=1.)
+
 augments_map = {
     0: {"name": "polarity_inversion"},
     1: {"name": "noise"},
@@ -35,8 +37,7 @@ neg_ratio = 0.2
 
 # Make an example tensor with white noise.
 # This tensor represents 8 audio snippets with 2 channels (stereo) and 2 s of 16 kHz audio.
-audio_samples_1 = torch.rand(size=(bs, 2, 32000), dtype=torch.float32, device=torch_device) - 0.5
-audio_samples_2 = torch.rand(size=(bs, 2, 32000), dtype=torch.float32, device=torch_device) - 0.5
+audio_samples_1 = torch.rand(size=(bs, 2, 32000), dtype=torch.float32, device=torch_device) * 2 - 1.
 
 def augment_to_label(augments, bs, neg_indices):
     labels = torch.zeros((bs, 5), dtype=torch.float)
@@ -77,13 +78,18 @@ def augment_to_label(augments, bs, neg_indices):
 
 orig_samples = audio_samples_1.clone()
 
-num_negatives = 1
+# num_negatives = 1
 
-indices = torch.randint(0, bs, size=(num_negatives,))
-audio_samples_1[indices] = audio_samples_2[indices]
+# indices = torch.randint(0, bs, size=(num_negatives,))
+# audio_samples_1[indices] = audio_samples_2[indices]
 
 perturbed_audio_samples = apply_augmentations(audio_samples_1, sample_rate=16000)
-aug_labels = augment_to_label(apply_augmentations, bs, indices)
+pprint(perturbed_audio_samples)
+print(torch.min(perturbed_audio_samples), torch.max(perturbed_audio_samples))
+normed = peak_norm(perturbed_audio_samples)
+pprint(normed)
+print(torch.min(normed), torch.max(normed))
+# aug_labels = augment_to_label(apply_augmentations, bs, indices)
 
-loss = 2 * F.binary_cross_entropy_with_logits(torch.rand(bs, 5) * 10, aug_labels.float())
-print(loss)
+# loss = 2 * F.binary_cross_entropy_with_logits(torch.rand(bs, 5) * 10, aug_labels.float())
+# print(loss)

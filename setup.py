@@ -12,7 +12,8 @@ setup(
         'numpy',
         'torchaudio',
         'x-transformers',
-        'einops'
+        'einops',
+        'git+https://github.com/nicola-decao/power_spherical'
     ],
 
     classifiers=[

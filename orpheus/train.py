@@ -1,7 +1,11 @@
 import os
 
+os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+
 import auraloss
 import torchaudio
+
+from pprint import pprint
 
 from slugify import slugify
 
@@ -27,7 +31,7 @@ from torchaudio.functional import mu_law_encoding
 from dataset import AudioFileDataset
 from sklearn.model_selection import train_test_split
 
-from torch_audiomentations import SomeOf, OneOf, PolarityInversion, AddColoredNoise, Gain, HighPassFilter, LowPassFilter
+from torch_audiomentations import SomeOf, OneOf, PolarityInversion, AddColoredNoise, Gain, HighPassFilter, LowPassFilter, BandPassFilter, PeakNormalization
 
 # from utils import copy_params
 from tqdm import tqdm
@@ -49,71 +53,22 @@ skip_max = 10
 n_fft = 1024
 n_mels = 64
 
-# apply_augmentations = SomeOf(
-#     num_transforms = (1, 3),
-#     transforms = [
-#         PolarityInversion(),
-#         AddColoredNoise(),
-#         Gain(),
-#         OneOf(
-#             transforms = [
-#                 HighPassFilter(),
-#                 LowPassFilter()
-#             ]
-#         )
-#     ]
-# ).cuda()
+apply_augmentations = SomeOf(
+    num_transforms = (1, 3),
+    transforms = [
+        PolarityInversion(),
+        AddColoredNoise(),
+        Gain(),
+        OneOf(
+            transforms = [
+                HighPassFilter(),
+                LowPassFilter()
+            ]
+        )
+    ]
+).cuda()
 
-class BarlowTwinsVAE(nn.Module):
-    def __init__(self, backbone, batch_size, lambda_coeff=5e-3):
-        super().__init__()
-
-        self.backbone = backbone
-
-        # self.projection = nn.Flatten()
-
-        # self.bn = nn.BatchNorm1d(8192, affine=False)
-
-        self.batch_size = batch_size
-        self.lambd = lambda_coeff
-
-        stft = closs.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
-        self.distance = closs.AudioDistanceV1(stft, 1e-7)
-
-    def off_diagonal(self, x):
-        # taken from: https://github.com/facebookresearch/barlowtwins/blob/main/main.py
-        # return a flattened view of the off-diagonal elements of a square matrix
-        n, m = x.shape
-        assert n == m
-        return x.flatten()[:-1].view(n - 1, n + 1)[:, 1:].flatten()
-
-    def forward(self, y1, y2, bt=False):
-        z1, kl1, mu1, std1 = self.backbone.reparameterize(self.backbone.encode(y1), return_vars=True)
-        z2, kl2, mu2, std2 = self.backbone.reparameterize(self.backbone.encode(y2), return_vars=True)
-
-        # z1_p = self.projection(z1)
-        # z2_p = self.projection(z2)
-
-        # # empirical cross-correlation matrix
-        # c = self.bn(z1_p).T @ self.bn(z2_p)
-
-        # # sum the cross-correlation matrix between all gpus
-        # c.div_(self.batch_size)
-
-        # on_diag = torch.diagonal(c).add_(-1).pow_(2).sum()
-        # off_diag = self.off_diagonal(c).pow_(2).sum()
-        # bt_loss = on_diag + self.lambd * off_diag
-
-        bt_loss = self.cr_loss(mu1, std1, mu2, std2)
-
-        dist_loss = kl1 + kl2
-
-        out1 = self.backbone.decode(z1)
-        out2 = self.backbone.decode(z2)
-
-        recons_loss = self.stft_loss(out1, y1) + self.stft_loss(out2, y2)
-
-        return (bt_loss, dist_loss, recons_loss)
+peak_norm = PeakNormalization(apply_to="only_too_loud_sounds", p=1.).cuda()
 
 def skip_predict(x, length, future_len, skip_max=10):
     """
@@ -196,9 +151,12 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
     stft = closs.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
     distance = closs.AudioDistanceV1(stft, 1e-7).cuda()
 
+    model.load_state_dict(torch.load("../models/rae_96.pt"))
+    opt.load_state_dict(torch.load("../models/opt_96.pt"))
+
     step = 0
 
-    i = 0
+    i = 96
     prior.print_parameters()
     slicer.print_parameters()
     while True:
@@ -212,19 +170,12 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
         f_loss_total = 0
         d_loss_total = 0
         total_batch = len(train_dl)
-        for batch, batch_neg in tqdm(zip(train_dl, neg_dl), position=0, leave=True):
-            print("inp", batch["input"])
-            print("mod", batch_neg["input"])
-
-        break
-
-
         for batch in tqdm(train_dl, position=0, leave=True):
             real_imgs = batch["input"].unsqueeze(1).cuda()
 
-            beginning, middle, skips = skip_predict(real_imgs, sequence_length, middle_sequence_length, skip_max)
-
             with torch.no_grad():
+                mod = peak_norm(apply_augmentations(real_imgs, sample_rate=bitrate))
+                beginning, middle, skips = skip_predict(mod, sequence_length, middle_sequence_length, skip_max)
                 x_quantized_mid = mu_law_encoding(middle.squeeze(1), mid_quantize_bins)
 
             opt.zero_grad()
