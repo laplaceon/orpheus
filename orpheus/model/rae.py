@@ -24,6 +24,7 @@ class Orpheus(nn.Module):
         dec_blocks_per_stages=[1, 1, 1, 1],
         dec_layers_per_blocks=[3, 4, 4, 4],
         pred_dec_layers_per_blocks=[3, 4, 4, 4],
+        drop_path=0.,
         aug_classes=2,
         fast_recompose=True
     ):
@@ -31,10 +32,10 @@ class Orpheus(nn.Module):
 
         self.pqmf = PQMF(enc_h_dims[0], 100, fast_recompose)
 
-        self.encoder = Encoder(enc_h_dims, latent_dim, [None] + enc_scales, [None] + enc_attns, enc_blocks_per_stages, enc_layers_per_blocks)
-        self.decoder = Decoder(dec_h_dims, latent_dim, dec_scales, dec_blocks_per_stages, dec_layers_per_blocks)
+        self.encoder = Encoder(enc_h_dims, latent_dim, [None] + enc_scales, [None] + enc_attns, enc_blocks_per_stages, enc_layers_per_blocks, drop_path=drop_path)
+        self.decoder = Decoder(dec_h_dims, latent_dim, dec_scales, dec_blocks_per_stages, dec_layers_per_blocks, drop_path=drop_path)
 
-        self.predictive_decoder = PredictiveDecoder(pred_dec_h_dims, latent_dim, pred_dec_scales, [1] * len(pred_dec_scales), pred_dec_layers_per_blocks)
+        self.predictive_decoder = PredictiveDecoder(pred_dec_h_dims, latent_dim, pred_dec_scales, [1] * len(pred_dec_scales), pred_dec_layers_per_blocks, drop_path=drop_path)
         self.contrastive_decoder = ContrastiveDecoder(latent_dim, num_classes=aug_classes)
 
     def decompose(self, x):

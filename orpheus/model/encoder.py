@@ -16,7 +16,8 @@ class Encoder(nn.Module):
         scales,
         attns,
         blocks_per_stages,
-        layers_per_blocks
+        layers_per_blocks,
+        drop_path=0.
     ):
         super().__init__()
 
@@ -24,7 +25,7 @@ class Encoder(nn.Module):
         for i in range(len(h_dims)-1):
             in_channels, out_channels = h_dims[i], h_dims[i+1]
 
-            encoder_stage = EncoderStage(in_channels, out_channels, scales[i], attns[i], blocks_per_stages[i], layers_per_blocks[i], last_stage=(i+1 == len(h_dims) - 1))
+            encoder_stage = EncoderStage(in_channels, out_channels, scales[i], attns[i], blocks_per_stages[i], layers_per_blocks[i], last_stage=(i+1 == len(h_dims) - 1), drop_path=drop_path)
             stages.append(encoder_stage)
 
         to_latent = nn.Sequential(
@@ -53,7 +54,8 @@ class EncoderStage(nn.Module):
         attns,
         num_blocks,
         layers_per_block,
-        last_stage=False
+        last_stage=False,
+        drop_path=0.
     ):
         super().__init__()
 
@@ -68,12 +70,13 @@ class EncoderStage(nn.Module):
                     EncoderBlock(
                         out_channels,
                         3,
-                        layers_per_block
+                        layers_per_block,
+                        drop_path = drop_path
                     )
                 )
         else:
-            # downscale = EBlock_DOWN(in_channels, out_channels, scale, expansion_factor=1.4, activation=nn.LeakyReLU(0.2))
-            downscale = EBlock_DOWN(in_channels, out_channels, scale, activation=nn.LeakyReLU(0.2))
+            downscale = EBlock_DOWN(in_channels, out_channels, scale, expansion_factor=1.4, activation=nn.LeakyReLU(0.2))
+            # downscale = EBlock_DOWN(in_channels, out_channels, scale, activation=nn.LeakyReLU(0.2))
 
             blocks.append(downscale)
 
@@ -84,7 +87,8 @@ class EncoderStage(nn.Module):
                         3,
                         layers_per_block,
                         ds = True,
-                        attn = attns[i]
+                        attn = attns[i],
+                        drop_path = drop_path
                     )
                 )
             
@@ -102,7 +106,8 @@ class EncoderBlock(nn.Module):
         num_layers,
         dilation_factor = 2,
         ds = False,
-        attn = False
+        attn = False,
+        drop_path = 0.
     ):
         super().__init__()
 
@@ -120,7 +125,8 @@ class EncoderBlock(nn.Module):
                     bias = False,
                     expansion_factor = 1.6,
                     activation = nn.LeakyReLU(0.2),
-                    dynamic = True
+                    dynamic = True,
+                    drop_path = drop_path
                 ) if ds else
 
                 EBlock_R(
@@ -130,7 +136,8 @@ class EncoderBlock(nn.Module):
                     dilation = dilation,
                     bias = False,
                     activation = nn.LeakyReLU(0.2),
-                    dynamic = False
+                    dynamic = False,
+                    drop_path = drop_path
                 )
             )
 

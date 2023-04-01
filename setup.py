@@ -13,6 +13,7 @@ setup(
         'torchaudio',
         'x-transformers',
         'einops',
+        'timm',
         'power_spherical @ git+https://github.com/nicola-decao/power_spherical'
     ],
 

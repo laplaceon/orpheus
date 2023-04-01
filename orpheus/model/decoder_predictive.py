@@ -15,7 +15,8 @@ class PredictiveDecoder(nn.Module):
         latent_dim,
         scales,
         blocks_per_stage,
-        layers_per_blocks
+        layers_per_blocks,
+        drop_path = 0.
     ):
         super().__init__()
 
@@ -26,7 +27,7 @@ class PredictiveDecoder(nn.Module):
         for i in range(len(h_dims)-1):
             in_channels, out_channels = h_dims_new[i], h_dims_new[i+1]
 
-            decoder_stage = DecoderStage(in_channels, out_channels, scales[i], blocks_per_stage[i], layers_per_blocks[i], i+1 == len(h_dims) - 1)
+            decoder_stage = DecoderStage(in_channels, out_channels, scales[i], blocks_per_stage[i], layers_per_blocks[i], i+1 == len(h_dims) - 1, drop_path=drop_path)
             stages.append(decoder_stage)
 
         final_conv = nn.Sequential(
@@ -51,7 +52,8 @@ class DecoderStage(nn.Module):
         scale,
         num_blocks,
         layers_per_block,
-        last_stage=False
+        last_stage = False,
+        drop_path = 0.
     ):
         super().__init__()
 
@@ -69,7 +71,8 @@ class DecoderStage(nn.Module):
                 DecoderBlock(
                     out_channels,
                     3,
-                    layers_per_block
+                    layers_per_block,
+                    drop_path = drop_path
                 )
             )
 
@@ -84,7 +87,8 @@ class DecoderBlock(nn.Module):
         channels,
         kernel,
         num_layers=2,
-        dilation_factor=2
+        dilation_factor=2,
+        drop_path = 0.
     ):
         super().__init__()
 
@@ -99,7 +103,8 @@ class DecoderBlock(nn.Module):
                     padding = "same",
                     dilation = dilation,
                     bias = False,
-                    activation = nn.LeakyReLU(0.2)
+                    activation = nn.LeakyReLU(0.2),
+                    drop_path = drop_path
                 )
             )
 

@@ -14,7 +14,8 @@ class Decoder(nn.Module):
         latent_dim,
         scales,
         blocks_per_stage,
-        layers_per_blocks
+        layers_per_blocks,
+        drop_path=0.
     ):
         super().__init__()
 
@@ -25,7 +26,7 @@ class Decoder(nn.Module):
         for i in range(len(h_dims)-1):
             in_channels, out_channels = h_dims_new[i], h_dims_new[i+1]
 
-            decoder_stage = DecoderStage(in_channels, out_channels, scales[i], blocks_per_stage[i], layers_per_blocks[i], i+1 == len(h_dims) - 1)
+            decoder_stage = DecoderStage(in_channels, out_channels, scales[i], blocks_per_stage[i], layers_per_blocks[i], i+1 == len(h_dims) - 1, drop_path=drop_path)
             stages.append(decoder_stage)
 
         final_conv = nn.Sequential(
@@ -51,7 +52,8 @@ class DecoderStageFG(nn.Module):
         num_blocks,
         layers_per_block,
         ds_block=False,
-        last_stage=False
+        last_stage=False,
+        drop_path=0.
     ):
         super().__init__()
 
@@ -73,7 +75,8 @@ class DecoderStageFG(nn.Module):
                     out_channels,
                     3,
                     layers_per_block,
-                    ds_block=ds_block
+                    ds_block = ds_block,
+                    drop_path = drop_path
                 )
             )
 
@@ -90,7 +93,8 @@ class DecoderStage(nn.Module):
         scale,
         num_blocks,
         layers_per_block,
-        last_stage=False
+        last_stage=False,
+        drop_path=0.
     ):
         super().__init__()
 
@@ -111,7 +115,8 @@ class DecoderStage(nn.Module):
                     out_channels,
                     3,
                     layers_per_block,
-                    ds = True
+                    ds = True,
+                    drop_path = drop_path
                 )
             )
 
@@ -127,7 +132,8 @@ class DecoderBlock(nn.Module):
         kernel,
         num_layers = 2,
         dilation_factor = 2,
-        ds = False
+        ds = False,
+        drop_path = 0.
     ):
         super().__init__()
 
@@ -144,7 +150,8 @@ class DecoderBlock(nn.Module):
                     bias = False,
                     expansion_factor = 1.4,
                     activation = nn.LeakyReLU(0.2),
-                    dynamic = True
+                    dynamic = True,
+                    drop_path = drop_path
                 ) if ds else
                 
                 DBlock_R(
@@ -153,7 +160,8 @@ class DecoderBlock(nn.Module):
                     padding = "same",
                     dilation = dilation,
                     bias = False,
-                    activation = nn.LeakyReLU(0.2)
+                    activation = nn.LeakyReLU(0.2),
+                    drop_path = drop_path
                 )
             )
 

@@ -1,7 +1,5 @@
 import os
 
-os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
-
 import auraloss
 import torchaudio
 
@@ -66,9 +64,9 @@ apply_augmentations = SomeOf(
             ]
         )
     ]
-).cuda()
+)
 
-peak_norm = PeakNormalization(apply_to="only_too_loud_sounds", p=1., sample_rate=bitrate).cuda()
+peak_norm = PeakNormalization(apply_to="only_too_loud_sounds", p=1., sample_rate=bitrate)
 
 def skip_predict(x, length, future_len, skip_max=10):
     """
@@ -171,11 +169,11 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
         d_loss_total = 0
         total_batch = len(train_dl)
         for batch in tqdm(train_dl, position=0, leave=True):
-            real_imgs = batch["input"].unsqueeze(1).cuda()
+            real_imgs = batch["input"].unsqueeze(1)
 
             with torch.no_grad():
-                # mod = peak_norm(apply_augmentations(real_imgs, sample_rate=bitrate))
-                mod = real_imgs
+                mod = peak_norm(apply_augmentations(real_imgs, sample_rate=bitrate)).cuda()
+                # mod = real_imgs
                 beginning, middle, skips = skip_predict(mod, sequence_length, middle_sequence_length, skip_max)
                 x_quantized_mid = mu_law_encoding(middle.squeeze(1), mid_quantize_bins)
 
@@ -239,7 +237,7 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
         i += 1
 
 
-model = Orpheus(aug_classes=5, fast_recompose=False).cuda()
+model = Orpheus(aug_classes=5, drop_path=0.1, fast_recompose=False).cuda()
 prior = GaussianPrior(128, 3).cuda()
 slicer = MPSSlicer(128, 3, 50).cuda()
 # model_b = BarlowTwinsVAE(model, 2).cuda()
