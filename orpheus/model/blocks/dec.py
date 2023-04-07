@@ -14,7 +14,7 @@ class DBlock_R(nn.Module):
         padding = 1,
         dilation = 1,
         bias = False,
-        num_groups = 8,
+        num_groups = 4,
         activation = nn.GELU(),
         dynamic = False,
         drop_path = 0.
@@ -45,7 +45,7 @@ class DBlock_DS(nn.Module):
         padding = 1,
         dilation = 1,
         bias = False,
-        num_groups = 8,
+        num_groups = 4,
         expansion_factor=2.,
         activation = nn.GELU(),
         dynamic = False,
@@ -81,7 +81,7 @@ class CausalDBlock(nn.Module):
         padding = 1,
         dilation = 1,
         bias = False,
-        num_groups = 8,
+        num_groups = 4,
         activation = nn.GELU(),
         drop_path = 0.
     ):

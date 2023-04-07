@@ -46,7 +46,7 @@ batch_size = 4
 bitrate = 44100
 sequence_length = 131072
 middle_sequence_length = sequence_length // 8
-skip_max = 10
+skip_max = 0
 
 n_fft = 1024
 n_mels = 64
@@ -67,6 +67,12 @@ apply_augmentations = SomeOf(
 )
 
 peak_norm = PeakNormalization(apply_to="only_too_loud_sounds", p=1., sample_rate=bitrate)
+
+def predictive_coding(x, length, future_len, skip=3):
+    beginning = x[:, :, :length]
+    middle = x[:, :, length+skip:length+skip+future_len]
+
+    return beginning, middle
 
 def skip_predict(x, length, future_len, skip_max=10):
     """
@@ -105,7 +111,7 @@ def get_song_features(model, file):
     data_spec = data[:15].unsqueeze(1)
 
     with torch.no_grad():
-        output = model(model.decompose(data_spec))
+        output = model.forward_nm(model.decompose(data_spec))
         output = model.recompose(output).flatten()
         # print(output[:5].shape)
         return output
@@ -147,7 +153,7 @@ def cyclic_kl(step, cycle_len, maxp=0.5, min_beta=0, max_beta=1):
 def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss_cycle=32, mid_quantize_bins=512):
     opt = Adam(list(model.parameters()) + list(prior.parameters()) + list(slicer.parameters()), lr)
     stft = closs.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
-    distance = closs.AudioDistanceV1(stft, 1e-7).cuda()
+    distance = closs.AudioDistanceMasked(stft, 1e-7).cuda()
 
     # model.load_state_dict(torch.load("../models/rae_96.pt"))
     # opt.load_state_dict(torch.load("../models/opt_96.pt"))
@@ -172,24 +178,18 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
             real_imgs = batch["input"].unsqueeze(1)
 
             with torch.no_grad():
-                mod = peak_norm(apply_augmentations(real_imgs, sample_rate=bitrate)).cuda()
-                # mod = real_imgs
-                beginning, middle, skips = skip_predict(mod, sequence_length, middle_sequence_length, skip_max)
+                # mod = peak_norm(apply_augmentations(real_imgs, sample_rate=bitrate)).cuda()
+                mod = real_imgs.cuda()
+                beginning, middle = predictive_coding(mod, sequence_length, middle_sequence_length, skip_max)
+                # beginning, middle, skips = skip_predict(mod, sequence_length, middle_sequence_length, skip_max)
                 x_quantized_mid = mu_law_encoding(middle.squeeze(1), mid_quantize_bins)
 
             opt.zero_grad()
 
-            x_subbands_1 = model.decompose(beginning)
+            y_1, y_subbands_1, x_subbands_1, z_1, mask = model(beginning)
 
-            z_1 = model.encode(x_subbands_1)
-
-            y_subbands_1 = model.decode(z_1)
-
-            mb_dist_1 = distance(y_subbands_1, x_subbands_1)["spectral_distance"]
-
-            y_1 = model.recompose(y_subbands_1)
-            
-            fb_dist_1 = distance(y_1, beginning)["spectral_distance"]
+            mb_dist_1 = distance(y_subbands_1, x_subbands_1, mask)["spectral_distance"]
+            fb_dist_1 = distance(y_1, beginning, mask)["spectral_distance"]
 
             r_loss = mb_dist_1 + fb_dist_1
 
@@ -201,19 +201,21 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
 
             d_loss = slicer.fgw_dist(z_1.transpose(1, 2).reshape(-1, z_1.shape[1]), z_samples_1)
             
-            r_loss_beta, c_loss_beta = 1., 4.
+            r_loss_beta, c_loss_beta = 1., 1.25
             d_loss_beta = 0.
             # d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=1e-5) if i > reg_skip-1 else 0.
 
             with torch.no_grad():
                 f_loss = F.mse_loss(y_1, beginning)
 
-            loss = (r_loss_beta * r_loss) + (c_loss_beta * continuity_loss) + (d_loss_beta * d_loss)
+            loss = (r_loss_beta * r_loss) + (c_loss_beta * continuity_loss)
+            # loss = r_loss
 
             r_loss_total += mb_dist_1.item()
             c_loss_total += continuity_loss.item()
             f_loss_total += f_loss.item()
             d_loss_total += d_loss.item()
+            # c_loss_total += 0
 
             loss.backward()
             opt.step()
@@ -251,7 +253,7 @@ X_train, X_test = train_test_split(audio_files, train_size=0.7, random_state=42)
 
 multiplier = 32
 
-train_ds = AudioFileDataset(X_train, sequence_length*1+middle_sequence_length+skip_max, multiplier=multiplier)
+train_ds = AudioFileDataset(X_train, sequence_length+middle_sequence_length+skip_max, multiplier=multiplier)
 train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 train_dl_neg = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 # val_ds = AudioFileDataset(X_test, sequence_length, multiplier=multiplier)

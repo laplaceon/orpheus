@@ -112,12 +112,14 @@ class ODConv1d(nn.Module):
     def update_temperature(self, temperature):
         self.attention.update_temperature(temperature)
 
-    def _forward_impl_common(self, x):
+    def _forward_impl_common(self, x, mask=None):
         # Multiplying channel attention (or filter attention) to weights and feature maps are equivalent,
         # while we observe that when using the latter method the models will run faster with less gpu memory cost.
         channel_attention, filter_attention, spatial_attention, kernel_attention = self.attention(x)
         batch_size, in_planes, length = x.size()
         x = x * channel_attention
+        if mask is not None:
+            x *= (1 - mask.unsqueeze(1))
         x = x.reshape(1, -1, length)
         aggregate_weight = spatial_attention * kernel_attention * self.weight.unsqueeze(dim=0)
         aggregate_weight = torch.sum(aggregate_weight, dim=1).view(
@@ -125,16 +127,22 @@ class ODConv1d(nn.Module):
         output = F.conv1d(x, weight=aggregate_weight, bias=None, stride=self.stride, padding=self.padding,
                           dilation=self.dilation, groups=self.groups * batch_size)
         output = output.view(batch_size, self.out_planes, output.size(-1))
+        if mask is not None:
+            output *= (1 - mask.unsqueeze(1))
         output = output * filter_attention
         return output
 
-    def _forward_impl_pw1x(self, x):
+    def _forward_impl_pw1x(self, x, mask=None):
         channel_attention, filter_attention, spatial_attention, kernel_attention = self.attention(x)
         x = x * channel_attention
+        if mask is not None:
+            x *= (1 - mask.unsqueeze(1))
         output = F.conv1d(x, weight=self.weight.squeeze(dim=0), bias=None, stride=self.stride, padding=self.padding,
                           dilation=self.dilation, groups=self.groups)
+        if mask is not None:
+            output *= (1 - mask.unsqueeze(1))
         output = output * filter_attention
         return output
 
-    def forward(self, x):
-        return self._forward_impl(x)
+    def forward(self, x, mask=None):
+        return self._forward_impl(x, mask)

@@ -30,9 +30,12 @@ class GRN(nn.Module):
         self.gamma = nn.Parameter(torch.zeros(1, 1, dim))
         self.beta = nn.Parameter(torch.zeros(1, 1, dim))
 
-    def forward(self, x):
+    def forward(self, x, mask=None):
+        residual = x
+        if mask is not None:
+            x *= (1. - mask)
         x = x.transpose(1, 2)
         Gx = torch.norm(x, p=2, dim=1, keepdim=True)
         Nx = Gx / (Gx.mean(dim=-1, keepdim=True) + 1e-6)
-        normed = self.gamma * (x * Nx) + self.beta + x
+        normed = self.gamma * (x * Nx) + self.beta + residual.transpose(1, 2)
         return normed.transpose(1, 2)

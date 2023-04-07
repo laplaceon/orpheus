@@ -31,9 +31,28 @@ def mean_difference(target: torch.Tensor,
     else:
         raise Exception(f'Norm must be either L1 or L2, got {norm}')
 
+def masked_mean_difference(target: torch.Tensor,
+                    value: torch.Tensor,
+                    mask: torch.Tensor,
+                    norm: str = 'L1',
+                    relative: bool = False):
+    diff = target - value
+    diff = diff.transpose(1, 2).view(mask.shape[0], mask.shape[1], -1)
+    target = target.transpose(1, 2).view(mask.shape[0], mask.shape[1], -1)
+    if norm == 'L1':
+        diff = diff.abs().mean(dim=-1)
+        if relative:
+            diff = diff / target.abs().mean(dim=-1)
+        return (diff * mask).sum() / mask.sum()
+    elif norm == 'L2':
+        diff = (diff * diff).mean(dim=-1)
+        if relative:
+            diff = diff / (target * target).mean(dim=-1)
+        return (diff * mask).sum() / mask.sum()
+    else:
+        raise Exception(f'Norm must be either L1 or L2, got {norm}')
 
 class MelScale(nn.Module):
-
     def __init__(self, sample_rate: int, n_fft: int, n_mels: int) -> None:
         super().__init__()
         mel = li.filters.mel(sr=sample_rate, n_fft=n_fft, n_mels=n_mels)
@@ -123,6 +142,29 @@ class AudioDistanceV1(nn.Module):
 
         return {'spectral_distance': distance}
 
+class AudioDistanceMasked(nn.Module):
+
+    def __init__(self, multiscale_stft: nn.Module,
+                 log_epsilon: float) -> None:
+        super().__init__()
+        self.multiscale_stft = multiscale_stft
+        self.log_epsilon = log_epsilon
+
+    def forward(self, x: torch.Tensor, y: torch.Tensor, mask: torch.Tensor):
+        stfts_x = self.multiscale_stft(x)
+        stfts_y = self.multiscale_stft(y)
+        distance = 0.
+
+        for x, y in zip(stfts_x, stfts_y):
+            logx = torch.log(x + self.log_epsilon)
+            logy = torch.log(y + self.log_epsilon)
+
+            lin_distance = masked_mean_difference(x, y, mask, norm='L2', relative=True)
+            log_distance = masked_mean_difference(logx, logy, mask, norm='L1')
+
+            distance = distance + lin_distance + log_distance
+
+        return {'spectral_distance': distance}
 
 class WeightedInstantaneousSpectralDistance(nn.Module):
 

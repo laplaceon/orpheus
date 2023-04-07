@@ -1,12 +1,16 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import scipy.stats as stats
+
 from .pqmf import PQMF
 
 from .encoder import Encoder
 from .decoder import Decoder
 from .decoder_predictive import PredictiveDecoder
 from .decoder_contrastive import ContrastiveDecoder
+
+from .mask import upsample_mask
 
 class Orpheus(nn.Module):
     def __init__(
@@ -36,7 +40,16 @@ class Orpheus(nn.Module):
         self.decoder = Decoder(dec_h_dims, latent_dim, dec_scales, dec_blocks_per_stages, dec_layers_per_blocks, drop_path=drop_path)
 
         self.predictive_decoder = PredictiveDecoder(pred_dec_h_dims, latent_dim, pred_dec_scales, [1] * len(pred_dec_scales), pred_dec_layers_per_blocks, drop_path=drop_path)
-        self.contrastive_decoder = ContrastiveDecoder(latent_dim, num_classes=aug_classes)
+
+        self.patch_size = 2048
+        self.num_bands = enc_h_dims[0]
+        self.mask_embedding = nn.Parameter(torch.randn(1, latent_dim, 1))
+
+        mask_ratio_min, mask_ratio_max, mask_ratio_mu, mask_ratio_std = 0.5, 0.98, 0.55, 0.25
+
+        self.mask_ratio_generator = stats.truncnorm((mask_ratio_min - mask_ratio_mu) / mask_ratio_std,
+                                                    (mask_ratio_max - mask_ratio_mu) / mask_ratio_std,
+                                                    loc=mask_ratio_mu, scale=mask_ratio_std)
 
     def decompose(self, x):
         return self.pqmf(x)
@@ -52,12 +65,46 @@ class Orpheus(nn.Module):
 
     def predict_middle(self, z):
         return self.predictive_decoder(z)
-    
-    def contrast(self, z1, z2):
-        return self.contrastive_decoder(z1, z2)
 
-    def forward(self, x):
+    def gen_random_mask(self, x):
+        N = x.shape[0]
+        L = x.shape[2] // self.patch_size
+
+        mask_ratios = self.mask_ratio_generator.rvs(N)
+        len_keep = (L * (1 - mask_ratios)).astype(int)
+
+        noise = torch.randn(N, L, device=x.device)
+
+        # sort noise for each sample
+        ids_shuffle = torch.argsort(noise, dim=1)
+        ids_restore = torch.argsort(ids_shuffle, dim=1)
+
+        # generate the binary mask: 0 is keep 1 is remove
+        mask = torch.ones([N, L], device=x.device)
+        for i in range(len(len_keep)):
+            mask[i, :len_keep[i]] = 0
+        # unshuffle to get the binary mask
+        mask = torch.gather(mask, dim=1, index=ids_restore)
+        return mask
+
+    def forward_nm(self, x):
         z = self.encode(x)
         out = self.decode(z)
 
         return out
+
+    def forward(self, x):
+        mask = self.gen_random_mask(x)
+        pre_pqmf_mask = upsample_mask(mask, self.patch_size).unsqueeze(1)
+        post_pqmf_mask = upsample_mask(mask, self.patch_size // self.num_bands).unsqueeze(1)
+        x = x * (1. - pre_pqmf_mask)
+        x_subbands = self.decompose(x)
+        x_subbands = x_subbands * (1. - post_pqmf_mask)
+        z = self.encoder(x_subbands, mask)
+
+        mask_token = self.mask_embedding.repeat(z.shape[0], 1, z.shape[2])
+        z_p = z * (1. - mask.unsqueeze(1)) + mask_token * mask.unsqueeze(1)
+        y_subbands = self.decode(z_p)
+        y = self.recompose(y_subbands)
+
+        return y, y_subbands, x_subbands, z_p, mask
