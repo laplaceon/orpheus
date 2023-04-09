@@ -128,7 +128,7 @@ class EncoderStage(nn.Module):
             x = self.expand(x)
 
             if mask is not None:
-                x *= (1. - upsample_mask(mask, self.mask_scale[1]).unsqueeze(1))
+                x = x * (1. - upsample_mask(mask, self.mask_scale[1]).unsqueeze(1))
         else:
             x = self.downscale(x, (upsample_mask(mask, self.mask_scale[0]).unsqueeze(1), upsample_mask(mask, self.mask_scale[1]).unsqueeze(1)) if mask is not None else None)
 

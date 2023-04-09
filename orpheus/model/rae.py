@@ -30,6 +30,7 @@ class Orpheus(nn.Module):
         pred_dec_layers_per_blocks=[3, 4, 4, 4],
         drop_path=0.,
         aug_classes=2,
+        masked_ratio=[0.5, 0.97, 0.55, 0.25],
         fast_recompose=True
     ):
         super().__init__()
@@ -45,7 +46,7 @@ class Orpheus(nn.Module):
         self.num_bands = enc_h_dims[0]
         self.mask_embedding = nn.Parameter(torch.randn(1, latent_dim, 1))
 
-        mask_ratio_min, mask_ratio_max, mask_ratio_mu, mask_ratio_std = 0.5, 0.98, 0.55, 0.25
+        mask_ratio_min, mask_ratio_max, mask_ratio_mu, mask_ratio_std = masked_ratio[0], masked_ratio[1], masked_ratio[2], masked_ratio[3]
 
         self.mask_ratio_generator = stats.truncnorm((mask_ratio_min - mask_ratio_mu) / mask_ratio_std,
                                                     (mask_ratio_max - mask_ratio_mu) / mask_ratio_std,
@@ -97,6 +98,10 @@ class Orpheus(nn.Module):
         mask = self.gen_random_mask(x)
         pre_pqmf_mask = upsample_mask(mask, self.patch_size).unsqueeze(1)
         post_pqmf_mask = upsample_mask(mask, self.patch_size // self.num_bands).unsqueeze(1)
+
+        with torch.no_grad():
+            x_subbands_true = self.decompose(x)
+
         x = x * (1. - pre_pqmf_mask)
         x_subbands = self.decompose(x)
         x_subbands = x_subbands * (1. - post_pqmf_mask)
@@ -107,4 +112,4 @@ class Orpheus(nn.Module):
         y_subbands = self.decode(z_p)
         y = self.recompose(y_subbands)
 
-        return y, y_subbands, x_subbands, z_p, mask
+        return y, y_subbands, x_subbands_true, z_p, mask

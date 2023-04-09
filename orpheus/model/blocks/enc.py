@@ -37,7 +37,7 @@ class EBlock_R(nn.Module):
         x = self.act(x)
         x = self.norm(x)
         if mask is not None:
-            x *= (1. - mask)
+            x = x * (1. - mask)
         
         if self.dynamic:
             x = self.dw(x, mask)
@@ -45,7 +45,7 @@ class EBlock_R(nn.Module):
             x = self.dw(x)
 
         if mask is not None:
-            x *= (1. - mask)
+            x = x * (1. - mask)
         x = self.act(x)
         x = self.grn(x, mask=mask)
         x = self.pw(x)
@@ -62,7 +62,7 @@ class EBlock_DS(nn.Module):
         dilation = 1,
         bias = False,
         num_groups = 4,
-        expansion_factor = 2,
+        expansion_factor = 2.,
         activation = nn.GELU(),
         dynamic = False,
         drop_path=0.
@@ -91,7 +91,7 @@ class EBlock_DS(nn.Module):
         x = self.act(x)
 
         if mask is not None:
-            x *= (1. - mask)
+            x = x * (1. - mask)
 
         if self.dynamic:
             x = self.dw(x, mask)
@@ -99,50 +99,13 @@ class EBlock_DS(nn.Module):
             x = self.dw(x)
 
         if mask is not None:
-            x *= (1. - mask)
+            x = x * (1. - mask)
             
         x = self.act(x)
         x = self.grn(x, mask=mask)
         x = self.pw2(x)
         
         return residual + self.drop_path(x)
-
-class EBlock_DOWN(nn.Module):
-    def __init__(
-        self,
-        in_channels,
-        out_channels,
-        scale,
-        bias = False,
-        num_groups = 4,
-        expansion_factor = 2,
-        activation = nn.GELU()
-    ):
-        super().__init__()
-
-        hidden_channels = int(out_channels * expansion_factor)
-
-        self.act = activation
-        self.norm = nn.GroupNorm(num_groups, in_channels)
-        self.dw = nn.Conv1d(hidden_channels, hidden_channels, kernel_size=scale*2, stride=scale, padding=scale//2, groups=hidden_channels, bias=bias)
-        self.pw1 = nn.Conv1d(in_channels, hidden_channels, kernel_size=1, bias=bias)
-        self.pw2 = nn.Conv1d(hidden_channels, out_channels, kernel_size=1, bias=bias)
-        self.grn = GRN(hidden_channels)
-    
-    def forward(self, x, masks=None):
-        x = self.act(x)
-        x = self.norm(x)
-        x = self.pw1(x)
-        x = self.act(x)
-        if masks is not None:
-            x *= (1. - masks[0])
-        x = self.dw(x)
-        if masks is not None:
-            x *= (1. - masks[1])
-        x = self.act(x)
-        x = self.grn(x, mask=masks[1] if masks is not None else None)
-        x = self.pw2(x)
-        return x
 
 # class EBlock_DOWN(nn.Module):
 #     def __init__(
@@ -162,13 +125,48 @@ class EBlock_DOWN(nn.Module):
 #         self.act = activation
 #         self.norm = nn.GroupNorm(num_groups, in_channels)
 #         self.dw = nn.Conv1d(hidden_channels, hidden_channels, kernel_size=scale*2, stride=scale, padding=scale//2, groups=hidden_channels, bias=bias)
+#         self.pw1 = nn.Conv1d(in_channels, hidden_channels, kernel_size=1, bias=bias)
+#         self.pw2 = nn.Conv1d(hidden_channels, out_channels, kernel_size=1, bias=bias)
+#         self.grn = GRN(hidden_channels)
     
 #     def forward(self, x, masks=None):
 #         x = self.act(x)
 #         x = self.norm(x)
+#         x = self.pw1(x)
+#         x = self.act(x)
 #         if masks is not None:
-#             x *= (1. - masks[0])
+#             x = x * (1. - masks[0])
 #         x = self.dw(x)
 #         if masks is not None:
-#             x *= (1. - masks[1])
+#             x = x * (1. - masks[1])
+#         x = self.act(x)
+#         x = self.grn(x, mask=masks[1] if masks is not None else None)
+#         x = self.pw2(x)
 #         return x
+
+class EBlock_DOWN(nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        scale,
+        bias = False,
+        num_groups = 4,
+        expansion_factor = 2.,
+        activation = nn.GELU()
+    ):
+        super().__init__()
+
+        self.act = activation
+        self.norm = nn.GroupNorm(num_groups, in_channels)
+        self.dw = nn.Conv1d(in_channels, out_channels, kernel_size=scale*2, stride=scale, padding=scale//2, bias=bias)
+    
+    def forward(self, x, masks=None):
+        x = self.act(x)
+        x = self.norm(x)
+        if masks is not None:
+            x = x * (1. - masks[0])
+        x = self.dw(x)
+        if masks is not None:
+            x = x * (1. - masks[1])
+        return x

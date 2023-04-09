@@ -103,7 +103,8 @@ def window_reverse(x, p):
 # C = 1
 # L = 131072
 
-# mask_ratio_min, mask_ratio_max, mask_ratio_mu, mask_ratio_std = 0.5, 0.98, 0.55, 0.25
+# mask_ratio_min, mask_ratio_max, mask_ratio_mu, mask_ratio_std = 0.5, 0.96875, 0.55, 0.225
+# mask_ratio_min, mask_ratio_max, mask_ratio_mu, mask_ratio_std = 0.5, 0.97, 0.55, 0.25
 
 # mask_ratio_generator = stats.truncnorm((mask_ratio_min - mask_ratio_mu) / mask_ratio_std,
 #                                             (mask_ratio_max - mask_ratio_mu) / mask_ratio_std,
@@ -111,8 +112,9 @@ def window_reverse(x, p):
 
 # mask_ratios = mask_ratio_generator.rvs(N)
 # mask = gen_random_mask_1d(torch.randn(N, C, L), mask_ratios, 2048)
+# print(mask.sum(), mask.shape[0] * mask.shape[1])
 
-# print(mask)
+# print(mask_ratios)
 
 # x = torch.rand(8, 3, 256, 256)
 # patched = patchify(x, 16)

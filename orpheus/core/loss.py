@@ -4,7 +4,7 @@ import numpy as np
 import librosa as li
 import torchaudio
 from einops import rearrange
-from typing import Callable, Optional, Sequence, Union
+from typing import Callable, Optional, Sequence, Union, Tuple
 
 def relative_distance(
     x: torch.Tensor,
@@ -34,23 +34,33 @@ def mean_difference(target: torch.Tensor,
 def masked_mean_difference(target: torch.Tensor,
                     value: torch.Tensor,
                     mask: torch.Tensor,
+                    masked_weights: Tuple[float],
                     norm: str = 'L1',
                     relative: bool = False):
     diff = target - value
     diff = diff.transpose(1, 2).view(mask.shape[0], mask.shape[1], -1)
     target = target.transpose(1, 2).view(mask.shape[0], mask.shape[1], -1)
+
+    unmask = 1. - mask
+
+    masked_weight = masked_weights[0]
+    unmasked_weight = masked_weights[1]
+
     if norm == 'L1':
         diff = diff.abs().mean(dim=-1)
         if relative:
             diff = diff / target.abs().mean(dim=-1)
-        return (diff * mask).sum() / mask.sum()
     elif norm == 'L2':
         diff = (diff * diff).mean(dim=-1)
         if relative:
             diff = diff / (target * target).mean(dim=-1)
-        return (diff * mask).sum() / mask.sum()
     else:
         raise Exception(f'Norm must be either L1 or L2, got {norm}')
+    
+    masked_diff = (diff * mask).sum() / mask.sum()
+    # unmasked_diff = (diff * unmask).sum() / unmask.sum()
+
+    return masked_weight * masked_diff
 
 class MelScale(nn.Module):
     def __init__(self, sample_rate: int, n_fft: int, n_mels: int) -> None:
@@ -64,9 +74,7 @@ class MelScale(nn.Module):
         y = torch.einsum('bft,mf->bmt', x, mel)
         return y
 
-
 class MultiScaleSTFT(nn.Module):
-
     def __init__(self,
                  scales: Sequence[int],
                  sample_rate: int,
@@ -119,7 +127,6 @@ class MultiScaleSTFT(nn.Module):
 
 
 class AudioDistanceV1(nn.Module):
-
     def __init__(self, multiscale_stft: nn.Module,
                  log_epsilon: float) -> None:
         super().__init__()
@@ -143,12 +150,13 @@ class AudioDistanceV1(nn.Module):
         return {'spectral_distance': distance}
 
 class AudioDistanceMasked(nn.Module):
-
     def __init__(self, multiscale_stft: nn.Module,
-                 log_epsilon: float) -> None:
+                 log_epsilon: float,
+                 masked_weights: Tuple[float] = (1., 0.)) -> None:
         super().__init__()
         self.multiscale_stft = multiscale_stft
         self.log_epsilon = log_epsilon
+        self.masked_weights = masked_weights
 
     def forward(self, x: torch.Tensor, y: torch.Tensor, mask: torch.Tensor):
         stfts_x = self.multiscale_stft(x)
@@ -159,8 +167,8 @@ class AudioDistanceMasked(nn.Module):
             logx = torch.log(x + self.log_epsilon)
             logy = torch.log(y + self.log_epsilon)
 
-            lin_distance = masked_mean_difference(x, y, mask, norm='L2', relative=True)
-            log_distance = masked_mean_difference(logx, logy, mask, norm='L1')
+            lin_distance = masked_mean_difference(x, y, mask, self.masked_weights, norm='L2', relative=True)
+            log_distance = masked_mean_difference(logx, logy, mask, self.masked_weights, norm='L1')
 
             distance = distance + lin_distance + log_distance
 

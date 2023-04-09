@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 loss_files = {
     # "conv_only": "E:\Desktop\losses\losses_cnxt_k7.txt",
     # "conv_only_ln": "E:\Desktop\losses\losses_conv_only_ds.txt",
-    "conv_only_ln_2": "E:\Desktop\losses\losses_conv_only_ds2.txt",
-    "drae_dyn_dil2": "E:\Desktop\losses\drae_ssl_dyn_dil2.txt",
+    # "conv_only_ln_2": "E:\Desktop\losses\losses_conv_only_ds2.txt",
+    # "drae_dyn_dil2": "E:\Desktop\losses\drae_ssl_dyn_dil2.txt",
     # "conv_only_2": "E:\Desktop\losses\losses_bnse_7.txt",
     # "conv_with_downsample_norm": "E:\Desktop\losses\losses_conv_dn.txt",
     # "conv_mhsa_dsc": "E:\Desktop\losses\losses_mhsa_dsc.txt",
@@ -21,12 +21,15 @@ loss_files = {
     # "conv_drae1": "E:\Desktop\losses\drae_conv1.txt",
     # "conv_drae2": "E:\Desktop\losses\drae_conv2.txt",
     # "conv1_drae2": "E:\Desktop\losses\drae_ssl_conv.txt",
-    "conv_ssl_drae2": "E:\Desktop\losses\drae_ssl_conv_2.txt",
-    "conv_ssl_drae3": "E:\Desktop\losses\drae_ssl_conv_3.txt",
+    # "conv_ssl_drae2": "E:\Desktop\losses\drae_ssl_conv_2.txt",
+    # "conv_ssl_drae3": "E:\Desktop\losses\drae_ssl_conv_3.txt",
     # "conv_ssl_drae2_zero_pc": "E:\Desktop\losses\drae_ssl_conv_zeropc.txt",
     # "mhsa_drae": "E:\Desktop\losses\drae_ssl_mhsa_2.txt",
     # "dyn_drae": "E:\Desktop\losses\drae_ssl_dyn.txt",
     # "dyn_drae_dwdec": "E:\Desktop\losses\drae_ssl_dyn_dwdec.txt",
+    "drae_vm": "E:\Desktop\losses\drae_variable_mask_per.txt",
+    "drae_vm_2": "E:\Desktop\losses\drae_variable_mask_per_2.txt",
+    "drae_vm_3": "E:\Desktop\losses\drae_variable_mask_per_3.txt"
 }
 
 recons_expr = re.compile("R Loss: (\d{1,2}[.]\d+)")

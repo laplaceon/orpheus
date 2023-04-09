@@ -33,7 +33,7 @@ class GRN(nn.Module):
     def forward(self, x, mask=None):
         residual = x
         if mask is not None:
-            x *= (1. - mask)
+            x = x * (1. - mask)
         x = x.transpose(1, 2)
         Gx = torch.norm(x, p=2, dim=1, keepdim=True)
         Nx = Gx / (Gx.mean(dim=-1, keepdim=True) + 1e-6)
