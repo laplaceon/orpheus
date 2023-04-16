@@ -51,10 +51,10 @@ def gen_random_mask(x, mask_ratio, patch_size):
     mask = torch.gather(mask, dim=1, index=ids_restore)
     return mask
 
-def gen_random_mask_1d(x, mask_ratios, patch_size):
+def gen_random_mask_1d(x, mask_ratio, patch_size):
     N = x.shape[0]
     L = x.shape[2] // patch_size
-    len_keep = (L * (1 - mask_ratios)).astype(int)
+    len_keep = int(L * (1 - mask_ratio))
 
     noise = torch.randn(N, L, device=x.device)
 
@@ -64,9 +64,7 @@ def gen_random_mask_1d(x, mask_ratios, patch_size):
 
     # generate the binary mask: 0 is keep 1 is remove
     mask = torch.ones([N, L], device=x.device)
-
-    for i in range(len(len_keep)):
-        mask[i, :len_keep[i]] = 0
+    mask[:, :len_keep] = 0
 
     # unshuffle to get the binary mask
     mask = torch.gather(mask, dim=1, index=ids_restore)

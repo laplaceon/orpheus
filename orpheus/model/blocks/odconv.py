@@ -119,7 +119,7 @@ class ODConv1d(nn.Module):
         batch_size, in_planes, length = x.size()
         x = x * channel_attention
         if mask is not None:
-            x = x * (1 - mask)
+            x = x * (1. - mask)
         x = x.reshape(1, -1, length)
         aggregate_weight = spatial_attention * kernel_attention * self.weight.unsqueeze(dim=0)
         aggregate_weight = torch.sum(aggregate_weight, dim=1).view(
@@ -128,7 +128,7 @@ class ODConv1d(nn.Module):
                           dilation=self.dilation, groups=self.groups * batch_size)
         output = output.view(batch_size, self.out_planes, output.size(-1))
         if mask is not None:
-            output = output * (1 - mask)
+            output = output * (1. - mask)
         output = output * filter_attention
         return output
 
@@ -136,11 +136,11 @@ class ODConv1d(nn.Module):
         channel_attention, filter_attention, spatial_attention, kernel_attention = self.attention(x)
         x = x * channel_attention
         if mask is not None:
-            x = x * (1 - mask.unsqueeze(1))
+            x = x * (1. - mask.unsqueeze(1))
         output = F.conv1d(x, weight=self.weight.squeeze(dim=0), bias=None, stride=self.stride, padding=self.padding,
                           dilation=self.dilation, groups=self.groups)
         if mask is not None:
-            output = output * (1 - mask.unsqueeze(1))
+            output = output * (1. - mask.unsqueeze(1))
         output = output * filter_attention
         return output
 

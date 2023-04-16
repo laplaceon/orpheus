@@ -10,7 +10,6 @@ class EBlock_R(nn.Module):
         channels,
         kernel_size,
         stride = 1,
-        padding = 1,
         dilation = 1,
         bias = False,
         num_groups = 4,
@@ -19,6 +18,8 @@ class EBlock_R(nn.Module):
         drop_path = 0.
     ):
         super().__init__()
+
+        padding = (kernel_size - 1) * dilation // 2
 
         self.act = activation
         self.norm = nn.GroupNorm(num_groups, channels)
@@ -58,7 +59,6 @@ class EBlock_DS(nn.Module):
         channels,
         kernel_size,
         stride = 1,
-        padding = 1,
         dilation = 1,
         bias = False,
         num_groups = 4,
@@ -70,6 +70,7 @@ class EBlock_DS(nn.Module):
         super().__init__()
 
         hidden_channels = int(channels * expansion_factor)
+        padding = (kernel_size - 1) * dilation // 2
 
         self.act = activation
         self.norm = nn.GroupNorm(num_groups, channels)

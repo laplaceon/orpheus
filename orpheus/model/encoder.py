@@ -20,7 +20,7 @@ class Encoder(nn.Module):
         attns,
         blocks_per_stages,
         layers_per_blocks,
-        drop_path=0.
+        drop_path = 0.
     ):
         super().__init__()
 
@@ -51,7 +51,7 @@ class Encoder(nn.Module):
         
         self.pre_latent_act = nn.LeakyReLU(0.2)
         # nn.GroupNorm(8, h_dims[-1] * 2),
-        self.to_latent = weight_norm(nn.Conv1d(h_dims[-1] * 2, latent_dim, kernel_size=3, padding="same"))
+        self.to_latent = weight_norm(nn.Conv1d(h_dims[-1] * 2, latent_dim, kernel_size=3, padding=1))
 
         self.stages = nn.ModuleList(stages)
 
@@ -86,14 +86,14 @@ class EncoderStage(nn.Module):
         num_blocks,
         layers_per_block,
         mask_scale,
-        drop_path=0.
+        drop_path = 0.
     ):
         super().__init__()
 
         blocks = []
 
         if scale is None:
-            self.expand = nn.Conv1d(in_channels, out_channels, 7, padding="same", bias=False)
+            self.expand = nn.Conv1d(in_channels, out_channels, 7, padding=3, bias=False)
 
             for _ in range(num_blocks):
                 blocks.append(
@@ -159,10 +159,9 @@ class EncoderBlock(nn.Module):
                 EBlock_DS(
                     channels,
                     kernel,
-                    padding = "same",
                     dilation = dilation,
                     bias = False,
-                    expansion_factor = 1.6,
+                    expansion_factor = 1.5,
                     activation = nn.LeakyReLU(0.2),
                     dynamic = True,
                     drop_path = drop_path
@@ -171,7 +170,6 @@ class EncoderBlock(nn.Module):
                 EBlock_R(
                     channels,
                     kernel,
-                    padding = "same",
                     dilation = dilation,
                     bias = False,
                     activation = nn.LeakyReLU(0.2),

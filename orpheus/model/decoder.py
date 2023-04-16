@@ -5,7 +5,7 @@ from einops.layers.torch import Rearrange
 
 from torch.nn.utils import weight_norm
 
-from .blocks.dec import  Upsample, DBlock_DS, DBlock_R
+from .blocks.dec import  Upsample, DBlock_DS, DBlock_R, CausalConv1d
 
 class Decoder(nn.Module):
     def __init__(
@@ -15,11 +15,12 @@ class Decoder(nn.Module):
         scales,
         blocks_per_stage,
         layers_per_blocks,
+        probabilistic_outputs,
         drop_path=0.
     ):
         super().__init__()
 
-        self.from_latent = weight_norm(nn.Conv1d(latent_dim, h_dims[0] * 2, kernel_size=3, padding="same"))
+        self.from_latent = weight_norm(nn.Conv1d(latent_dim, h_dims[0] * 2, kernel_size=3, padding=1))
 
         stages = []
         h_dims_new = [h_dims[0] * 2] + h_dims[:-1]
@@ -29,19 +30,24 @@ class Decoder(nn.Module):
             decoder_stage = DecoderStage(in_channels, out_channels, scales[i], blocks_per_stage[i], layers_per_blocks[i], i+1 == len(h_dims) - 1, drop_path=drop_path)
             stages.append(decoder_stage)
 
-        final_conv = nn.Sequential(
+        self.final_conv = nn.Sequential(
             nn.LeakyReLU(0.2),
-            weight_norm(nn.Conv1d(h_dims[-2], h_dims[-1], 7, padding="same")),
+            weight_norm(nn.Conv1d(h_dims[-2], h_dims[-1], 7, padding=3)),
             nn.Tanh()
         )
 
-        stages.append(final_conv)
+        self.prob_conv = nn.Sequential(
+            nn.LeakyReLU(0.2),
+            nn.GroupNorm(8, h_dims[-2]),
+            nn.Conv1d(h_dims[-2], probabilistic_outputs, 7, padding=3)
+        )
 
         self.conv = nn.Sequential(*stages)
 
     def forward(self, z):
         out = self.from_latent(z)
-        return self.conv(out)
+        out = self.conv(out)
+        return self.final_conv(out), self.prob_conv(out)
 
 class DecoderStageFG(nn.Module):
     def __init__(
@@ -145,10 +151,9 @@ class DecoderBlock(nn.Module):
                 DBlock_DS(
                     channels,
                     kernel,
-                    padding = "same",
                     dilation = dilation,
                     bias = False,
-                    expansion_factor = 1.4,
+                    expansion_factor = 1.5,
                     activation = nn.LeakyReLU(0.2),
                     dynamic = True,
                     drop_path = drop_path
@@ -157,7 +162,6 @@ class DecoderBlock(nn.Module):
                 DBlock_R(
                     channels,
                     kernel,
-                    padding = "same",
                     dilation = dilation,
                     bias = False,
                     activation = nn.LeakyReLU(0.2),

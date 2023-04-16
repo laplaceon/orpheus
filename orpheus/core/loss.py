@@ -34,33 +34,40 @@ def mean_difference(target: torch.Tensor,
 def masked_mean_difference(target: torch.Tensor,
                     value: torch.Tensor,
                     mask: torch.Tensor,
-                    masked_weights: Tuple[float],
                     norm: str = 'L1',
                     relative: bool = False):
-    diff = target - value
-    diff = diff.transpose(1, 2).view(mask.shape[0], mask.shape[1], -1)
+    
+    value = value.transpose(1, 2).view(mask.shape[0], mask.shape[1], -1)
     target = target.transpose(1, 2).view(mask.shape[0], mask.shape[1], -1)
+
+    # mean = target.mean(dim=-1, keepdim=True)
+    # var = target.var(dim=-1, keepdim=True)
+    # ntarget = (target - mean) / (var + 1.e-6)**.5
+
+    diff = target - value
+    # ndiff = ntarget - value
 
     unmask = 1. - mask
 
-    masked_weight = masked_weights[0]
-    unmasked_weight = masked_weights[1]
-
     if norm == 'L1':
         diff = diff.abs().mean(dim=-1)
+        # ndiff = ndiff.abs().mean(dim=-1)
         if relative:
             diff = diff / target.abs().mean(dim=-1)
+            # ndiff = ndiff / ntarget.abs().mean(dim=-1)
     elif norm == 'L2':
         diff = (diff * diff).mean(dim=-1)
+        # ndiff = (ndiff * ndiff).mean(dim=-1)
         if relative:
             diff = diff / (target * target).mean(dim=-1)
+            # ndiff = ndiff / (ntarget * ntarget).mean(dim=-1)
     else:
         raise Exception(f'Norm must be either L1 or L2, got {norm}')
     
     masked_diff = (diff * mask).sum() / mask.sum()
-    # unmasked_diff = (diff * unmask).sum() / unmask.sum()
+    unmasked_diff = (diff * unmask).sum() / unmask.sum()
 
-    return masked_weight * masked_diff
+    return masked_diff, unmasked_diff
 
 class MelScale(nn.Module):
     def __init__(self, sample_rate: int, n_fft: int, n_mels: int) -> None:
@@ -162,17 +169,27 @@ class AudioDistanceMasked(nn.Module):
         stfts_x = self.multiscale_stft(x)
         stfts_y = self.multiscale_stft(y)
         distance = 0.
+        masked_distance = 0.
+        unmasked_distance = 0.
+        
+        masked_weight = self.masked_weights[0]
+        unmasked_weight = self.masked_weights[1]
 
         for x, y in zip(stfts_x, stfts_y):
             logx = torch.log(x + self.log_epsilon)
             logy = torch.log(y + self.log_epsilon)
 
-            lin_distance = masked_mean_difference(x, y, mask, self.masked_weights, norm='L2', relative=True)
-            log_distance = masked_mean_difference(logx, logy, mask, self.masked_weights, norm='L1')
+            lin_distance_masked, lin_distance_unmasked = masked_mean_difference(x, y, mask, norm='L2', relative=True)
+            log_distance_masked, log_distance_unmasked = masked_mean_difference(logx, logy, mask, norm='L1')
+
+            lin_distance = masked_weight * lin_distance_masked + unmasked_weight * lin_distance_unmasked
+            log_distance = masked_weight * log_distance_masked + unmasked_weight * log_distance_unmasked
 
             distance = distance + lin_distance + log_distance
+            masked_distance = masked_distance + lin_distance_masked + log_distance_masked
+            unmasked_distance = unmasked_distance + lin_distance_unmasked + log_distance_unmasked
 
-        return {'spectral_distance': distance}
+        return {'spectral_distance': distance, 'spectral_distance_masked': masked_distance, 'spectral_distance_unmasked': unmasked_distance}
 
 class WeightedInstantaneousSpectralDistance(nn.Module):
 

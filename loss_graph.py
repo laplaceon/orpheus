@@ -27,9 +27,14 @@ loss_files = {
     # "mhsa_drae": "E:\Desktop\losses\drae_ssl_mhsa_2.txt",
     # "dyn_drae": "E:\Desktop\losses\drae_ssl_dyn.txt",
     # "dyn_drae_dwdec": "E:\Desktop\losses\drae_ssl_dyn_dwdec.txt",
-    "drae_vm": "E:\Desktop\losses\drae_variable_mask_per.txt",
-    "drae_vm_2": "E:\Desktop\losses\drae_variable_mask_per_2.txt",
-    "drae_vm_3": "E:\Desktop\losses\drae_variable_mask_per_3.txt"
+    # "drae_vm": "E:\Desktop\losses\drae_variable_mask_per.txt",
+    # "drae_vm_2": "E:\Desktop\losses\drae_variable_mask_per_2.txt",
+    # "drae_vm_3": "E:\Desktop\losses\drae_variable_mask_per_3.txt",
+    # "drae_vm_4": "E:\Desktop\losses\drae_variable_mask_per_4.txt",
+    # "drae_vm_7": "E:\Desktop\losses\drae_variable_mask_per_7.txt",
+    # "drae_vm_8": "E:\Desktop\losses\drae_variable_mask_per_8.txt",
+    "drae_100_0": "E:\Desktop\losses\drae_vmp_100_0.txt",
+    "drae_100_100": "E:\Desktop\losses\drae_vmp_100_100.txt"
 }
 
 recons_expr = re.compile("R Loss: (\d{1,2}[.]\d+)")

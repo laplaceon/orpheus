@@ -11,7 +11,6 @@ class DBlock_R(nn.Module):
         channels,
         kernel_size,
         stride = 1,
-        padding = 1,
         dilation = 1,
         bias = False,
         num_groups = 4,
@@ -21,6 +20,8 @@ class DBlock_R(nn.Module):
     ):
         super().__init__()
 
+        padding = (kernel_size - 1) * dilation // 2
+
         self.net = nn.Sequential(
             activation,
             nn.GroupNorm(num_groups, channels),
@@ -28,7 +29,7 @@ class DBlock_R(nn.Module):
             nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias),
             activation,
             GRN(channels),
-            nn.Conv1d(channels, channels, kernel_size=1, padding=padding, bias=bias)
+            nn.Conv1d(channels, channels, kernel_size=1, bias=bias)
         )
 
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
@@ -42,7 +43,6 @@ class DBlock_DS(nn.Module):
         channels,
         kernel_size,
         stride = 1,
-        padding = 1,
         dilation = 1,
         bias = False,
         num_groups = 4,
@@ -54,17 +54,18 @@ class DBlock_DS(nn.Module):
         super().__init__()
 
         hidden_channels = int(channels * expansion_factor)
+        padding = (kernel_size - 1) * dilation // 2
 
         self.net = nn.Sequential(
             activation,
             nn.GroupNorm(num_groups, channels),
-            nn.Conv1d(channels, hidden_channels, kernel_size=1, padding=padding, bias=bias),
+            nn.Conv1d(channels, hidden_channels, kernel_size=1, bias=bias),
             activation,
             DynamicConv1d(hidden_channels, hidden_channels, kernel_size=kernel_size, padding=padding, dilation=dilation, groups=hidden_channels) if dynamic else 
             nn.Conv1d(hidden_channels, hidden_channels, kernel_size=kernel_size, padding=padding, dilation=dilation, groups=hidden_channels, bias=bias),
             activation,
             GRN(hidden_channels),
-            nn.Conv1d(hidden_channels, channels, kernel_size=1, padding=padding, bias=bias)
+            nn.Conv1d(hidden_channels, channels, kernel_size=1, bias=bias)
         )
 
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
@@ -78,7 +79,6 @@ class CausalDBlock(nn.Module):
         channels,
         kernel_size,
         stride = 1,
-        padding = 1,
         dilation = 1,
         bias = False,
         num_groups = 4,
@@ -93,7 +93,7 @@ class CausalDBlock(nn.Module):
             CausalConv1d(channels, channels, kernel_size=kernel_size, stride=stride, dilation=dilation, bias=bias),
             activation,
             GRN(channels),
-            nn.Conv1d(channels, channels, kernel_size=1, padding=padding, bias=bias)
+            nn.Conv1d(channels, channels, kernel_size=1, bias=bias)
         )
 
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()

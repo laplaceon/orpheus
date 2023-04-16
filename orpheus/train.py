@@ -14,7 +14,7 @@ import core.loss as closs
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.optim import Adam
+from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 
@@ -40,12 +40,13 @@ torchaudio.USE_SOUNDFILE_LEGACY_INTERFACE = False
 torchaudio.set_audio_backend("soundfile")
 
 # Hyperparams
-batch_size = 4
+batch_size = 6
+min_bs = 4
 
 # Params
 bitrate = 44100
 sequence_length = 131072
-middle_sequence_length = sequence_length // 8
+# middle_sequence_length = sequence_length // 8
 skip_max = 0
 
 n_fft = 1024
@@ -150,10 +151,13 @@ def cyclic_kl(step, cycle_len, maxp=0.5, min_beta=0, max_beta=1):
     div_shift = 1 / (1 - min_beta/max_beta)
     return min(((step % cycle_len) / (cycle_len * maxp * div_shift)) + (min_beta / max_beta), 1) * max_beta
 
-def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss_cycle=32, mid_quantize_bins=512):
-    opt = Adam(list(model.parameters()) + list(prior.parameters()) + list(slicer.parameters()), lr)
+def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss_cycle=32, quantize_bins=256):
+    lr_m = lr * (batch_size/min_bs) ** 0.5
+    print("Learning rate:", lr_m)
+    opt = AdamW(list(model.parameters()) + list(prior.parameters()) + list(slicer.parameters()), lr_m)
     stft = closs.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
-    distance = closs.AudioDistanceMasked(stft, 1e-7).cuda()
+    # distance = closs.AudioDistanceMasked(stft, 1e-7, masked_weights=(1., 1.)).cuda()
+    distance = closs.AudioDistanceV1(stft, 1e-7).cuda()
 
     # model.load_state_dict(torch.load("../models/rae_96.pt"))
     # opt.load_state_dict(torch.load("../models/opt_96.pt"))
@@ -172,6 +176,7 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
         r_loss_total = 0
         c_loss_total = 0
         f_loss_total = 0
+        m_loss_total = 0
         d_loss_total = 0
         total_batch = len(train_dl)
         for batch in tqdm(train_dl, position=0, leave=True):
@@ -179,43 +184,45 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
 
             with torch.no_grad():
                 # mod = peak_norm(apply_augmentations(real_imgs, sample_rate=bitrate)).cuda()
-                mod = real_imgs.cuda()
-                beginning, middle = predictive_coding(mod, sequence_length, middle_sequence_length, skip_max)
-                # beginning, middle, skips = skip_predict(mod, sequence_length, middle_sequence_length, skip_max)
-                x_quantized_mid = mu_law_encoding(middle.squeeze(1), mid_quantize_bins)
+                beginning = real_imgs.cuda()
+                # beginning, middle = predictive_coding(mod, sequence_length, middle_sequence_length, skip_max)
+                x_avg = F.avg_pool1d(beginning, 16)
+                x_quantized = mu_law_encoding(torch.clamp(x_avg, -1, 1).squeeze(1), quantize_bins)
+                # print(torch.min(x_quantized), torch.max(x_quantized))
 
             opt.zero_grad()
 
-            y_1, y_subbands_1, x_subbands_1, z_1, mask = model(beginning)
+            y, y_subbands, y_probs, x_subbands, z, mask = model(beginning)
 
-            mb_dist_1 = distance(y_subbands_1, x_subbands_1, mask)["spectral_distance"]
-            fb_dist_1 = distance(y_1, beginning, mask)["spectral_distance"]
+            # Reversing order of arguments results in nan loss
+            mb_dist_1 = distance(y_subbands, x_subbands)
+            fb_dist_1 = distance(y, beginning)
 
-            r_loss = mb_dist_1 + fb_dist_1
+            r_loss = mb_dist_1["spectral_distance"] + fb_dist_1["spectral_distance"]
 
-            y_pred = model.predict_middle(z_1)
+            ce_mask = mask.repeat(1, 2048 // 16)
 
-            continuity_loss = F.cross_entropy(y_pred, x_quantized_mid)
+            continuity_loss = F.cross_entropy(y_probs, x_quantized, reduction="none")
+            continuity_loss = (continuity_loss * ce_mask).sum() / ce_mask.sum()
 
-            z_samples_1 = prior.sample(batch_size * 64)
+            z_samples = prior.sample(z.shape[0] * z.shape[2])
 
-            d_loss = slicer.fgw_dist(z_1.transpose(1, 2).reshape(-1, z_1.shape[1]), z_samples_1)
+            d_loss = slicer.fgw_dist(z.transpose(1, 2).reshape(-1, z.shape[1]), z_samples)
             
-            r_loss_beta, c_loss_beta = 1., 1.25
+            r_loss_beta, c_loss_beta = 1., 0.6
             d_loss_beta = 0.
             # d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=1e-5) if i > reg_skip-1 else 0.
 
             with torch.no_grad():
-                f_loss = F.mse_loss(y_1, beginning)
+                f_loss = F.mse_loss(y, beginning)
 
             loss = (r_loss_beta * r_loss) + (c_loss_beta * continuity_loss)
             # loss = r_loss
 
-            r_loss_total += mb_dist_1.item()
+            r_loss_total += mb_dist_1["spectral_distance"].item()
             c_loss_total += continuity_loss.item()
             f_loss_total += f_loss.item()
             d_loss_total += d_loss.item()
-            # c_loss_total += 0
 
             loss.backward()
             opt.step()
@@ -239,7 +246,8 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
         i += 1
 
 
-model = Orpheus(aug_classes=5, drop_path=0.1, fast_recompose=False).cuda()
+model = Orpheus(drop_path=0.1, fast_recompose=False).cuda()
+# compiled_model = torch.compile(model)
 prior = GaussianPrior(128, 3).cuda()
 slicer = MPSSlicer(128, 3, 50).cuda()
 # model_b = BarlowTwinsVAE(model, 2).cuda()
@@ -253,16 +261,16 @@ X_train, X_test = train_test_split(audio_files, train_size=0.7, random_state=42)
 
 multiplier = 32
 
-train_ds = AudioFileDataset(X_train, sequence_length+middle_sequence_length+skip_max, multiplier=multiplier)
+train_ds = AudioFileDataset(X_train, sequence_length, multiplier=multiplier)
 train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
-train_dl_neg = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
+# train_dl_neg = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 # val_ds = AudioFileDataset(X_test, sequence_length, multiplier=multiplier)
 # val_dl = DataLoader(val_ds, batch_size=ae_batch_size*2)
 
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(pytorch_total_params)
 
-train(model, prior, slicer, train_dl, train_dl_neg)
+train(model, prior, slicer, train_dl, None)
 # checkpoint = torch.load("../models/ravae_stage1.pt")
 # model_b.load_state_dict(checkpoint["model"])
 # model = model_b.backbone
