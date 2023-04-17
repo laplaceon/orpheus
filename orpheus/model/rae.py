@@ -41,8 +41,6 @@ class Orpheus(nn.Module):
         self.encoder = Encoder(enc_h_dims, latent_dim, [None] + enc_scales, enc_ds_expansion_factor, [None] + enc_attns, enc_blocks_per_stages, enc_layers_per_blocks, drop_path=drop_path)
         self.decoder = Decoder(dec_h_dims, latent_dim, dec_scales, dec_ds_expansion_factor, dec_blocks_per_stages, dec_layers_per_blocks, dec_prob_dim, drop_path=drop_path)
 
-        # self.predictive_decoder = PredictiveDecoder(pred_dec_h_dims, latent_dim, pred_dec_scales, [1] * len(pred_dec_scales), pred_dec_layers_per_blocks)
-
         self.patch_size = 2048
         self.num_bands = enc_h_dims[0]
         self.mask_embedding = nn.Parameter(torch.randn(1, latent_dim, 1))
@@ -64,9 +62,6 @@ class Orpheus(nn.Module):
 
     def decode(self, z):
         return self.decoder(z)
-
-    def predict_middle(self, z):
-        return self.predictive_decoder(z)
 
     def gen_random_mask(self, x):
         N = x.shape[0]
@@ -99,7 +94,7 @@ class Orpheus(nn.Module):
 
         return out
 
-    def forward(self, x):
+    def forward(self, x, fullband=True):
         mask = self.gen_random_mask(x)
         pre_pqmf_mask = upsample_mask(mask, self.patch_size).unsqueeze(1)
         post_pqmf_mask = upsample_mask(mask, self.patch_size // self.num_bands).unsqueeze(1)
@@ -115,6 +110,8 @@ class Orpheus(nn.Module):
         mask_token = self.mask_embedding.repeat(z.shape[0], 1, z.shape[2])
         z_p = z * (1. - mask.unsqueeze(1)) + mask_token * mask.unsqueeze(1)
         y_subbands, y_probs = self.decode(z_p)
-        y = self.recompose(y_subbands)
 
-        return y, y_subbands, y_probs, x_subbands_true, z_p, mask
+        if fullband:
+            return self.recompose(y_subbands), y_subbands, y_probs, x_subbands_true, z_p, mask
+
+        return y_subbands, y_probs, x_subbands_true, z_p, mask
