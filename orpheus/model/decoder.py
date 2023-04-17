@@ -13,6 +13,7 @@ class Decoder(nn.Module):
         h_dims,
         latent_dim,
         scales,
+        ds_expansion_factor,
         blocks_per_stage,
         layers_per_blocks,
         probabilistic_outputs,
@@ -27,7 +28,7 @@ class Decoder(nn.Module):
         for i in range(len(h_dims)-1):
             in_channels, out_channels = h_dims_new[i], h_dims_new[i+1]
 
-            decoder_stage = DecoderStage(in_channels, out_channels, scales[i], blocks_per_stage[i], layers_per_blocks[i], i+1 == len(h_dims) - 1, drop_path=drop_path)
+            decoder_stage = DecoderStage(in_channels, out_channels, scales[i], ds_expansion_factor, blocks_per_stage[i], layers_per_blocks[i], i+1 == len(h_dims) - 1, drop_path=drop_path)
             stages.append(decoder_stage)
 
         self.final_conv = nn.Sequential(
@@ -49,54 +50,13 @@ class Decoder(nn.Module):
         out = self.conv(out)
         return self.final_conv(out), self.prob_conv(out)
 
-class DecoderStageFG(nn.Module):
-    def __init__(
-        self,
-        in_channels,
-        out_channels,
-        scale,
-        num_blocks,
-        layers_per_block,
-        ds_block=False,
-        last_stage=False,
-        drop_path=0.
-    ):
-        super().__init__()
-
-        blocks = []
-
-        blocks.append(
-            nn.Sequential(
-                nn.LeakyReLU(0.2),
-                Rearrange('b c l -> b l c'),
-                nn.LayerNorm(in_channels),
-                Rearrange('b l c -> b c l'),
-                nn.ConvTranspose1d(in_channels, out_channels, scale * 2, stride=scale, padding=scale//2, bias=False)
-            )
-        )
-
-        for _ in range(num_blocks):
-            blocks.append(
-                DecoderBlock(
-                    out_channels,
-                    3,
-                    layers_per_block,
-                    ds_block = ds_block,
-                    drop_path = drop_path
-                )
-            )
-
-        self.blocks = nn.Sequential(*blocks)
-
-    def forward(self, x):
-        return self.blocks(x)
-
 class DecoderStage(nn.Module):
     def __init__(
         self,
         in_channels,
         out_channels,
         scale,
+        ds_expansion_factor,
         num_blocks,
         layers_per_block,
         last_stage=False,
@@ -121,6 +81,7 @@ class DecoderStage(nn.Module):
                     out_channels,
                     3,
                     layers_per_block,
+                    ds_expansion_factor = ds_expansion_factor,
                     ds = True,
                     drop_path = drop_path
                 )
@@ -138,6 +99,7 @@ class DecoderBlock(nn.Module):
         kernel,
         num_layers = 2,
         dilation_factor = 2,
+        ds_expansion_factor = 2.,
         ds = False,
         drop_path = 0.
     ):
@@ -153,7 +115,7 @@ class DecoderBlock(nn.Module):
                     kernel,
                     dilation = dilation,
                     bias = False,
-                    expansion_factor = 1.5,
+                    expansion_factor = ds_expansion_factor,
                     activation = nn.LeakyReLU(0.2),
                     dynamic = True,
                     drop_path = drop_path

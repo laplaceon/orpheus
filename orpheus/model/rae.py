@@ -16,32 +16,30 @@ from .mask import upsample_mask
 class Orpheus(nn.Module):
     def __init__(
         self,
-        enc_h_dims=[16, 80, 160, 320, 640],
-        dec_h_dims=[640, 320, 160, 80, 16],
-        pred_dec_h_dims=[256, 128, 128, 128, 256],
-        prob_dec_h_dims=[120, 256],
-        latent_dim=128,
-        enc_scales=[4, 4, 4, 2],
-        enc_attns=[[False, False, False], [False, False, False], [False, False, False]],
-        dec_scales=[2, 4, 4, 4],
-        pred_dec_scales=[4, 4, 4, 4],
-        prob_dec_scales=[4, 4],
-        enc_blocks_per_stages=[1, 1, 1, 1],
-        enc_layers_per_blocks=[4, 4, 4, 3],
-        dec_blocks_per_stages=[1, 1, 1, 1],
-        dec_layers_per_blocks=[3, 4, 4, 4],
-        pred_dec_layers_per_blocks=[3, 4, 4, 4],
-        prob_dec_layers_per_blocks=[4, 4],
-        drop_path=0.,
-        masked_ratio=[0.45, 0.97, 0.55, 0.25],
-        fast_recompose=True
+        enc_h_dims = [16, 80, 160, 320, 640],
+        dec_h_dims = [640, 320, 160, 80, 16],
+        dec_prob_dim = 256,
+        dec_prob_scale = 1,
+        latent_dim = 128,
+        enc_scales = [4, 4, 4, 2],
+        enc_attns = [[False, False, False], [False, False, False], [False, False, False]],
+        dec_scales = [2, 4, 4, 4],
+        enc_ds_expansion_factor = 2.,
+        dec_ds_expansion_factor = 2.,
+        enc_blocks_per_stages = [1, 1, 1, 1],
+        enc_layers_per_blocks = [4, 4, 4, 3],
+        dec_blocks_per_stages = [1, 1, 1, 1],
+        dec_layers_per_blocks = [3, 4, 4, 4],
+        drop_path = 0.,
+        masked_ratio = [0.45, 0.97, 0.55, 0.25],
+        fast_recompose = True
     ):
         super().__init__()
 
         self.pqmf = PQMF(enc_h_dims[0], 100, fast_recompose)
 
-        self.encoder = Encoder(enc_h_dims, latent_dim, [None] + enc_scales, [None] + enc_attns, enc_blocks_per_stages, enc_layers_per_blocks, drop_path=drop_path)
-        self.decoder = Decoder(dec_h_dims, latent_dim, dec_scales, dec_blocks_per_stages, dec_layers_per_blocks, pred_dec_h_dims[-1], drop_path=drop_path)
+        self.encoder = Encoder(enc_h_dims, latent_dim, [None] + enc_scales, enc_ds_expansion_factor, [None] + enc_attns, enc_blocks_per_stages, enc_layers_per_blocks, drop_path=drop_path)
+        self.decoder = Decoder(dec_h_dims, latent_dim, dec_scales, dec_ds_expansion_factor, dec_blocks_per_stages, dec_layers_per_blocks, dec_prob_dim, drop_path=drop_path)
 
         # self.predictive_decoder = PredictiveDecoder(pred_dec_h_dims, latent_dim, pred_dec_scales, [1] * len(pred_dec_scales), pred_dec_layers_per_blocks)
 

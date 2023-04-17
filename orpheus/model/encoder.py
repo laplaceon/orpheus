@@ -17,6 +17,7 @@ class Encoder(nn.Module):
         h_dims,
         latent_dim,
         scales,
+        ds_expansion_factor,
         attns,
         blocks_per_stages,
         layers_per_blocks,
@@ -39,42 +40,60 @@ class Encoder(nn.Module):
         for i in range(len(h_dims)-1):
             in_channels, out_channels = h_dims[i], h_dims[i+1]
 
-            encoder_stage = EncoderStage(in_channels, out_channels, scales[i], attns[i], blocks_per_stages[i], layers_per_blocks[i], (mask_scales[i], mask_scales[i+1]), drop_path=drop_path)
+            encoder_stage = EncoderStage(in_channels, out_channels, scales[i], ds_expansion_factor, attns[i], blocks_per_stages[i], layers_per_blocks[i], (mask_scales[i], mask_scales[i+1]), drop_path=drop_path)
             stages.append(encoder_stage)
 
-        self.pre_d_norm = nn.Sequential(
-            nn.LeakyReLU(0.2),
-            nn.GroupNorm(8, h_dims[-1])
-        )
-
-        self.down = nn.Conv1d(h_dims[-1], h_dims[-1] * 2, kernel_size=4, stride=2, padding=1)
-        
-        self.pre_latent_act = nn.LeakyReLU(0.2)
-        # nn.GroupNorm(8, h_dims[-1] * 2),
-        self.to_latent = weight_norm(nn.Conv1d(h_dims[-1] * 2, latent_dim, kernel_size=3, padding=1))
-
         self.stages = nn.ModuleList(stages)
+
+        self.final_block = EncoderFinalBlock(h_dims[-1], latent_dim, scales[-1])
 
     def forward(self, x, mask=None):
         for stage in self.stages:
             x = stage(x, mask)
             
-        x = self.pre_d_norm(x)
+        x = self.final_block(x, mask)
+
+        return torch.tanh(x)
+
+class EncoderFinalBlock(nn.Module):
+    def __init__(
+        self,
+        dim,
+        latent_dim,
+        final_scale
+    ):
+        super().__init__()
+
+        self.norm = nn.Sequential(
+            nn.LeakyReLU(0.2),
+            nn.GroupNorm(8, dim)
+        )
+
+        self.down = nn.Conv1d(dim, dim * 2, kernel_size=4, stride=2, padding=1)
+        
+        self.act = nn.LeakyReLU(0.2)
+        self.to_latent = weight_norm(nn.Conv1d(dim * 2, latent_dim, kernel_size=3, padding=1))
+
+        self.final_scale = final_scale
+    
+    def forward(self, x, mask=None):
+        x = self.norm(x)
 
         if mask is not None:
-            x = x * (1. - upsample_mask(mask, self.scales[-1]).unsqueeze(1))
+            x = x * (1. - upsample_mask(mask, self.final_scale).unsqueeze(1))
         x = self.down(x)
         if mask is not None:
             x = x * (1. - mask.unsqueeze(1))
 
-        x = self.pre_latent_act(x)
+        x = self.act(x)
+
         if mask is not None:
             x = x * (1. - mask.unsqueeze(1))
         x = self.to_latent(x)
         if mask is not None:
             x = x * (1. - mask.unsqueeze(1))
-
-        return torch.tanh(x)
+    
+        return x
 
 class EncoderStage(nn.Module):
     def __init__(
@@ -82,6 +101,7 @@ class EncoderStage(nn.Module):
         in_channels,
         out_channels,
         scale,
+        ds_expansion_factor,
         attns,
         num_blocks,
         layers_per_block,
@@ -113,6 +133,7 @@ class EncoderStage(nn.Module):
                         out_channels,
                         3,
                         layers_per_block,
+                        ds_expansion_factor = ds_expansion_factor,
                         ds = True,
                         attn = attns[i],
                         drop_path = drop_path
@@ -144,6 +165,7 @@ class EncoderBlock(nn.Module):
         kernel,
         num_layers,
         dilation_factor = 2,
+        ds_expansion_factor = 2.,
         ds = False,
         attn = False,
         drop_path = 0.
@@ -161,7 +183,7 @@ class EncoderBlock(nn.Module):
                     kernel,
                     dilation = dilation,
                     bias = False,
-                    expansion_factor = 1.5,
+                    expansion_factor = ds_expansion_factor,
                     activation = nn.LeakyReLU(0.2),
                     dynamic = True,
                     drop_path = drop_path

@@ -209,7 +209,7 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
 
             d_loss = slicer.fgw_dist(z.transpose(1, 2).reshape(-1, z.shape[1]), z_samples)
             
-            r_loss_beta, c_loss_beta = 1., 0.6
+            r_loss_beta, c_loss_beta = 1., 0.5
             d_loss_beta = 0.
             # d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=1e-5) if i > reg_skip-1 else 0.
 
@@ -246,7 +246,7 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
         i += 1
 
 
-model = Orpheus(drop_path=0.1, fast_recompose=False).cuda()
+model = Orpheus(enc_ds_expansion_factor=2., dec_ds_expansion_factor=2., drop_path=0.1, fast_recompose=False).cuda()
 # compiled_model = torch.compile(model)
 prior = GaussianPrior(128, 3).cuda()
 slicer = MPSSlicer(128, 3, 50).cuda()
@@ -270,7 +270,7 @@ train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(pytorch_total_params)
 
-train(model, prior, slicer, train_dl, None)
+# train(model, prior, slicer, train_dl, None)
 # checkpoint = torch.load("../models/ravae_stage1.pt")
 # model_b.load_state_dict(checkpoint["model"])
 # model = model_b.backbone
