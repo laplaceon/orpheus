@@ -69,33 +69,54 @@ apply_augmentations = SomeOf(
 
 peak_norm = PeakNormalization(apply_to="only_too_loud_sounds", p=1., sample_rate=bitrate)
 
-def predictive_coding(x, length, future_len, skip=3):
-    beginning = x[:, :, :length]
-    middle = x[:, :, length+skip:length+skip+future_len]
+class TrainerAE(nn.Module):
+    def __init__(self, backbone, prior, slicer):
+        super().__init__()
 
-    return beginning, middle
+        self.backbone = backbone
+        self.prior = prior
+        self.slicer = slicer
 
-def skip_predict(x, length, future_len, skip_max=10):
-    """
-    Takes a tensor x of shape (N, C, L) and returns two slices of the tensor.
-    The first slice is the first length timesteps of x.
-    The second slice is a random skip from 1 to skip_max followed by future_len timesteps.
-    """
-    N, _, L = x.shape
-    assert length + future_len <= L, "The sum of length and future_len cannot be greater than the sequence length."
-    assert skip_max <= L - length - future_len, "skip_max must be smaller than the number of timesteps left in the sequence."
-    
-    # Choose a random skip between 1 and skip_max
-    skip = torch.randint(1, skip_max+1, size=(N,))
-    
-    seqs = []
-    future_seqs = []
+        stft = closs.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
+        self.distance = closs.AudioDistanceV1(stft, 1e-7)
 
-    for i in range(N):
-        seqs.append(x[i, :, :length])
-        future_seqs.append(x[i, :, length+skip[i]:length+skip[i]+future_len])
-    
-    return torch.stack(seqs), torch.stack(future_seqs), skip.unsqueeze(1).float()
+    def eval_mb(self, x, x_quantized):
+        y_subbands, y_probs, x_subbands, z, mask = self.backbone(x, fullband=False)
+
+        r_loss = self.distance(y_subbands, x_subbands)["spectral_distance"]
+
+        ce_mask = mask.repeat(1, 2048 // 16)
+
+        continuity_loss = F.cross_entropy(y_probs, x_quantized, reduction="none")
+        continuity_loss = (continuity_loss * ce_mask).sum() / ce_mask.sum()
+
+        z_samples = self.prior.sample(z.shape[0] * z.shape[2])
+
+        d_loss = slicer.fgw_dist(z.transpose(1, 2).reshape(-1, z.shape[1]), z_samples)
+
+        return (r_loss, continuity_loss, d_loss)
+
+    def forward(self, x, x_quantized):
+        y, y_subbands, y_probs, x_subbands, z, mask = self.backbone(x)
+
+        mb_dist = self.distance(y_subbands, x_subbands)
+        fb_dist = self.distance(y, x)
+
+        r_loss = mb_dist["spectral_distance"] + fb_dist["spectral_distance"]
+
+        ce_mask = mask.repeat(1, 2048 // 16)
+
+        continuity_loss = F.cross_entropy(y_probs, x_quantized, reduction="none")
+        continuity_loss = (continuity_loss * ce_mask).sum() / ce_mask.sum()
+
+        z_samples = self.prior.sample(z.shape[0] * z.shape[2])
+
+        d_loss = slicer.fgw_dist(z.transpose(1, 2).reshape(-1, z.shape[1]), z_samples)
+
+        with torch.no_grad():
+            f_loss = F.mse_loss(y, x)
+
+        return (r_loss, continuity_loss, d_loss, f_loss)
 
 def get_song_features(model, file):
     data, rate = torchaudio.load(file)
@@ -209,7 +230,7 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
 
             d_loss = slicer.fgw_dist(z.transpose(1, 2).reshape(-1, z.shape[1]), z_samples)
             
-            r_loss_beta, c_loss_beta = 1., 0.5
+            r_loss_beta, c_loss_beta = 1., 0.8
             d_loss_beta = 0.
             # d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=1e-5) if i > reg_skip-1 else 0.
 
@@ -246,11 +267,11 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
         i += 1
 
 
-model = Orpheus(enc_ds_expansion_factor=2., dec_ds_expansion_factor=2., drop_path=0.1, fast_recompose=False).cuda()
-# compiled_model = torch.compile(model)
+model = Orpheus(enc_ds_expansion_factor=1.6, dec_ds_expansion_factor=1.6, drop_path=0.1, fast_recompose=True).cuda()
 prior = GaussianPrior(128, 3).cuda()
 slicer = MPSSlicer(128, 3, 50).cuda()
-# model_b = BarlowTwinsVAE(model, 2).cuda()
+
+# trainer = TrainerAE(model, prior, slicer)
 
 data_folder = "../data"
 
@@ -270,9 +291,8 @@ train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(pytorch_total_params)
 
-# train(model, prior, slicer, train_dl, None)
+train(model, prior, slicer, train_dl, None)
 # checkpoint = torch.load("../models/ravae_stage1.pt")
-# model_b.load_state_dict(checkpoint["model"])
-# model = model_b.backbone
-# real_eval(model, 500)
+# trainer.load_state_dict(checkpoint["model"])
+# real_eval(trainer.backbone, 500)
 print(model)

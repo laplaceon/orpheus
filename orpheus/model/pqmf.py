@@ -102,7 +102,7 @@ def polyphase_forward(x, hk, rearrange_filter=True):
     if rearrange_filter:
         hk = rearrange(hk, "c (t m) -> c m t", m=hk.shape[0])
     p = hk.shape[-1] // 2
-    x = nn.functional.conv1d(x, hk, padding=p.item())[..., :-1]
+    x = nn.functional.conv1d(x, hk, padding=p)[..., :-1]
     return x
 
 
