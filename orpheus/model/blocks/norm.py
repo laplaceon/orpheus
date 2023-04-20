@@ -6,11 +6,13 @@ class ChannelRMSNorm(nn.Module):
     def __init__(self, dim):
         super().__init__()
         self.scale = dim ** 0.5
-        self.gamma = nn.Parameter(torch.ones(dim, 1, 1))
+        self.gamma = nn.Parameter(torch.ones(1, dim, 1))
 
     def forward(self, x):
         normed = F.normalize(x, dim = 1)
-        return normed * self.scale * self.gamma
+        # print(normed.shape, self.gamma.shape)
+        scaled = normed * self.scale * self.gamma
+        return scaled
 
 class RMSNorm(nn.Module):
     def __init__(self, dim):
@@ -20,7 +22,8 @@ class RMSNorm(nn.Module):
 
     def forward(self, x):
         normed = F.normalize(x, dim = -1)
-        return normed * self.scale * self.gamma
+        scaled = normed * self.scale * self.gamma
+        return scaled
 
 class GRN(nn.Module):
     """ GRN (Global Response Normalization) layer

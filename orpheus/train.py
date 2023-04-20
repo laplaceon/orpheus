@@ -22,6 +22,8 @@ from model.rae import Orpheus
 from model.prior import GaussianPrior
 from model.slicer import MPSSlicer
 
+from lr_scheduler.warmup_lr_scheduler import WarmupLRScheduler
+
 # from model.quantizer import mu_law_encoding, mu_law_encode
 
 from torchaudio.functional import mu_law_encoding
@@ -56,7 +58,7 @@ apply_augmentations = SomeOf(
     num_transforms = (1, 3),
     transforms = [
         PolarityInversion(),
-        AddColoredNoise(),
+        # AddColoredNoise(),
         Gain(),
         OneOf(
             transforms = [
@@ -158,7 +160,7 @@ def real_eval(model, epoch):
 
     for test_file in test_files:
         out = get_song_features(model, f"../input/{test_file}")
-        print(out)
+        print(out, torch.min(out).item(), torch.max(out).item())
         # count_pos_neg(out)
         torchaudio.save(f"../output/{slugify(test_file)}_epoch{epoch+1}.wav", out.cpu().unsqueeze(0), bitrate)
 
@@ -172,8 +174,9 @@ def cyclic_kl(step, cycle_len, maxp=0.5, min_beta=0, max_beta=1):
     div_shift = 1 / (1 - min_beta/max_beta)
     return min(((step % cycle_len) / (cycle_len * maxp * div_shift)) + (min_beta / max_beta), 1) * max_beta
 
-def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss_cycle=32, quantize_bins=256):
+def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss_cycle=32, warmup=None, quantize_bins=256):
     lr_m = lr * (batch_size/min_bs) ** 0.5
+    # lr_m = lr
     print("Learning rate:", lr_m)
     opt = AdamW(list(model.parameters()) + list(prior.parameters()) + list(slicer.parameters()), lr_m)
     stft = closs.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
@@ -182,6 +185,14 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
 
     # model.load_state_dict(torch.load("../models/rae_96.pt"))
     # opt.load_state_dict(torch.load("../models/opt_96.pt"))
+
+    if warmup is not None:
+        scheduler = WarmupLRScheduler(
+          opt, 
+          init_lr=warmup[0], 
+          peak_lr=lr_m, 
+          warmup_steps=warmup[1] * len(train_dl),
+    )
 
     step = 0
 
@@ -199,12 +210,11 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
         f_loss_total = 0
         m_loss_total = 0
         d_loss_total = 0
-        total_batch = len(train_dl)
         for batch in tqdm(train_dl, position=0, leave=True):
             real_imgs = batch["input"].unsqueeze(1)
 
             with torch.no_grad():
-                # mod = peak_norm(apply_augmentations(real_imgs, sample_rate=bitrate)).cuda()
+                # beginning = peak_norm(apply_augmentations(real_imgs, sample_rate=bitrate)).cuda()
                 beginning = real_imgs.cuda()
                 # beginning, middle = predictive_coding(mod, sequence_length, middle_sequence_length, skip_max)
                 x_avg = F.avg_pool1d(beginning, 16)
@@ -230,7 +240,9 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
 
             d_loss = slicer.fgw_dist(z.transpose(1, 2).reshape(-1, z.shape[1]), z_samples)
             
-            r_loss_beta, c_loss_beta = 1., 0.8
+            skip = warmup[1]-1 if warmup is not None else -1
+
+            r_loss_beta, c_loss_beta = 1., 0.7 if i > skip else 0.
             d_loss_beta = 0.
             # d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=1e-5) if i > reg_skip-1 else 0.
 
@@ -247,6 +259,8 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
 
             loss.backward()
             opt.step()
+            if warmup is not None:
+                scheduler.step()
 
             # if torch.isnan(r_loss[0]):
             #     raise SystemError
@@ -267,7 +281,7 @@ def train(model, prior, slicer, train_dl, neg_dl, lr=1e-4, reg_skip=32, reg_loss
         i += 1
 
 
-model = Orpheus(enc_ds_expansion_factor=1.6, dec_ds_expansion_factor=1.6, drop_path=0.1, fast_recompose=True).cuda()
+model = Orpheus(enc_ds_expansion_factor=1.6, dec_ds_expansion_factor=1.6, drop_path=0.05, fast_recompose=True).cuda()
 prior = GaussianPrior(128, 3).cuda()
 slicer = MPSSlicer(128, 3, 50).cuda()
 
@@ -291,8 +305,8 @@ train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(pytorch_total_params)
 
-train(model, prior, slicer, train_dl, None)
+train(model, prior, slicer, train_dl, None, warmup=(1e-7, 2))
 # checkpoint = torch.load("../models/ravae_stage1.pt")
 # trainer.load_state_dict(checkpoint["model"])
-# real_eval(trainer.backbone, 500)
+# real_eval(trainer.backbone, 600)
 print(model)

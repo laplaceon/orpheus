@@ -33,8 +33,12 @@ loss_files = {
     # "drae_vm_4": "E:\Desktop\losses\drae_variable_mask_per_4.txt",
     # "drae_vm_7": "E:\Desktop\losses\drae_variable_mask_per_7.txt",
     # "drae_vm_8": "E:\Desktop\losses\drae_variable_mask_per_8.txt",
-    "drae_100_0": "E:\Desktop\losses\drae_vmp_100_0.txt",
-    "drae_100_100": "E:\Desktop\losses\drae_vmp_100_100.txt"
+    # "drae_100_0": "E:\Desktop\losses\drae_vmp_100_0.txt",
+    # "drae_100_100": "E:\Desktop\losses\drae_vmp_100_100.txt",
+    "drae_nodyn": "E:\Desktop\losses\drae_nodyn_decwn_mhd.txt",
+    "drae_dyn": "E:\Desktop\losses\drae_dyn_mhd.txt",
+    "fd_enc_dr0.05": "E:\Desktop\losses\drae_nodyn_decwn_fdynenc_mhd.txt",
+    "pd_enc_dr0.05": "E:\Desktop\losses\drae_nodyn_decwn_pdynenc_mhd.txt"
 }
 
 recons_expr = re.compile("R Loss: (\d{1,2}[.]\d+)")

@@ -5,7 +5,7 @@ from einops.layers.torch import Rearrange
 
 from torch.nn.utils import weight_norm
 
-from .blocks.dec import  Upsample, DBlock_DS, DBlock_R, CausalConv1d
+from .blocks.dec import  DBlock_DS, DBlock_R
 
 class Decoder(nn.Module):
     def __init__(
@@ -40,7 +40,9 @@ class Decoder(nn.Module):
         self.prob_conv = nn.Sequential(
             nn.LeakyReLU(0.2),
             nn.GroupNorm(8, h_dims[-2]),
-            nn.Conv1d(h_dims[-2], probabilistic_outputs, 7, padding=3)
+            nn.Conv1d(h_dims[-2], probabilistic_outputs, 7, padding=3),
+            # nn.GELU(),
+            # nn.Conv1d(probabilistic_outputs, probabilistic_outputs, 1, bias=False)
         )
 
         self.conv = nn.Sequential(*stages)
@@ -69,9 +71,7 @@ class DecoderStage(nn.Module):
         blocks.append(
             nn.Sequential(
                 nn.LeakyReLU(0.2),
-                # Upsample(scale_factor=scale),
-                # DepthwiseSeparableConvWN(in_channels, out_channels, scale * 2, padding="same")
-                nn.ConvTranspose1d(in_channels, out_channels, scale * 2, stride=scale, padding=scale//2, bias=False)
+                weight_norm(nn.ConvTranspose1d(in_channels, out_channels, scale * 2, stride=scale, padding=scale//2, bias=False))
             )
         )
 
@@ -117,7 +117,7 @@ class DecoderBlock(nn.Module):
                     bias = False,
                     expansion_factor = ds_expansion_factor,
                     activation = nn.LeakyReLU(0.2),
-                    dynamic = True,
+                    dynamic = False,
                     drop_path = drop_path
                 ) if ds else
                 

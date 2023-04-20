@@ -114,31 +114,20 @@ class EncoderStage(nn.Module):
 
         if scale is None:
             self.expand = nn.Conv1d(in_channels, out_channels, 7, padding=3, bias=False)
-
-            for _ in range(num_blocks):
-                blocks.append(
-                    EncoderBlock(
-                        out_channels,
-                        3,
-                        layers_per_block,
-                        drop_path = drop_path
-                    )
-                )
         else:
             self.downscale = EBlock_DOWN(in_channels, out_channels, scale, expansion_factor=1.5, activation=nn.LeakyReLU(0.2))
 
-            for i in range(num_blocks):
-                blocks.append(
-                    EncoderBlock(
-                        out_channels,
-                        3,
-                        layers_per_block,
-                        ds_expansion_factor = ds_expansion_factor,
-                        ds = True,
-                        attn = attns[i],
-                        drop_path = drop_path
-                    )
+        for _ in range(num_blocks):
+            blocks.append(
+                EncoderBlock(
+                    out_channels,
+                    3,
+                    layers_per_block,
+                    ds_expansion_factor = ds_expansion_factor,
+                    ds = True,
+                    drop_path = drop_path
                 )
+            )
             
         self.scale = scale
         self.blocks = nn.ModuleList(blocks)
@@ -167,7 +156,6 @@ class EncoderBlock(nn.Module):
         dilation_factor = 2,
         ds_expansion_factor = 2.,
         ds = False,
-        attn = False,
         drop_path = 0.
     ):
         super().__init__()
@@ -198,9 +186,6 @@ class EncoderBlock(nn.Module):
                     drop_path = drop_path
                 )   
             )
-
-            if attn:
-                conv.append(AttnBlock(channels, bucket=2048, expansion_factor_feedforward=1., dropout=0.1))
 
         self.conv = nn.ModuleList(conv)
 
