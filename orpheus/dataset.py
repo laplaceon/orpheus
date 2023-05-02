@@ -3,6 +3,18 @@ from torch.utils.data import Dataset
 import random
 from math import floor
 
+import os
+
+def aggregate_wavs(dirs, random_state=4):
+    files = []
+
+    for dir in dirs:
+        files += [f"{dir}/{x}" for x in os.listdir(dir) if x.endswith(".wav")]
+    
+    random.Random(random_state).shuffle(files)
+
+    return files
+
 class AudioFileDataset(Dataset):
     def __init__(self, files, extract_length, bitrate=44100, multiplier=1):
         self.multiplier = multiplier

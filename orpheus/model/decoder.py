@@ -7,6 +7,25 @@ from torch.nn.utils import weight_norm
 
 from .blocks.dec import  DBlock_DS, DBlock_R
 
+class MultiBranchProbabilisticDecoder(nn.Module):
+    def __init__(
+        self,
+        penulti_dim,
+        probabilistic_outputs
+    ):
+        super().__init__()
+
+        self.prob_conv = nn.Sequential(
+            nn.LeakyReLU(0.2),
+            nn.GroupNorm(8, penulti_dim),
+            nn.Conv1d(penulti_dim, probabilistic_outputs, 7, padding=3),
+            # nn.GELU(),
+            # nn.Conv1d(probabilistic_outputs, probabilistic_outputs, 1, bias=False)
+        )
+    
+    def forward(self, x):
+        return self.prob_conv(x)
+
 class Decoder(nn.Module):
     def __init__(
         self,
@@ -16,7 +35,6 @@ class Decoder(nn.Module):
         ds_expansion_factor,
         blocks_per_stage,
         layers_per_blocks,
-        probabilistic_outputs,
         drop_path=0.
     ):
         super().__init__()
@@ -37,20 +55,12 @@ class Decoder(nn.Module):
             nn.Tanh()
         )
 
-        self.prob_conv = nn.Sequential(
-            nn.LeakyReLU(0.2),
-            nn.GroupNorm(8, h_dims[-2]),
-            nn.Conv1d(h_dims[-2], probabilistic_outputs, 7, padding=3),
-            # nn.GELU(),
-            # nn.Conv1d(probabilistic_outputs, probabilistic_outputs, 1, bias=False)
-        )
-
         self.conv = nn.Sequential(*stages)
 
     def forward(self, z):
         out = self.from_latent(z)
         out = self.conv(out)
-        return self.final_conv(out), self.prob_conv(out)
+        return self.final_conv(out), out
 
 class DecoderStage(nn.Module):
     def __init__(

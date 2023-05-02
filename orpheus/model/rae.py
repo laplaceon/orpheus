@@ -6,10 +6,8 @@ import scipy.stats as stats
 from .pqmf import PQMF
 
 from .encoder import Encoder
-from .decoder import Decoder
-from .decoder_probabilistic import ProbabilisticDecoder
+from .decoder import Decoder, MultiBranchProbabilisticDecoder
 from .decoder_predictive import PredictiveDecoder
-from .decoder_contrastive import ContrastiveDecoder
 
 from .mask import upsample_mask
 
@@ -39,7 +37,8 @@ class Orpheus(nn.Module):
         self.pqmf = PQMF(enc_h_dims[0], 100, fast_recompose)
 
         self.encoder = Encoder(enc_h_dims, latent_dim, [None] + enc_scales, enc_ds_expansion_factor, [None] + enc_attns, enc_blocks_per_stages, enc_layers_per_blocks, drop_path=drop_path)
-        self.decoder = Decoder(dec_h_dims, latent_dim, dec_scales, dec_ds_expansion_factor, dec_blocks_per_stages, dec_layers_per_blocks, dec_prob_dim, drop_path=drop_path)
+        self.decoder = Decoder(dec_h_dims, latent_dim, dec_scales, dec_ds_expansion_factor, dec_blocks_per_stages, dec_layers_per_blocks, drop_path=drop_path)
+        self.decoder_mbp = MultiBranchProbabilisticDecoder(dec_h_dims[-2], dec_prob_dim)
 
         self.patch_size = 2048
         self.num_bands = enc_h_dims[0]
@@ -109,7 +108,9 @@ class Orpheus(nn.Module):
 
         mask_token = self.mask_embedding.repeat(z.shape[0], 1, z.shape[2])
         z_p = z * (1. - mask.unsqueeze(1)) + mask_token * mask.unsqueeze(1)
-        y_subbands, y_probs = self.decode(z_p)
+        y_subbands, y_pre = self.decode(z_p)
+
+        y_probs = self.decoder_mbp(y_pre)
 
         if fullband:
             return self.recompose(y_subbands), y_subbands, y_probs, x_subbands_true, z_p, mask
