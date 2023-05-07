@@ -6,6 +6,8 @@ import torchaudio
 from einops import rearrange
 from typing import Callable, Optional, Sequence, Union, Tuple
 
+import torch.nn.functional as F
+
 def relative_distance(
     x: torch.Tensor,
     y: torch.Tensor,
@@ -336,3 +338,210 @@ class SpectralDistance(nn.Module):
             distance = distance + mean_difference(y, x, norm)
         return distance
 
+def log_sum_exp(x):
+    """ numerically stable log_sum_exp implementation that prevents overflow """
+    # TF ordering
+    axis = len(x.size()) - 1
+    m, _ = torch.max(x, dim=axis)
+    m2, _ = torch.max(x, dim=axis, keepdim=True)
+    return m + torch.log(torch.sum(torch.exp(x - m2), dim=axis))
+
+def _compute_inv_stdv(logits, distribution_base='std', min_mol_logscale=-250., gradient_smoothing_beta=0.6931472):
+    softplus = nn.Softplus(beta=gradient_smoothing_beta)
+    if distribution_base == 'std':
+        scales = torch.maximum(softplus(logits),
+                               torch.as_tensor(np.exp(min_mol_logscale)))
+        inv_stdv = 1. / scales  # Not stable for sharp distributions
+        log_scales = torch.log(scales)
+
+    elif distribution_base == 'logstd':
+        log_scales = torch.maximum(logits, torch.as_tensor(np.array(min_mol_logscale)))
+        inv_stdv = torch.exp(-gradient_smoothing_beta * log_scales)
+    else:
+        raise ValueError(f'distribution base {distribution_base} not known!!')
+
+    return inv_stdv, log_scales
+
+def discretized_mix_logistic_loss(input, target, num_classes=256,
+                                  log_scale_min=-7.0, reduce=True):
+    """Discretized mixture of logistic distributions loss
+    Note that it is assumed that input is scaled to [-1, 1].
+    Args:
+        y_hat (Tensor): Predicted output (B x C x T)
+        y (Tensor): Target (B x T x 1).
+        num_classes (int): Number of classes
+        log_scale_min (float): Log scale minimum value
+        reduce (bool): If True, the losses are averaged or summed for each
+          minibatch.
+    Returns
+        Tensor: loss
+    """
+    assert input.dim() == 3
+    assert input.size(1) % 3 == 0
+    nr_chan = target.size(2)
+    nr_mix = input.size(1) // (3 * nr_chan)
+
+    # (B x T x C)
+    input = input.transpose(1, 2)
+
+    logit_probs = input[:, :, :nr_mix*nr_chan]
+    means = input[:, :, nr_mix*nr_chan:2 * nr_mix*nr_chan]
+    log_scales = torch.clamp(input[:, :, 2 * nr_mix * nr_chan:3 * nr_mix * nr_chan], min=log_scale_min)
+
+    # B x T x 1 -> B x T x num_mixtures
+    # print(y.shape, means.shape)
+    # y = y.expand_as(means)
+    target = target.repeat(1, 1, nr_mix)
+
+    centered_y = target - means
+    inv_stdv = torch.exp(-log_scales)
+    plus_in = inv_stdv * (centered_y + 1. / (num_classes - 1))
+    cdf_plus = torch.sigmoid(plus_in)
+    min_in = inv_stdv * (centered_y - 1. / (num_classes - 1))
+    cdf_min = torch.sigmoid(min_in)
+
+    # log probability for edge case of 0 (before scaling)
+    # equivalent: torch.log(torch.sigmoid(plus_in))
+    log_cdf_plus = plus_in - F.softplus(plus_in)
+
+    # log probability for edge case of 255 (before scaling)
+    # equivalent: (1 - torch.sigmoid(min_in)).log()
+    log_one_minus_cdf_min = -F.softplus(min_in)
+
+    # probability for all other cases
+    cdf_delta = cdf_plus - cdf_min
+
+    mid_in = inv_stdv * centered_y
+    # log probability in the center of the bin, to be used in extreme cases
+    # (not actually used in our code)
+    log_pdf_mid = mid_in - log_scales - 2. * F.softplus(mid_in)
+
+    # tf equivalent
+    """
+    log_probs = tf.where(x < -0.999, log_cdf_plus,
+                         tf.where(x > 0.999, log_one_minus_cdf_min,
+                                  tf.where(cdf_delta > 1e-5,
+                                           tf.log(tf.maximum(cdf_delta, 1e-12)),
+                                           log_pdf_mid - np.log(127.5))))
+    """
+    # TODO: cdf_delta <= 1e-5 actually can happen. How can we choose the value
+    # for num_classes=65536 case? 1e-7? not sure..
+    inner_inner_cond = (cdf_delta > 1e-5).float()
+
+    inner_inner_out = inner_inner_cond * \
+        torch.log(torch.clamp(cdf_delta, min=1e-12)) + \
+        (1. - inner_inner_cond) * (log_pdf_mid - np.log((num_classes - 1) / 2))
+    inner_cond = (target > 0.999).float()
+    inner_out = inner_cond * log_one_minus_cdf_min + (1. - inner_cond) * inner_inner_out
+    cond = (target < -0.999).float()
+    log_probs = cond * log_cdf_plus + (1. - cond) * inner_out
+
+    log_probs = log_probs + F.log_softmax(logit_probs, -1)
+
+    if reduce:
+        return -torch.sum(log_sum_exp(log_probs))
+    else:
+        return -log_sum_exp(log_probs).unsqueeze(-1)
+
+def discretized_mix_logistic_loss_2(logits, targets, num_classes=256, num_mixtures=4, log_scale_min=-7.0):
+    # Shapes:
+    #    targets: B, C, L
+    #    logits: B, M * (3 * C + 1), L
+
+    assert len(targets.shape) == 3
+    B, C, L = targets.size()
+
+    min_pix_value, max_pix_value = -1, 1
+
+    targets = targets.unsqueeze(2)  # B, C, 1, L
+
+    logit_probs = logits[:, :num_mixtures, :]  # B, M, L
+    l = logits[:, num_mixtures:, :]  # B, M*C*3 , L
+    l = l.reshape(B, C, 3 * num_mixtures, L)  # B, C, 3 * M, L
+
+    model_means = l[:, :, :num_mixtures, :]  # B, C, M, L
+    means = model_means
+
+    inv_stdv, log_scales = _compute_inv_stdv(
+        l[:, :, num_mixtures: 2 * num_mixtures, :], distribution_base='logstd')
+
+    # model_coeffs = torch.tanh(
+    #     l[:, :, 2 * num_output_mixtures: 3 * num_output_mixtures, :])  # B, C, M, H, W
+
+    centered = targets - means  # B, C, M, L
+
+    plus_in = inv_stdv * (centered + 1. / num_classes)
+    cdf_plus = torch.sigmoid(plus_in)
+    min_in = inv_stdv * (centered - 1. / num_classes)
+    cdf_min = torch.sigmoid(min_in)
+
+    log_cdf_plus = plus_in - F.softplus(plus_in)  # log probability for edge case of 0 (before scaling)
+    log_one_minus_cdf_min = -F.softplus(min_in)  # log probability for edge case of 255 (before scaling)
+
+    # probability for all other cases
+    cdf_delta = cdf_plus - cdf_min  # B, C, M, L
+
+    mid_in = inv_stdv * centered
+    # log probability in the center of the bin, to be used in extreme cases
+    # (not actually used in this code)
+    log_pdf_mid = mid_in - log_scales - 2. * F.softplus(mid_in)
+
+    # the original implementation uses samples > 0.999, this ignores the largest possible pixel value (255)
+    # which is mapped to 0.9922
+    broadcast_targets = torch.broadcast_to(targets, size=[B, C, num_mixtures, L])
+    log_probs = torch.where(broadcast_targets == min_pix_value, log_cdf_plus,
+                            torch.where(broadcast_targets == max_pix_value, log_one_minus_cdf_min,
+                                        torch.where(cdf_delta > 1e-5,
+                                                    torch.log(torch.clamp(cdf_delta, min=1e-12)),
+                                                    log_pdf_mid - np.log(num_classes / 2))))  # B, C, M, L
+
+    log_probs = torch.sum(log_probs, dim=1) + F.log_softmax(logit_probs, dim=1)  # B, M, L
+    negative_log_probs = -torch.logsumexp(log_probs, dim=1)  # B, L
+
+    expected = torch.sum(means * logit_probs.unsqueeze(1), dim=2)
+
+    return negative_log_probs, expected
+
+class DiscretizedMixtureLoss1(nn.Module):
+    def __init__(
+        self,
+        num_classes = 256
+    ):
+        super().__init__()
+
+        self.num_classes = num_classes
+
+    def forward(self, input, target, mask=None):
+        mask = mask.expand_as(target)
+
+        losses = discretized_mix_logistic_loss(
+            input, target, num_classes=self.num_classes, reduce=False)
+        assert losses.size() == target.size()
+
+        losses = losses.squeeze(2)
+
+        if mask is not None:
+           return ((losses * mask).sum()) / mask.sum()
+        
+        return torch.sum(losses)
+    
+class DiscretizedMixtureLoss2(nn.Module):
+    def __init__(
+        self,
+        num_classes = 256
+    ):
+        super().__init__()
+
+        self.num_classes = num_classes
+
+    def forward(self, input, target, mask=None):
+        # mask = mask.expand_as(target)
+
+        losses, expected = discretized_mix_logistic_loss_2(
+            input, target, num_classes=self.num_classes)
+        # assert losses.size() == target.size()
+
+        if mask is not None:
+           return ((losses * mask).sum()) / mask.sum(), expected
+        
+        return torch.sum(losses), expected

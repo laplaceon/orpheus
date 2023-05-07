@@ -60,7 +60,7 @@ class Decoder(nn.Module):
     def forward(self, z):
         out = self.from_latent(z)
         out = self.conv(out)
-        return self.final_conv(out), out
+        return self.final_conv(out)
 
 class DecoderStage(nn.Module):
     def __init__(

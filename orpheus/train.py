@@ -66,36 +66,25 @@ class TrainerAE(nn.Module):
 
         stft = closs.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
         self.distance = closs.AudioDistanceV1(stft, 1e-7)
+        self.prob_distance = closs.DiscretizedMixtureLoss(65536)
 
-    def eval_mb(self, x, x_quantized):
-        y_subbands, y_probs, x_subbands, z, mask = self.backbone(x, fullband=False)
-
-        r_loss = self.distance(y_subbands, x_subbands)["spectral_distance"]
+    def forward(self, x):
+        y_subbands, x_subbands, z, mask = self.backbone(x)
 
         ce_mask = mask.repeat(1, 2048 // 16)
 
-        continuity_loss = F.cross_entropy(y_probs, x_quantized, reduction="none")
-        continuity_loss = (continuity_loss * ce_mask).sum() / ce_mask.sum()
+        # Consider replacing with discretized mixture of logistic distributions loss
+        # continuity_loss = F.cross_entropy(y_probs, x_quantized, reduction="none")
+        # continuity_loss = (continuity_loss * ce_mask).sum() / ce_mask.sum()
 
-        z_samples = self.prior.sample(z.shape[0] * z.shape[2])
+        continuity_loss, y_subbands = self.prob_distance(y_subbands, x_subbands, mask=ce_mask)
 
-        d_loss = slicer.fgw_dist(z.transpose(1, 2).reshape(-1, z.shape[1]), z_samples)
-
-        return (r_loss, continuity_loss, d_loss)
-
-    def forward(self, x, x_quantized):
-        y, y_subbands, y_probs, x_subbands, z, mask = self.backbone(x)
+        y = self.backbone.recompose(y_subbands)
 
         mb_dist = self.distance(y_subbands, x_subbands)
         fb_dist = self.distance(y, x)
 
         r_loss = mb_dist["spectral_distance"] + fb_dist["spectral_distance"]
-
-        ce_mask = mask.repeat(1, 2048 // 16)
-
-        # Consider replacing with discretized mixture of logistic distributions loss
-        continuity_loss = F.cross_entropy(y_probs, x_quantized, reduction="none")
-        continuity_loss = (continuity_loss * ce_mask).sum() / ce_mask.sum()
 
         z_samples = self.prior.sample(z.shape[0] * z.shape[2])
 
@@ -177,6 +166,7 @@ def train(model, train_dl, lr=1e-4, warmup=None, checkpoint=None):
     i = 0
     model.prior.print_parameters()
     model.slicer.print_parameters()
+
     while True:
         model.train()
 
@@ -192,8 +182,8 @@ def train(model, train_dl, lr=1e-4, warmup=None, checkpoint=None):
             with torch.no_grad():
                 # beginning = peak_norm(apply_augmentations(real_imgs, sample_rate=bitrate)).cuda()
                 beginning = real_imgs
-                x_avg = F.avg_pool1d(beginning, 16)
-                x_quantized = mu_law_encoding(torch.clamp(x_avg, -1, 1).squeeze(1), 256)
+                # x_avg = F.avg_pool1d(beginning, 16)
+                # x_quantized = mu_law_encoding(torch.clamp(x_avg, -1, 1).squeeze(1), 256)
                 # x_quantized = [None] * beginning.shape[0]
                 # for i in range(beginning.shape[0]):
                 #     x_quantized[i] = utils.convert_pcm(beginning[i, :, :])
@@ -203,16 +193,16 @@ def train(model, train_dl, lr=1e-4, warmup=None, checkpoint=None):
 
             opt.zero_grad()
 
-            r_loss, c_loss, d_loss, f_loss = model(beginning, x_quantized)
+            r_loss, c_loss, d_loss, f_loss = model(beginning)
             
-            skip = warmup[1] if warmup is not None else 2
+            # skip = warmup[1] if warmup is not None else 2
 
-            r_loss_beta, c_loss_beta = 1., 0.55
-            f_loss_beta = 0.1 if i > skip-1 else 1.
+            r_loss_beta, c_loss_beta = 0., 1.
+            # f_loss_beta = 0.1 if i > skip-1 else 1.
             d_loss_beta = 0.
             # d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=1e-5) if i > reg_skip-1 else 0.
 
-            loss = (r_loss_beta * r_loss) + (c_loss_beta * c_loss) + (f_loss_beta * f_loss)
+            loss = (r_loss_beta * r_loss) + (c_loss_beta * c_loss)
             # loss = r_loss
 
             r_loss_total += r_loss.item() / 2
@@ -232,7 +222,7 @@ def train(model, train_dl, lr=1e-4, warmup=None, checkpoint=None):
         if (i+1) % 8 == 0:
             torch.save(model.state_dict(), f"../models/rae_{i+1}.pt")
             torch.save(opt.state_dict(), f"../models/opt_{i+1}.pt")
-            real_eval(model, i)
+            real_eval(model.backbone, i)
 
         i += 1
 
@@ -246,14 +236,14 @@ trainer = TrainerAE(model, prior, slicer).cuda()
 data_folder = "../data"
 
 audio_files = aggregate_wavs([f"{data_folder}/Classical", f"{data_folder}/Electronic", f"{data_folder}/Hip Hop", f"{data_folder}/Jazz", f"{data_folder}/Metal", f"{data_folder}/Pop", f"{data_folder}/R&B", f"{data_folder}/Rock"])
-X_train, X_test = train_test_split(audio_files[:80], train_size=0.8, random_state=42)
+X_train, X_test = train_test_split(audio_files[:70], train_size=0.8, random_state=42)
 
 training_params = {
-    "batch_size": 6,
+    "batch_size": 4,
     "learning_rate": 1e-4,
     "dataset_multiplier": 32,
     "dataloader_num_workers": 0,
-    "data_loader_pin_mem": False
+    "dataloader_pin_mem": False
 }
 
 train_ds = AudioFileDataset(X_train, sequence_length, multiplier=training_params["dataset_multiplier"])
@@ -264,9 +254,9 @@ val_dl = DataLoader(val_ds, batch_size=training_params["batch_size"], num_worker
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(pytorch_total_params)
 
-# train(trainer, train_dl, lr=training_params["learning_rate"])
-checkpoint = torch.load("../models/ravae_stage1.pt")
-trainer.load_state_dict(checkpoint["model"])
-real_eval(trainer.backbone, 1001)
-sample_from_prior(trainer.backbone, trainer.prior, 64 * 4)
+train(trainer, train_dl, lr=training_params["learning_rate"])
+# checkpoint = torch.load("../models/ravae_stage1.pt")
+# trainer.load_state_dict(checkpoint["model"])
+# real_eval(trainer.backbone, 1001)
+# sample_from_prior(trainer.backbone, trainer.prior, 64 * 4)
 # print(model)

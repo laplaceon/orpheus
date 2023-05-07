@@ -17,7 +17,7 @@ class Orpheus(nn.Module):
         enc_h_dims = [16, 80, 160, 320, 640],
         dec_h_dims = [640, 320, 160, 80, 16],
         dec_prob_dim = 256,
-        dec_prob_scale = 1,
+        dec_num_mixtures = 4,
         latent_dim = 128,
         enc_scales = [4, 4, 4, 2],
         enc_attns = [[False, False, False], [False, False, False], [False, False, False]],
@@ -36,9 +36,13 @@ class Orpheus(nn.Module):
 
         self.pqmf = PQMF(enc_h_dims[0], 100, fast_recompose)
 
+        dec_h_dims[-1] = (dec_h_dims[-1] * 3 + 1) * dec_num_mixtures
+
         self.encoder = Encoder(enc_h_dims, latent_dim, [None] + enc_scales, enc_ds_expansion_factor, [None] + enc_attns, enc_blocks_per_stages, enc_layers_per_blocks, drop_path=drop_path)
         self.decoder = Decoder(dec_h_dims, latent_dim, dec_scales, dec_ds_expansion_factor, dec_blocks_per_stages, dec_layers_per_blocks, drop_path=drop_path)
-        self.decoder_mbp = MultiBranchProbabilisticDecoder(dec_h_dims[-2], dec_prob_dim)
+        # self.decoder_mbp = MultiBranchProbabilisticDecoder(dec_h_dims[-2], dec_prob_dim)
+
+        self.num_mixtures = dec_num_mixtures
 
         self.patch_size = 2048
         self.num_bands = enc_h_dims[0]
@@ -89,11 +93,21 @@ class Orpheus(nn.Module):
 
     def forward_nm(self, x):
         z = self.encode(x)
-        out, _ = self.decode(z)
+        logits = self.decode(z)
 
-        return out
+        B, _, L = logits.size()
 
-    def forward(self, x, fullband=True):
+        logit_probs = logits[:, :self.num_mixtures, :]  # B, M, L
+        l = logits[:, self.num_mixtures:, :]  # B, M*C*3 , L
+        l = l.reshape(B, self.num_bands, 3 * self.num_mixtures, L)  # B, C, 3 * M, L
+
+        means = l[:, :, :self.num_mixtures, :]  # B, C, M, L
+
+        expected = torch.sum(means * logit_probs.unsqueeze(1), dim=2)
+
+        return expected
+
+    def forward(self, x):
         mask = self.gen_random_mask(x)
         pre_pqmf_mask = upsample_mask(mask, self.patch_size).unsqueeze(1)
         post_pqmf_mask = upsample_mask(mask, self.patch_size // self.num_bands).unsqueeze(1)
@@ -108,11 +122,6 @@ class Orpheus(nn.Module):
 
         mask_token = self.mask_embedding.repeat(z.shape[0], 1, z.shape[2])
         z_p = z * (1. - mask.unsqueeze(1)) + mask_token * mask.unsqueeze(1)
-        y_subbands, y_pre = self.decode(z_p)
+        y_subbands = self.decode(z_p)
 
-        y_probs = self.decoder_mbp(y_pre)
-
-        if fullband:
-            return self.recompose(y_subbands), y_subbands, y_probs, x_subbands_true, z_p, mask
-
-        return y_subbands, y_probs, x_subbands_true, z_p, mask
+        return y_subbands, x_subbands_true, z_p, mask
