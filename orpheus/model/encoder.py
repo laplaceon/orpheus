@@ -153,7 +153,7 @@ class EncoderBlock(nn.Module):
         channels,
         kernel,
         num_layers,
-        dilation_factor = 2,
+        dilation_factor = 3,
         ds_expansion_factor = 2.,
         ds = False,
         drop_path = 0.

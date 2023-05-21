@@ -52,7 +52,7 @@ class Decoder(nn.Module):
         self.final_conv = nn.Sequential(
             nn.LeakyReLU(0.2),
             weight_norm(nn.Conv1d(h_dims[-2], h_dims[-1], 7, padding=3)),
-            nn.Tanh()
+            # nn.Tanh()
         )
 
         self.conv = nn.Sequential(*stages)
@@ -108,7 +108,7 @@ class DecoderBlock(nn.Module):
         channels,
         kernel,
         num_layers = 2,
-        dilation_factor = 2,
+        dilation_factor = 3,
         ds_expansion_factor = 2.,
         ds = False,
         drop_path = 0.

@@ -14,6 +14,7 @@ setup(
         'x-transformers',
         'einops',
         'timm',
+        'cdpam',
         'power_spherical @ git+https://github.com/nicola-decao/power_spherical'
     ],
 

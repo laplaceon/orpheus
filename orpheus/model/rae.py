@@ -8,6 +8,7 @@ from .pqmf import PQMF
 from .encoder import Encoder
 from .decoder import Decoder, MultiBranchProbabilisticDecoder
 from .decoder_predictive import PredictiveDecoder
+from .mol_translate import MoLTranslate
 
 from .mask import upsample_mask
 
@@ -25,9 +26,9 @@ class Orpheus(nn.Module):
         enc_ds_expansion_factor = 2.,
         dec_ds_expansion_factor = 2.,
         enc_blocks_per_stages = [1, 1, 1, 1],
-        enc_layers_per_blocks = [4, 4, 4, 3],
+        enc_layers_per_blocks = [4, 3, 3, 3],
         dec_blocks_per_stages = [1, 1, 1, 1],
-        dec_layers_per_blocks = [3, 4, 4, 4],
+        dec_layers_per_blocks = [3, 3, 3, 4],
         drop_path = 0.,
         masked_ratio = [0.45, 0.97, 0.55, 0.25],
         fast_recompose = True
@@ -36,11 +37,15 @@ class Orpheus(nn.Module):
 
         self.pqmf = PQMF(enc_h_dims[0], 100, fast_recompose)
 
-        dec_h_dims[-1] = (dec_h_dims[-1] * 3 + 1) * dec_num_mixtures
+        num_prob_logits = (dec_h_dims[-1] * 2 + 1) * dec_num_mixtures
+        # num_prob_logits = dec_h_dims[-1] * 3 * dec_num_mixtures
+
+        dec_h_dims[-1] = num_prob_logits
 
         self.encoder = Encoder(enc_h_dims, latent_dim, [None] + enc_scales, enc_ds_expansion_factor, [None] + enc_attns, enc_blocks_per_stages, enc_layers_per_blocks, drop_path=drop_path)
         self.decoder = Decoder(dec_h_dims, latent_dim, dec_scales, dec_ds_expansion_factor, dec_blocks_per_stages, dec_layers_per_blocks, drop_path=drop_path)
         # self.decoder_mbp = MultiBranchProbabilisticDecoder(dec_h_dims[-2], dec_prob_dim)
+        self.translator = MoLTranslate(num_prob_logits)
 
         self.num_mixtures = dec_num_mixtures
 
@@ -93,19 +98,30 @@ class Orpheus(nn.Module):
 
     def forward_nm(self, x):
         z = self.encode(x)
-        logits = self.decode(z)
+        expected, _ = self.expected_from_decoded(self.decode(z))
 
+        return expected
+
+    def expected_from_decoded(self, logits):
         B, _, L = logits.size()
 
         logit_probs = logits[:, :self.num_mixtures, :]  # B, M, L
         l = logits[:, self.num_mixtures:, :]  # B, M*C*3 , L
-        l = l.reshape(B, self.num_bands, 3 * self.num_mixtures, L)  # B, C, 3 * M, L
+        l = l.reshape(B, self.num_bands, 2 * self.num_mixtures, L)  # B, C, 3 * M, L
 
         means = l[:, :, :self.num_mixtures, :]  # B, C, M, L
+        weights = F.softmax(logit_probs, dim=-1)
 
-        expected = torch.sum(means * logit_probs.unsqueeze(1), dim=2)
+        l[:, :, :self.num_mixtures, :] = torch.tanh(means)
 
-        return expected
+        # l = logits.reshape(B, self.num_bands, 3 * self.num_mixtures, L)  # B, C, 3 * M, L
+        # logit_probs = l[:, :, :self.num_mixtures, :]
+        # means = l[:, :, self.num_mixtures: 2 * self.num_mixtures, :]  # B, C, M, L 
+        # weights = F.softmax(logit_probs, dim=-1)
+
+        expected = torch.sum(torch.tanh(means) * weights.unsqueeze(1), dim=2)
+
+        return expected, logits
 
     def forward(self, x):
         mask = self.gen_random_mask(x)

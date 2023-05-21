@@ -1,6 +1,7 @@
 import os
 
 import torchaudio
+import cdpam
 
 from pprint import pprint
 
@@ -12,9 +13,10 @@ import core.process as utils
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.optim import AdamW
+from torch.optim import AdamW, Adamax
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
+from torch.cuda.amp import GradScaler
 
 from model.rae import Orpheus
 from model.prior import GaussianPrior
@@ -26,6 +28,8 @@ from torchaudio.functional import mu_law_encoding
 
 from dataset import AudioFileDataset, aggregate_wavs
 from sklearn.model_selection import train_test_split
+
+from torchaudio.transforms import Resample
 
 from torch_audiomentations import SomeOf, OneOf, PolarityInversion, AddColoredNoise, Gain, HighPassFilter, LowPassFilter, BandPassFilter, PeakNormalization, PitchShift
 
@@ -64,9 +68,14 @@ class TrainerAE(nn.Module):
         self.prior = prior
         self.slicer = slicer
 
+        log_epsilon = 1e-7
+
         stft = closs.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
-        self.distance = closs.AudioDistanceV1(stft, 1e-7)
-        self.prob_distance = closs.DiscretizedMixtureLoss(65536)
+        self.compound_distance = closs.AudioDistanceV2(stft, backbone.translator, 4096, 4, log_epsilon)
+        self.distance = closs.AudioDistanceV1(stft, log_epsilon)
+        # self.perceptual_distance = cdpam.CDPAM()
+
+        self.resample_fp = Resample(bitrate, 22050)
 
     def forward(self, x):
         y_subbands, x_subbands, z, mask = self.backbone(x)
@@ -77,20 +86,25 @@ class TrainerAE(nn.Module):
         # continuity_loss = F.cross_entropy(y_probs, x_quantized, reduction="none")
         # continuity_loss = (continuity_loss * ce_mask).sum() / ce_mask.sum()
 
-        continuity_loss, y_subbands = self.prob_distance(y_subbands, x_subbands, mask=ce_mask)
+        # continuity_loss, y_subbands = self.prob_distance(y_subbands, x_subbands, mask=ce_mask)
 
-        y = self.backbone.recompose(y_subbands)
+        # print("1", y_subbands.max().item(), y_subbands.min().item())
+        y_subbands_expected, y_subbands = self.backbone.expected_from_decoded(y_subbands)
+        # print("2", y_subbands.max().item(), y_subbands.min().item())
+        y = self.backbone.recompose(y_subbands_expected)
 
-        mb_dist = self.distance(y_subbands, x_subbands)
+        mb_dist = self.compound_distance(y_subbands_expected, x_subbands, y_subbands, mask=ce_mask)
         fb_dist = self.distance(y, x)
 
         r_loss = mb_dist["spectral_distance"] + fb_dist["spectral_distance"]
+        continuity_loss = mb_dist["entropy_distance"]
 
         z_samples = self.prior.sample(z.shape[0] * z.shape[2])
 
         d_loss = slicer.fgw_dist(z.transpose(1, 2).reshape(-1, z.shape[1]), z_samples)
 
         with torch.no_grad():
+            # f_loss = self.perceptual_distance.forward(self.resample_fp(x.squeeze(1)), self.resample_fp(y.squeeze(1)))
             f_loss = F.mse_loss(y, x)
 
         return (r_loss, continuity_loss, d_loss, f_loss)
@@ -145,9 +159,14 @@ def cyclic_kl(step, cycle_len, maxp=0.5, min_beta=0, max_beta=1):
     div_shift = 1 / (1 - min_beta/max_beta)
     return min(((step % cycle_len) / (cycle_len * maxp * div_shift)) + (min_beta / max_beta), 1) * max_beta
 
-def train(model, train_dl, lr=1e-4, warmup=None, checkpoint=None):
+def eval(model, val_dl):
+    for batch in tqdm(val_dl):
+        print(batch)
+
+def train(model, train_dl, lr=1e-4, mixed_precision=False, warmup=None, checkpoint=None):
     print("Learning rate:", lr)
     opt = AdamW(model.parameters(), lr)
+    scaler = GradScaler(enabled=mixed_precision)
 
     if checkpoint is not None:
         model.load_state_dict(checkpoint["model"])
@@ -166,7 +185,6 @@ def train(model, train_dl, lr=1e-4, warmup=None, checkpoint=None):
     i = 0
     model.prior.print_parameters()
     model.slicer.print_parameters()
-
     while True:
         model.train()
 
@@ -191,27 +209,32 @@ def train(model, train_dl, lr=1e-4, warmup=None, checkpoint=None):
                 # x_quantized = utils.quantize_waveform(x_quantized, quantize_bins, pool=16).cuda()
                 beginning = beginning.cuda()
 
+
+            # Try set to none
             opt.zero_grad()
 
-            r_loss, c_loss, d_loss, f_loss = model(beginning)
-            
-            # skip = warmup[1] if warmup is not None else 2
+            with torch.autocast('cuda', dtype=torch.float16, enabled=mixed_precision):
+                r_loss, c_loss, d_loss, f_loss = model(beginning)
+                
+                # skip = warmup[1] if warmup is not None else 2
 
-            r_loss_beta, c_loss_beta = 0., 1.
-            # f_loss_beta = 0.1 if i > skip-1 else 1.
-            d_loss_beta = 0.
-            # d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=1e-5) if i > reg_skip-1 else 0.
+                r_loss_beta, c_loss_beta = 0., 1.
+                # f_loss_beta = 0.1 if i > skip-1 else 1.
+                d_loss_beta = 0.
+                # d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=1e-5) if i > reg_skip-1 else 0.
 
-            loss = (r_loss_beta * r_loss) + (c_loss_beta * c_loss)
-            # loss = r_loss
+                loss = (r_loss_beta * r_loss) + (c_loss_beta * c_loss)
+                # loss = r_loss
 
             r_loss_total += r_loss.item() / 2
             c_loss_total += c_loss.item()
             f_loss_total += f_loss.item()
             d_loss_total += d_loss.item()
 
-            loss.backward()
-            opt.step()
+            scaler.scale(loss).backward()
+            scaler.step(opt)
+            scaler.update()
+
             if warmup is not None:
                 scheduler.step()
 
@@ -239,11 +262,13 @@ audio_files = aggregate_wavs([f"{data_folder}/Classical", f"{data_folder}/Electr
 X_train, X_test = train_test_split(audio_files[:70], train_size=0.8, random_state=42)
 
 training_params = {
-    "batch_size": 4,
+    "batch_size": 4, # Set to multiple of 8 if mixed_precision is True
     "learning_rate": 1e-4,
     "dataset_multiplier": 32,
     "dataloader_num_workers": 0,
-    "dataloader_pin_mem": False
+    "dataloader_pin_mem": False,
+    "mixed_precision": False,
+    "compile": False
 }
 
 train_ds = AudioFileDataset(X_train, sequence_length, multiplier=training_params["dataset_multiplier"])
@@ -254,7 +279,7 @@ val_dl = DataLoader(val_ds, batch_size=training_params["batch_size"], num_worker
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(pytorch_total_params)
 
-train(trainer, train_dl, lr=training_params["learning_rate"])
+train(trainer, train_dl, lr=training_params["learning_rate"], mixed_precision=training_params["mixed_precision"])
 # checkpoint = torch.load("../models/ravae_stage1.pt")
 # trainer.load_state_dict(checkpoint["model"])
 # real_eval(trainer.backbone, 1001)
