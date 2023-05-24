@@ -160,8 +160,34 @@ def cyclic_kl(step, cycle_len, maxp=0.5, min_beta=0, max_beta=1):
     return min(((step % cycle_len) / (cycle_len * maxp * div_shift)) + (min_beta / max_beta), 1) * max_beta
 
 def eval(model, val_dl):
-    for batch in tqdm(val_dl):
-        print(batch)
+    loss_total = 0
+    d_loss_total = 0
+    r_loss_total = 0
+    c_loss_total = 0
+    nb = 0
+    
+    model.eval()
+    with torch.no_grad():
+        for batch in tqdm(val_dl, position=0, leave=True):
+            inp = batch['input'].unsqueeze(1)
+
+            mod = peak_norm(inp.cuda())
+            x_avg = F.avg_pool1d(mod, 16)
+            x_quantized = mu_law_encoding(x_avg.squeeze(1), mu_quantize_bins)
+
+            r_loss, c_loss, d_loss = model.eval_mb(mod, x_quantized)
+
+            loss = r_loss + c_loss
+
+            loss_total += loss.item()
+            d_loss_total += d_loss.item()
+            r_loss_total += r_loss.item()
+            c_loss_total += c_loss.item()
+
+            nb += 1
+
+    print(f"Valid loss: {loss_total/nb}, D loss: {d_loss_total/nb}, R loss: {r_loss_total/nb}, C loss: {c_loss_total/nb}")
+    return loss_total/nb
 
 def train(model, train_dl, lr=1e-4, mixed_precision=False, warmup=None, checkpoint=None):
     print("Learning rate:", lr)
@@ -218,7 +244,7 @@ def train(model, train_dl, lr=1e-4, mixed_precision=False, warmup=None, checkpoi
                 
                 # skip = warmup[1] if warmup is not None else 2
 
-                r_loss_beta, c_loss_beta = 0., 1.
+                r_loss_beta, c_loss_beta = 0.1, 1.
                 # f_loss_beta = 0.1 if i > skip-1 else 1.
                 d_loss_beta = 0.
                 # d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=1e-5) if i > reg_skip-1 else 0.
@@ -262,7 +288,7 @@ audio_files = aggregate_wavs([f"{data_folder}/Classical", f"{data_folder}/Electr
 X_train, X_test = train_test_split(audio_files[:70], train_size=0.8, random_state=42)
 
 training_params = {
-    "batch_size": 4, # Set to multiple of 8 if mixed_precision is True
+    "batch_size": 3, # Set to multiple of 8 if mixed_precision is True
     "learning_rate": 1e-4,
     "dataset_multiplier": 32,
     "dataloader_num_workers": 0,

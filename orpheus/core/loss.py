@@ -188,8 +188,10 @@ class AudioDistanceV2(nn.Module):
             dmll = discretized_mix_logistic_loss(y_mix, dml_labels, self.num_classes, self.num_mixtures)
             # assert dmll.size() == x.size()
 
-            if False:
-                entropy_loss = (dmll * mask).sum() / mask.sum()
+            if mask is not None:
+                expanded_dmll = F.interpolate(dmll, mask.shape[-1], mode='linear')
+                expanded_mask = mask.unsqueeze(1)
+                entropy_loss = (expanded_dmll * expanded_mask).sum() / expanded_mask.sum()
             else:
                 entropy_loss = torch.sum(dmll)
             
