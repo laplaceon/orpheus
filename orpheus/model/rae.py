@@ -40,12 +40,12 @@ class Orpheus(nn.Module):
         num_prob_logits = (dec_h_dims[-1] * 2 + 1) * dec_num_mixtures
         # num_prob_logits = dec_h_dims[-1] * 3 * dec_num_mixtures
 
-        dec_h_dims[-1] = num_prob_logits
+        # dec_h_dims[-1] = num_prob_logits
 
         self.encoder = Encoder(enc_h_dims, latent_dim, [None] + enc_scales, enc_ds_expansion_factor, [None] + enc_attns, enc_blocks_per_stages, enc_layers_per_blocks, drop_path=drop_path)
         self.decoder = Decoder(dec_h_dims, latent_dim, dec_scales, dec_ds_expansion_factor, dec_blocks_per_stages, dec_layers_per_blocks, drop_path=drop_path)
-        # self.decoder_mbp = MultiBranchProbabilisticDecoder(dec_h_dims[-2], dec_prob_dim)
-        self.translator = MoLTranslate(num_prob_logits)
+        self.decoder_mbp = MultiBranchProbabilisticDecoder(dec_h_dims[-2], dec_prob_dim)
+        # self.translator = MoLTranslate(num_prob_logits)
 
         self.num_mixtures = dec_num_mixtures
 
@@ -98,7 +98,7 @@ class Orpheus(nn.Module):
 
     def forward_nm(self, x):
         z = self.encode(x)
-        expected, _ = self.expected_from_decoded(self.decode(z))
+        expected, _ = self.decode(z)
 
         return expected
 
@@ -138,6 +138,8 @@ class Orpheus(nn.Module):
 
         mask_token = self.mask_embedding.repeat(z.shape[0], 1, z.shape[2])
         z_p = z * (1. - mask.unsqueeze(1)) + mask_token * mask.unsqueeze(1)
-        y_subbands = self.decode(z_p)
+        y_subbands, y_pre = self.decode(z_p)
 
-        return y_subbands, x_subbands_true, z_p, mask
+        y_probs = self.decoder_mbp(y_pre)
+
+        return y_subbands, y_probs, x_subbands_true, z_p, mask
