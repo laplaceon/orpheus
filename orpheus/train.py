@@ -141,7 +141,7 @@ def real_eval(model, epoch):
     for test_file in test_files:
         out = get_song_features(model, f"../input/{test_file}")
         # print(out, torch.min(out).item(), torch.max(out).item())
-        torchaudio.save(f"../output/{slugify(test_file)}_epoch{epoch+1}.wav", out.cpu().unsqueeze(0), bitrate)
+        torchaudio.save(f"../output/{slugify(test_file)}_epoch{epoch}.wav", out.cpu().unsqueeze(0), bitrate)
 
 def sample_from_prior(backbone, prior, num_samples):
     backbone.eval()
@@ -182,7 +182,7 @@ def eval(model, val_dl, hparams=None):
 
             loss_total += loss.item()
             d_loss_total += d_loss.item()
-            r_loss_total += r_loss.item()
+            r_loss_total += r_loss.item() / 2
             c_loss_total += c_loss.item()
             f_loss_total += f_loss.item()
 
@@ -196,7 +196,7 @@ def train(model, train_dl, val_dl, lr, hparams=None, mixed_precision=False, comp
     opt = AdamW(model.parameters(), lr)
     scaler = GradScaler(enabled=mixed_precision)
 
-    val_loss_min = np.Inf
+    val_loss_min = None
 
     if checkpoint is not None:
         model.load_state_dict(checkpoint["model"])
@@ -204,7 +204,9 @@ def train(model, train_dl, val_dl, lr, hparams=None, mixed_precision=False, comp
 
         val_loss_min = checkpoint["loss"]
 
-    early_stopping = EarlyStopping(patience=10, verbose=True, val_loss_min=val_loss_min, path="../models/ravae_stage1.pt")
+        # print(val_loss_min)
+
+    early_stopping = EarlyStopping(patience=10, verbose=True, val_loss_min=val_loss_min, path="../models/ravae_stage1_p2.pt")
 
     if compile:
         model = torch.compile(model)
@@ -320,8 +322,9 @@ val_dl = DataLoader(val_ds, batch_size=training_params["batch_size"], num_worker
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(pytorch_total_params)
 
-train(trainer, train_dl, val_dl, lr=training_params["learning_rate"], mixed_precision=training_params["mixed_precision"], compile=training_params["compile"], hparams=hparams)
-# checkpoint = torch.load("../models/ravae_stage1.pt")
+checkpoint = torch.load("../models/ravae_stage1.pt")
+train(trainer, train_dl, val_dl, lr=training_params["learning_rate"], mixed_precision=training_params["mixed_precision"], compile=training_params["compile"], hparams=hparams, checkpoint=checkpoint)
+
 # trainer.load_state_dict(checkpoint["model"])
 # real_eval(trainer.backbone, 1001)
 # sample_from_prior(trainer.backbone, trainer.prior, 64 * 4)
