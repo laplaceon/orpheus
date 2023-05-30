@@ -75,7 +75,7 @@ class TrainerAE(nn.Module):
         stft = closs.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
         # self.compound_distance = closs.AudioDistanceV2(stft, backbone.translator, 4096, 4, log_epsilon)
         self.distance = closs.AudioDistanceV1(stft, log_epsilon)
-        self.perceptual_distance = cdpam.CDPAM()
+        # self.perceptual_distance = cdpam.CDPAM()
 
         self.resample_fp = Resample(bitrate, 22050)
 
@@ -104,10 +104,10 @@ class TrainerAE(nn.Module):
         d_loss = slicer.fgw_dist(z.transpose(1, 2).reshape(-1, z.shape[1]), z_samples)
 
         with torch.no_grad():
-            f_loss = self.perceptual_distance.forward(self.resample_fp(x.squeeze(1)), self.resample_fp(y.squeeze(1)))
-            # f_loss = F.mse_loss(y, x)
+            # f_loss = self.perceptual_distance.forward(self.resample_fp(x.squeeze(1)), self.resample_fp(y.squeeze(1)))
+            f_loss = F.mse_loss(y, x)
 
-        return (r_loss, continuity_loss, d_loss, torch.mean(f_loss))
+        return (r_loss, continuity_loss, d_loss, f_loss)
 
 def get_song_features(model, file):
     data, rate = torchaudio.load(file)
@@ -178,7 +178,7 @@ def eval(model, val_dl, hparams=None):
 
             r_loss, c_loss, d_loss, f_loss = model(mod, x_quantized)
 
-            loss = r_loss + c_loss + f_loss
+            loss = r_loss + c_loss
 
             loss_total += loss.item()
             d_loss_total += d_loss.item()
@@ -201,12 +201,10 @@ def train(model, train_dl, val_dl, lr, hparams=None, mixed_precision=False, comp
     if checkpoint is not None:
         model.load_state_dict(checkpoint["model"])
         opt.load_state_dict(checkpoint["opt"])
-
         val_loss_min = checkpoint["loss"]
+        print(f"Resuming from model with val loss: {val_loss_min}")
 
-        # print(val_loss_min)
-
-    early_stopping = EarlyStopping(patience=10, verbose=True, val_loss_min=val_loss_min, path="../models/ravae_stage1_p2.pt")
+    early_stopping = EarlyStopping(patience=10, verbose=True, val_loss_min=val_loss_min, path="../models/ravae_stage1.pt")
 
     if compile:
         model = torch.compile(model)
@@ -260,7 +258,7 @@ def train(model, train_dl, val_dl, lr, hparams=None, mixed_precision=False, comp
                 d_loss_beta = 0.
                 # d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=1e-5) if i > reg_skip-1 else 0.
 
-                loss = (r_loss_beta * r_loss) + (c_loss_beta * c_loss) + (f_loss_beta * f_loss)
+                loss = (r_loss_beta * r_loss) + (c_loss_beta * c_loss)
 
             training_loss += loss.item()
             r_loss_total += r_loss.item() / 2
@@ -306,7 +304,7 @@ hparams = {
 
 training_params = {
     "batch_size": 24, # Set to multiple of 8 if mixed_precision is True
-    "learning_rate": 1e-4,
+    "learning_rate": 1.5e-4,
     "dataset_multiplier": 256,
     "dataloader_num_workers": 4,
     "dataloader_pin_mem": False,
@@ -322,7 +320,8 @@ val_dl = DataLoader(val_ds, batch_size=training_params["batch_size"], num_worker
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(pytorch_total_params)
 
-checkpoint = torch.load("../models/ravae_stage1.pt")
+checkpoint = torch.load("../models/ravae_stage1_epoch20.pt")
+# checkpoint = None
 train(trainer, train_dl, val_dl, lr=training_params["learning_rate"], mixed_precision=training_params["mixed_precision"], compile=training_params["compile"], hparams=hparams, checkpoint=checkpoint)
 
 # trainer.load_state_dict(checkpoint["model"])
