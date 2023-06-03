@@ -15,6 +15,10 @@ from model.pqmf import PQMF
 from torch.distributions import Normal
 
 from core.utils import min_max_scale
+from core.loss import MelScale
+from model.mask import gen_random_mask_1d, upsample_mask
+
+from einops import rearrange
 
 apply_augmentations = SomeOf(
     num_transforms = (1, 3),
@@ -117,7 +121,10 @@ def load_audio_clips(l):
     
     return data_map
 
-def to_mel(x, scale, normalized=False, num_mels=None, sample_rate=44100):
+def mel_spec(x, scale, normalized=False, num_mels=None, sample_rate=44100):
+    B = x.size(0)
+    x = rearrange(x, "b c t -> (b c) t")
+
     to_spec = torchaudio.transforms.Spectrogram(
         n_fft=scale,
         win_length=scale,
@@ -126,16 +133,19 @@ def to_mel(x, scale, normalized=False, num_mels=None, sample_rate=44100):
         power=None,
     )
 
-    spec = to_spec(x).abs()
+    spec = to_spec(x)
 
     if num_mels is not None:
-        to_mel = torchaudio.transforms.MelScale(
+        to_mel = MelScale(
             sample_rate=sample_rate,
             n_fft=scale,
             n_mels=num_mels,
         )
 
-        spec = to_mel(spec)
+        spec = to_mel(spec).abs()
+
+    _, C, L = spec.size()
+    spec = spec.view(B, -1, C, L)
     
     return spec
 
@@ -154,10 +164,9 @@ n_mels = 64
 # resize = torchvision.transforms.Resize((n_stft, n_stft)).cuda()
 
 clips = load_audio_clips(["../input/Synthwave Coolin'.wav", "../input/Waiting For The End [Official Music Video] - Linkin Park-HQ.wav"])
-clips = list(clips.values())[1][:sequence_length].unsqueeze(0).unsqueeze(1)
+clips = list(clips.values())[1][sequence_length*5:sequence_length*6].unsqueeze(0).unsqueeze(1)
 
 def test_wave_spectral_prob_relationship():
-    
     # clips = pqmf(clips)
 
     # clips = torch.tensor(get_trunc_norm(-1, 1, 0, 1).rvs(sequence_length)).float().unsqueeze(0).unsqueeze(1)
@@ -172,17 +181,51 @@ def test_wave_spectral_prob_relationship():
 
     print(means.shape, means.min(), means.max())
     print(variances.shape, variances.min(), variances.max())
-    spec = to_mel(sampled, 2048, normalized=False)
+    spec = mel_spec(sampled, 2048, normalized=False)
     print(spec.shape, spec.min(), spec.max())
     # spectrograms = get_complex_spectrogram(clips, to_complex)
     # visualize_magnitude_and_phase(spectrograms, to_mel, resize)
 
-clips = pqmf(clips)
+def visualize_spec(specs):
+    plt.figure()
 
-print(clips.shape, clips.min(), clips.max())
-spec = to_mel(clips, 2048, normalized=False)
-print(spec)
-print(spec.shape, spec.min(), spec.max())
-spec = min_max_scale(spec)
-print(spec)
-print(spec.shape, spec.min(), spec.max())
+    s = to_db(specs[0].permute(1, 2, 0))
+    mask = to_db(specs[1].permute(1, 2, 0))
+    
+    plt.subplot(1, 3, 1)
+    plt.imshow(s)
+    plt.subplot(1, 3, 3)
+    plt.imshow(mask)
+    plt.subplot(1, 3, 2)
+    plt.imshow(s * (1. - mask))
+    
+    plt.colorbar()
+    plt.show()
+
+# mask = gen_random_mask_1d(clips, 0.1, 2048)
+# wav_mask = upsample_mask(mask, 2048).unsqueeze(1)
+
+# print(wav_mask.shape, clips.shape)
+
+# clips_mel = mel_spec(clips, 2048, num_mels=128)
+# mask_mel = min_max_scale(mel_spec(wav_mask, 2048, num_mels=128))
+
+# print(mask, mask_mel.min().item(), mask_mel.max().item())
+
+# visualize_spec([clips_mel[0], mask_mel[0]])
+
+# print(clips.shape, clips.min(), clips.max())
+# spec = to_mel(clips, 2048, normalized=False)
+# print(spec)
+# print(spec.shape, spec.min(), spec.max())
+# spec = min_max_scale(spec)
+# print(spec)
+# print(spec.shape, spec.min(), spec.max())
+
+nums = torch.rand(5,)
+logprobs = torch.log_softmax(nums, dim=0)
+probs = torch.softmax(nums, dim=0)
+exp = torch.exp(logprobs)
+log = torch.log(probs)
+
+print(nums, logprobs, exp, log)

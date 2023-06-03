@@ -35,44 +35,6 @@ def mean_difference(target: torch.Tensor,
     else:
         raise Exception(f'Norm must be either L1 or L2, got {norm}')
 
-def masked_mean_difference(target: torch.Tensor,
-                    value: torch.Tensor,
-                    mask: torch.Tensor,
-                    norm: str = 'L1',
-                    relative: bool = False):
-    
-    value = value.transpose(1, 2).view(mask.shape[0], mask.shape[1], -1)
-    target = target.transpose(1, 2).view(mask.shape[0], mask.shape[1], -1)
-
-    # mean = target.mean(dim=-1, keepdim=True)
-    # var = target.var(dim=-1, keepdim=True)
-    # ntarget = (target - mean) / (var + 1.e-6)**.5
-
-    diff = target - value
-    # ndiff = ntarget - value
-
-    unmask = 1. - mask
-
-    if norm == 'L1':
-        diff = diff.abs().mean(dim=-1)
-        # ndiff = ndiff.abs().mean(dim=-1)
-        if relative:
-            diff = diff / target.abs().mean(dim=-1)
-            # ndiff = ndiff / ntarget.abs().mean(dim=-1)
-    elif norm == 'L2':
-        diff = (diff * diff).mean(dim=-1)
-        # ndiff = (ndiff * ndiff).mean(dim=-1)
-        if relative:
-            diff = diff / (target * target).mean(dim=-1)
-            # ndiff = ndiff / (ntarget * ntarget).mean(dim=-1)
-    else:
-        raise Exception(f'Norm must be either L1 or L2, got {norm}')
-    
-    masked_diff = (diff * mask).sum() / mask.sum()
-    unmasked_diff = (diff * unmask).sum() / unmask.sum()
-
-    return masked_diff, unmasked_diff
-
 class MelScale(nn.Module):
     def __init__(self, sample_rate: int, n_fft: int, n_mels: int) -> None:
         super().__init__()
@@ -121,11 +83,13 @@ class MultiScaleSTFT(nn.Module):
         self.stfts = nn.ModuleList(self.stfts)
         self.mel_scales = nn.ModuleList(self.mel_scales)
 
-    def forward(self, x: torch.Tensor) -> Sequence[torch.Tensor]:
-        B = x.size(0)
-        x = rearrange(x, "b c t -> (b c) t")
+    def forward(self, x: torch.Tensor, with_mixtures: bool = False, add_scale: bool = False) -> Sequence[torch.Tensor]:
+        if with_mixtures:
+            x = rearrange(x, "b c m t -> (b c m) t")
+        else:
+            x = rearrange(x, "b c t -> (b c) t")
         stfts = []
-        for stft, mel in zip(self.stfts, self.mel_scales):
+        for stft, mel, scale in zip(self.stfts, self.mel_scales, self.scales):
             y = stft(x)
             if mel is not None:
                 y = mel(y)
@@ -134,71 +98,67 @@ class MultiScaleSTFT(nn.Module):
             else:
                 y = torch.stack([y.real, y.imag], -1)
 
-            _, C, L = y.size()
-            y = y.view(B, -1, C, L)
-
-            stfts.append(y)
+            if add_scale:
+                stfts.append((y, scale))
+            else:
+                stfts.append(y)
 
         return stfts
 
-class AudioDistanceV2(nn.Module):
+class AudioDistanceCE(nn.Module):
     def __init__(self,
         multiscale_stft: nn.Module,
-        translator: nn.Module,
+        translators: nn.Module,
         num_classes: int,
-        num_mixtures: int,
-        log_epsilon: float
+        num_mixtures: int
     ) -> None:
         super().__init__()
         self.multiscale_stft = multiscale_stft
-        self.translator = translator
+        self.translators = translators
         self.num_classes = num_classes - 1
         self.num_mixtures = num_mixtures
-        self.log_epsilon = log_epsilon
+        self.epsilon = 1e-7
 
-    def forward(self, x: torch.Tensor, y: torch.Tensor, y_mix: torch.Tensor, mask: torch.Tensor = None):
+    def forward(self, x: torch.Tensor, y_means: torch.Tensor, y_means_weighted: torch.Tensor, y_scales: torch.Tensor, mask: torch.Tensor = None):
+        B = x.size(0)
         stfts_x = self.multiscale_stft(x)
-        stfts_y = self.multiscale_stft(y)
+        stfts_y_means = self.multiscale_stft(y_means, True)
+        stfts_y_means_weighted = self.multiscale_stft(y_means_weighted, True)
+        stfts_y_scales = self.multiscale_stft(y_scales, True, True)
 
-        stfts_y_mix = self.multiscale_stft(y_mix)
-
-        spectral_distance = 0.
         entropy_distance = 0.
 
-        for x, y, y_mix in zip(stfts_x, stfts_y, stfts_y_mix):
-            dml_labels = min_max_scale(x)
+        for x, y, y_weighted, y_scale in zip(stfts_x, stfts_y_means, stfts_y_means_weighted, stfts_y_scales):
+            # x = rearrange(x, "b c h w -> (b c) h w")
+            _, H, W = y.size()
 
-            x = rearrange(x, "b c h w -> (b c) h w")
-            y = rearrange(y, "b c h w -> (b c) h w")
+            y_weighted = min_max_scale(y_weighted) + self.epsilon
+            y = min_max_scale(y) + self.epsilon
+            y_weights = y_weighted / y
 
-            logx = torch.log(x + self.log_epsilon)
-            logy = torch.log(y + self.log_epsilon)
-
-            lin_distance = mean_difference(x, y, norm='L2', relative=True)
-            log_distance = mean_difference(logx, logy, norm='L1')
-
-            spectral_distance = spectral_distance + lin_distance + log_distance
-
-            # print(y_mix.min().item(), y_mix.max().item())
-            y_mix = self.translator(y_mix)
-            # print(y_mix.min().item(), y_mix.max().item())
+            y_scales_t = self.translators(y_scale[0], y_scale[1])
             # print(dml_labels.min().item(), dml_labels.max().item())
-            
+            # print("mean", y.min().item(), y.max().item())
+            # print("scale", y_scales_t.min().item(), y_scales_t.max().item())
+            # print("w", y_weights.min().item(), y_weights.max().item())
 
-            dmll = discretized_mix_logistic_loss(y_mix, dml_labels, self.num_classes, self.num_mixtures)
-            # assert dmll.size() == x.size()
+            y = y.view(B, -1, self.num_mixtures, H, W)
+            y_scales_t = y_scales_t.view(B, -1, self.num_mixtures, H, W)
+            y_weights = y_weights.view(B, -1, self.num_mixtures, H, W)
+
+            dml_labels = min_max_scale(x).view(B, -1, H, W)
+
+            dmll = discretized_mix_logistic_loss(y, y_scales_t, y_weights, dml_labels, self.num_classes, self.num_mixtures)
 
             if mask is not None:
-                expanded_dmll = F.interpolate(dmll, mask.shape[-1], mode='linear')
-                expanded_mask = mask.unsqueeze(1)
-                entropy_loss = (expanded_dmll * expanded_mask).sum() / expanded_mask.sum()
+                mod_mask = F.interpolate(mask.unsqueeze(1), size=dmll.shape[3], mode="linear").unsqueeze(2)
+                entropy_loss = (dmll * mod_mask).sum() / mod_mask.sum()
             else:
-                entropy_loss = torch.sum(dmll)
+                entropy_loss = torch.mean(dmll)
             
             entropy_distance = entropy_distance + entropy_loss
 
-
-        return {'spectral_distance': spectral_distance, 'entropy_distance': entropy_distance}
+        return {'entropy_distance': entropy_distance}
 
 class AudioDistanceV1(nn.Module):
     def __init__(self, multiscale_stft: nn.Module,
@@ -223,8 +183,85 @@ class AudioDistanceV1(nn.Module):
 
         return {'spectral_distance': distance}
 
-class WeightedInstantaneousSpectralDistance(nn.Module):
+def _compute_inv_stdv(logits, distribution_base='std', min_mol_logscale=-250., gradient_smoothing_beta=0.6931472):
+    softplus = nn.Softplus(beta=gradient_smoothing_beta)
+    if distribution_base == 'std':
+        scales = torch.maximum(softplus(logits),
+                               torch.as_tensor(np.exp(min_mol_logscale)))
+        inv_stdv = 1. / scales  # Not stable for sharp distributions
+        log_scales = torch.log(scales)
 
+    elif distribution_base == 'logstd':
+        log_scales = torch.maximum(logits, torch.as_tensor(np.array(min_mol_logscale)))
+        inv_stdv = torch.exp(-gradient_smoothing_beta * log_scales)
+    else:
+        raise ValueError(f'distribution base {distribution_base} not known!!')
+
+    return inv_stdv, log_scales
+
+def discretized_mix_logistic_loss(model_means, logit_scales, logit_probs, targets, num_classes, num_mixtures):
+    # Shapes:
+    #    targets: B, C, H, W
+    #    logits: B, M * 3 * C, H, W
+
+    # print(model_means.shape, logit_scales.shape, logit_probs.shape, targets.shape)
+
+    assert len(targets.shape) == 4
+    B, C, H, W = targets.size()
+
+    min_pix_value, max_pix_value = 0, 1
+
+    targets = targets.unsqueeze(2)  # B, C, 1, H, W
+
+    # logit_probs = logits[:, :num_mixtures, :, :]  # B, M, H, W
+    # l = logits[:, num_mixtures:, :, :]  # B, M*C*3 ,H, W
+    # l = l.reshape(B, C, 2 * num_mixtures, H, W)  # B, C, 3 * M, H, W
+
+    # model_means = l[:, :, :num_mixtures, :, :]  # B, C, M, H, W
+
+    inv_stdv, log_scales = _compute_inv_stdv(logit_scales)
+
+    # l = logits.reshape(B, C, 3 * num_mixtures, H, W)  # B, C, 3 * M, H, W
+    # logit_probs = l[:, :, :num_mixtures, :, :]
+    # model_means = l[:, :, num_mixtures: 2 * num_mixtures, :, :]  # B, C, M, H, W
+    # inv_stdv, log_scales = _compute_inv_stdv(l[:, :, 2 * num_mixtures: 3 * num_mixtures, :, :])
+
+    centered = targets - model_means  # B, C, M, H, W
+
+    plus_in = inv_stdv * (centered + 1. / num_classes)
+    cdf_plus = torch.sigmoid(plus_in)
+    min_in = inv_stdv * (centered - 1. / num_classes)
+    cdf_min = torch.sigmoid(min_in)
+
+    log_cdf_plus = plus_in - F.softplus(plus_in)  # log probability for edge case of 0 (before scaling)
+    log_one_minus_cdf_min = -F.softplus(min_in)  # log probability for edge case of 255 (before scaling)
+
+    # probability for all other cases
+    cdf_delta = cdf_plus - cdf_min  # B, C, M, H, W
+
+    mid_in = inv_stdv * centered
+    # log probability in the center of the bin, to be used in extreme cases
+    # (not actually used in this code)
+    log_pdf_mid = mid_in - log_scales - 2. * F.softplus(mid_in)
+
+    # the original implementation uses samples > 0.999, this ignores the largest possible pixel value (255)
+    # which is mapped to 0.9922
+    broadcast_targets = torch.broadcast_to(targets, size=[B, C, num_mixtures, H, W])
+    log_probs = torch.where(broadcast_targets == min_pix_value, log_cdf_plus,
+                            torch.where(broadcast_targets == max_pix_value, log_one_minus_cdf_min,
+                                        torch.where(cdf_delta > 1e-5,
+                                                    torch.log(torch.clamp(cdf_delta, min=1e-12)),
+                                                    log_pdf_mid - np.log(num_classes / 2))))  # B, C, M, H, W
+
+    # print(log_probs.shape, logit_probs.shape)
+
+    # log_probs = torch.sum(log_probs, dim=1) + F.log_softmax(logit_probs, dim=1)  # B, M, H, W
+    log_probs = log_probs + torch.log(logit_probs)  # B, M, H, W
+    negative_log_probs = -torch.logsumexp(log_probs, dim=1)  # B, H, W
+
+    return negative_log_probs
+
+class WeightedInstantaneousSpectralDistance(nn.Module):
     def __init__(self,
                  multiscale_stft: Callable[[], MultiScaleSTFT],
                  weighted: bool = False) -> None:
@@ -292,7 +329,6 @@ class WeightedInstantaneousSpectralDistance(nn.Module):
 
 
 class EncodecAudioDistance(nn.Module):
-
     def __init__(self, scales: int,
                  spectral_distance: Callable[[int], nn.Module]) -> None:
         super().__init__()
@@ -313,7 +349,6 @@ class EncodecAudioDistance(nn.Module):
 
 
 class WaveformDistance(nn.Module):
-
     def __init__(self, norm: str) -> None:
         super().__init__()
         self.norm = norm
@@ -323,7 +358,6 @@ class WaveformDistance(nn.Module):
 
 
 class SpectralDistance(nn.Module):
-
     def __init__(
         self,
         n_fft: int,
@@ -367,22 +401,6 @@ class SpectralDistance(nn.Module):
         for norm in self.norm:
             distance = distance + mean_difference(y, x, norm)
         return distance
-
-def _compute_inv_stdv(logits, distribution_base='std', min_mol_logscale=-250., gradient_smoothing_beta=0.6931472):
-    softplus = nn.Softplus(beta=gradient_smoothing_beta)
-    if distribution_base == 'std':
-        scales = torch.maximum(softplus(logits),
-                               torch.as_tensor(np.exp(min_mol_logscale)))
-        inv_stdv = 1. / scales  # Not stable for sharp distributions
-        log_scales = torch.log(scales)
-
-    elif distribution_base == 'logstd':
-        log_scales = torch.maximum(logits, torch.as_tensor(np.array(min_mol_logscale)))
-        inv_stdv = torch.exp(-gradient_smoothing_beta * log_scales)
-    else:
-        raise ValueError(f'distribution base {distribution_base} not known!!')
-
-    return inv_stdv, log_scales
 
 def discretized_mix_logistic_loss_1dm(logits, targets, num_classes=255, num_mixtures=4):
     # Shapes:
@@ -441,65 +459,6 @@ def discretized_mix_logistic_loss_1dm(logits, targets, num_classes=255, num_mixt
     expected = torch.sum(model_means * logit_probs.unsqueeze(1), dim=2)
 
     return negative_log_probs, expected
-
-def discretized_mix_logistic_loss(logits, targets, num_classes, num_mixtures):
-        # Shapes:
-        #    targets: B, C, H, W
-        #    logits: B, M * 3 * C, H, W
-
-        assert len(targets.shape) == 4
-        B, C, H, W = targets.size()
-
-        min_pix_value, max_pix_value = 0, 1
-
-        targets = targets.unsqueeze(2)  # B, C, 1, H, W
-
-        logit_probs = logits[:, :num_mixtures, :, :]  # B, M, H, W
-        l = logits[:, num_mixtures:, :, :]  # B, M*C*3 ,H, W
-        l = l.reshape(B, C, 2 * num_mixtures, H, W)  # B, C, 3 * M, H, W
-
-        model_means = l[:, :, :num_mixtures, :, :]  # B, C, M, H, W
-
-        inv_stdv, log_scales = _compute_inv_stdv(l[:, :, num_mixtures: 2 * num_mixtures, :, :])
-
-        # l = logits.reshape(B, C, 3 * num_mixtures, H, W)  # B, C, 3 * M, H, W
-        # logit_probs = l[:, :, :num_mixtures, :, :]
-        # model_means = l[:, :, num_mixtures: 2 * num_mixtures, :, :]  # B, C, M, H, W
-        # inv_stdv, log_scales = _compute_inv_stdv(l[:, :, 2 * num_mixtures: 3 * num_mixtures, :, :])
-
-        centered = targets - model_means  # B, C, M, H, W
-
-        plus_in = inv_stdv * (centered + 1. / num_classes)
-        cdf_plus = torch.sigmoid(plus_in)
-        min_in = inv_stdv * (centered - 1. / num_classes)
-        cdf_min = torch.sigmoid(min_in)
-
-        log_cdf_plus = plus_in - F.softplus(plus_in)  # log probability for edge case of 0 (before scaling)
-        log_one_minus_cdf_min = -F.softplus(min_in)  # log probability for edge case of 255 (before scaling)
-
-        # probability for all other cases
-        cdf_delta = cdf_plus - cdf_min  # B, C, M, H, W
-
-        mid_in = inv_stdv * centered
-        # log probability in the center of the bin, to be used in extreme cases
-        # (not actually used in this code)
-        log_pdf_mid = mid_in - log_scales - 2. * F.softplus(mid_in)
-
-        # the original implementation uses samples > 0.999, this ignores the largest possible pixel value (255)
-        # which is mapped to 0.9922
-        broadcast_targets = torch.broadcast_to(targets, size=[B, C, num_mixtures, H, W])
-        log_probs = torch.where(broadcast_targets == min_pix_value, log_cdf_plus,
-                                torch.where(broadcast_targets == max_pix_value, log_one_minus_cdf_min,
-                                            torch.where(cdf_delta > 1e-5,
-                                                        torch.log(torch.clamp(cdf_delta, min=1e-12)),
-                                                        log_pdf_mid - np.log(num_classes / 2))))  # B, C, M, H, W
-
-        # print(log_probs.shape, logit_probs.shape)
-
-        log_probs = torch.sum(log_probs, dim=1) + F.log_softmax(logit_probs, dim=1)  # B, M, H, W
-        negative_log_probs = -torch.logsumexp(log_probs, dim=1)  # B, H, W
-
-        return negative_log_probs
 
 class DiscretizedMixtureLoss1dM(nn.Module):
     def __init__(

@@ -21,6 +21,7 @@ from torch.cuda.amp import GradScaler
 from model.rae import Orpheus
 from model.prior import GaussianPrior
 from model.slicer import MPSSlicer
+from model.mol_translate import MoLTranslate
 
 from early import EarlyStopping
 
@@ -66,38 +67,45 @@ class TrainerAE(nn.Module):
     def __init__(self, backbone, prior, slicer):
         super().__init__()
 
+        scales = [2048, 1024, 512, 256, 128]
+        num_mels = 128
+
         self.backbone = backbone
         self.prior = prior
         self.slicer = slicer
+        
+        self.translator = MoLTranslate(scales, num_mels)
 
         log_epsilon = 1e-7
 
-        stft = closs.MultiScaleSTFT([2048, 1024, 512, 256, 128], bitrate, num_mels=128)
-        # self.compound_distance = closs.AudioDistanceV2(stft, backbone.translator, 4096, 4, log_epsilon)
+        stft = closs.MultiScaleSTFT(scales, bitrate, num_mels=num_mels)
+        self.entropy_distance = closs.AudioDistanceCE(stft, self.translator, 4096, 4)
         self.distance = closs.AudioDistanceV1(stft, log_epsilon)
         # self.perceptual_distance = cdpam.CDPAM()
 
-        self.resample_fp = Resample(bitrate, 22050)
+        # self.resample_fp = Resample(bitrate, 22050)
 
     def forward(self, x, x_quantized):
-        y_subbands, y_probs, x_subbands, z, mask = self.backbone(x)
+        y_subbands, _, x_subbands, z, mask = self.backbone(x)
 
-        ce_mask = mask.repeat(1, 2048 // 16)
+        # ce_mask = mask.repeat(1, 2048 // 16)
 
         # Consider replacing with discretized mixture of logistic distributions loss
-        continuity_loss = F.cross_entropy(y_probs, x_quantized, reduction="none")
-        continuity_loss = (continuity_loss * ce_mask).sum() / ce_mask.sum()
+        # continuity_loss = F.cross_entropy(y_probs, x_quantized, reduction="none")
+        # continuity_loss = (continuity_loss * ce_mask).sum() / ce_mask.sum()
 
-        # continuity_loss, y_subbands = self.prob_distance(y_subbands, x_subbands, mask=ce_mask)
+        y_weights, y_means, y_scales = self.backbone.expand_dml(y_subbands)
+        y_means_weighted = y_means * F.softmax(y_weights, dim=-1).unsqueeze(1)
+        y_subbands = torch.sum(y_means_weighted, dim=2)
 
-        # y_subbands_expected, y_subbands = self.backbone.expected_from_decoded(y_subbands)
+        continuity_loss = self.entropy_distance(x_subbands, y_means, y_means_weighted, y_scales, mask=mask)["entropy_distance"]
+
         y = self.backbone.recompose(y_subbands)
 
         mb_dist = self.distance(y_subbands, x_subbands)
         fb_dist = self.distance(y, x)
 
         r_loss = mb_dist["spectral_distance"] + fb_dist["spectral_distance"]
-        # continuity_loss = mb_dist["entropy_distance"]
 
         z_samples = self.prior.sample(z.shape[0] * z.shape[2])
 
@@ -254,7 +262,7 @@ def train(model, train_dl, val_dl, lr, hparams=None, mixed_precision=False, comp
                 
                 # skip = warmup[1] if warmup is not None else 2
 
-                r_loss_beta, c_loss_beta, f_loss_beta = 1., 0.6, 0.2
+                r_loss_beta, c_loss_beta, f_loss_beta = 0., 1., 0.
                 d_loss_beta = 0.
                 # d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=1e-5) if i > reg_skip-1 else 0.
 
@@ -283,8 +291,8 @@ def train(model, train_dl, val_dl, lr, hparams=None, mixed_precision=False, comp
         if early_stopping.early_stop:
             print("Early stopping")
             break
-        else:
-            real_eval(model.backbone, epoch)
+        # else:
+            # real_eval(model.backbone, epoch)
 
 
 model = Orpheus(enc_ds_expansion_factor=1.6, dec_ds_expansion_factor=1.6, drop_path=0.05, fast_recompose=True)
@@ -296,19 +304,19 @@ trainer = TrainerAE(model, prior, slicer).cuda()
 data_folder = "../data"
 
 audio_files = aggregate_wavs([f"{data_folder}/Classical", f"{data_folder}/Electronic", f"{data_folder}/Hip Hop", f"{data_folder}/Jazz", f"{data_folder}/Metal", f"{data_folder}/Pop", f"{data_folder}/R&B", f"{data_folder}/Rock"])
-X_train, X_test = train_test_split(audio_files, train_size=0.8, random_state=42)
+X_train, X_test = train_test_split(audio_files[:70], train_size=0.8, random_state=42)
 
 hparams = {
     "quantize_bins": 256
 }
 
 training_params = {
-    "batch_size": 24, # Set to multiple of 8 if mixed_precision is True
+    "batch_size": 2, # Set to multiple of 8 if mixed_precision is True
     "learning_rate": 1.5e-4,
-    "dataset_multiplier": 256,
-    "dataloader_num_workers": 4,
+    "dataset_multiplier": 16,
+    "dataloader_num_workers": 0,
     "dataloader_pin_mem": False,
-    "mixed_precision": True,
+    "mixed_precision": False,
     "compile": False
 }
 
@@ -320,8 +328,8 @@ val_dl = DataLoader(val_ds, batch_size=training_params["batch_size"], num_worker
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(pytorch_total_params)
 
-checkpoint = torch.load("../models/ravae_stage1_epoch20.pt")
-# checkpoint = None
+# checkpoint = torch.load("../models/ravae_stage1_epoch20.pt")
+checkpoint = None
 train(trainer, train_dl, val_dl, lr=training_params["learning_rate"], mixed_precision=training_params["mixed_precision"], compile=training_params["compile"], hparams=hparams, checkpoint=checkpoint)
 
 # trainer.load_state_dict(checkpoint["model"])
