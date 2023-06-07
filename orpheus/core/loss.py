@@ -35,6 +35,12 @@ def mean_difference(target: torch.Tensor,
     else:
         raise Exception(f'Norm must be either L1 or L2, got {norm}')
 
+def hinge_gan(score_real, score_fake):
+    loss_dis = torch.relu(1 - score_real) + torch.relu(1 + score_fake)
+    loss_dis = loss_dis.mean()
+    loss_gen = -score_fake.mean()
+    return loss_dis, loss_gen
+
 class MelScale(nn.Module):
     def __init__(self, sample_rate: int, n_fft: int, n_mels: int) -> None:
         super().__init__()

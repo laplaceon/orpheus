@@ -36,10 +36,10 @@ class Orpheus(nn.Module):
 
         self.pqmf = PQMF(enc_h_dims[0], 100, fast_recompose)
 
-        num_prob_logits = (dec_h_dims[-1] * 2 + 1) * dec_num_mixtures
+        # num_prob_logits = (dec_h_dims[-1] * 2 + 1) * dec_num_mixtures
         # num_prob_logits = dec_h_dims[-1] * 3 * dec_num_mixtures
 
-        dec_h_dims[-1] = num_prob_logits
+        # dec_h_dims[-1] = num_prob_logits
 
         self.encoder = Encoder(enc_h_dims, latent_dim, [None] + enc_scales, enc_ds_expansion_factor, [None] + enc_attns, enc_blocks_per_stages, enc_layers_per_blocks, drop_path=drop_path)
         self.decoder = Decoder(dec_h_dims, latent_dim, dec_scales, dec_ds_expansion_factor, dec_blocks_per_stages, dec_layers_per_blocks, drop_path=drop_path)
@@ -93,6 +93,8 @@ class Orpheus(nn.Module):
     def freeze_encoder(self):
         for param in self.encoder.parameters():
             param.requires_grad = False
+        
+        self.mask_embedding.requires_grad = False
 
     def forward_nm(self, x):
         z = self.encode(x)

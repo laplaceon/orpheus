@@ -1,13 +1,11 @@
 from typing import Callable, Optional, Sequence, Tuple, Type
 
-import cached_conv as cc
 import numpy as np
 import torch
 import torch.nn as nn
 import torchaudio
 
-from .blocks import normalization
-
+from torch.nn.utils import weight_norm
 
 def spectrogram(n_fft: int):
     return torchaudio.transforms.Spectrogram(
@@ -18,7 +16,6 @@ def spectrogram(n_fft: int):
         center=False,
         pad_mode=None,
     )
-
 
 def rectified_2d_conv_block(
     capacity,
@@ -36,7 +33,7 @@ def rectified_2d_conv_block(
                                                      1) * dilations[1]
         paddings = fks[0] // 2, fks[1] // 2
 
-    conv = normalization(
+    conv = weight_norm(
         nn.Conv2d(
             in_size or capacity,
             out_size or capacity,
@@ -50,9 +47,7 @@ def rectified_2d_conv_block(
 
     return nn.Sequential(conv, nn.LeakyReLU(.2))
 
-
 class EncodecConvNet(nn.Module):
-
     def __init__(self, capacity: int) -> None:
         super().__init__()
         self.net = nn.Sequential(
@@ -73,9 +68,7 @@ class EncodecConvNet(nn.Module):
             features.append(x)
         return features
 
-
 class ConvNet(nn.Module):
-
     def __init__(self, in_size, out_size, capacity, n_layers, kernel_size,
                  stride, conv) -> None:
         super().__init__()
@@ -87,17 +80,12 @@ class ConvNet(nn.Module):
 
         net = []
         for i in range(n_layers):
-            if not isinstance(kernel_size, int):
-                pad = (cc.get_padding(kernel_size[0],
-                                      stride[i],
-                                      mode="centered")[0], 0)
-                s = (stride[i], 1)
-            else:
-                pad = cc.get_padding(kernel_size, stride[i],
-                                     mode="centered")[0]
-                s = stride[i]
+
+            pad = kernel_size / 2
+            s = stride[i]
+
             net.append(
-                normalization(
+                weight_norm(
                     conv(
                         channels[i],
                         channels[i + 1],
@@ -118,9 +106,7 @@ class ConvNet(nn.Module):
                 features.append(x)
         return features
 
-
 class MultiScaleDiscriminator(nn.Module):
-
     def __init__(self, n_discriminators, convnet) -> None:
         super().__init__()
         layers = []
@@ -135,14 +121,12 @@ class MultiScaleDiscriminator(nn.Module):
             x = nn.functional.avg_pool1d(x, 2)
         return features
 
-
 class MultiScaleSpectralDiscriminator(nn.Module):
-
     def __init__(self, scales: Sequence[int],
-                 convnet: Callable[[], nn.Module]) -> None:
+                 convnet: Callable[[], nn.Module] = EncodecConvNet) -> None:
         super().__init__()
         self.specs = nn.ModuleList([spectrogram(n) for n in scales])
-        self.nets = nn.ModuleList([convnet() for _ in scales])
+        self.nets = nn.ModuleList([convnet(32) for _ in scales])
 
     def forward(self, x):
         features = []
@@ -152,9 +136,7 @@ class MultiScaleSpectralDiscriminator(nn.Module):
             features.append(net(spec_x))
         return features
 
-
 class MultiScaleSpectralDiscriminator1d(nn.Module):
-
     def __init__(self, scales: Sequence[int],
                  convnet: Callable[[int], nn.Module]) -> None:
         super().__init__()
@@ -169,9 +151,7 @@ class MultiScaleSpectralDiscriminator1d(nn.Module):
             features.append(net(spec_x))
         return features
 
-
 class MultiPeriodDiscriminator(nn.Module):
-
     def __init__(self, periods, convnet) -> None:
         super().__init__()
         layers = []
@@ -193,9 +173,7 @@ class MultiPeriodDiscriminator(nn.Module):
         x = nn.functional.pad(x, (0, pad))
         return x.reshape(*x.shape[:2], -1, n)
 
-
 class CombineDiscriminators(nn.Module):
-
     def __init__(self, discriminators: Sequence[Type[nn.Module]]) -> None:
         super().__init__()
         self.discriminators = nn.ModuleList(disc_cls()
