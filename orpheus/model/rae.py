@@ -14,8 +14,8 @@ from .mask import upsample_mask
 class Orpheus(nn.Module):
     def __init__(
         self,
-        enc_h_dims = [16, 80, 160, 320, 640],
-        dec_h_dims = [640, 320, 160, 80, 16],
+        enc_h_dims = [16, 96, 192, 384, 768],
+        dec_h_dims = [768, 384, 192, 96, 16],
         dec_prob_dim = 256,
         dec_num_mixtures = 4,
         latent_dim = 128,
@@ -28,7 +28,8 @@ class Orpheus(nn.Module):
         enc_layers_per_blocks = [4, 3, 3, 3],
         dec_blocks_per_stages = [1, 1, 1, 1],
         dec_layers_per_blocks = [3, 3, 3, 4],
-        drop_path = 0.,
+        enc_drop_path = 0.,
+        dec_drop_path = 0.,
         masked_ratio = [0.45, 0.97, 0.55, 0.25],
         fast_recompose = True
     ):
@@ -41,8 +42,8 @@ class Orpheus(nn.Module):
 
         # dec_h_dims[-1] = num_prob_logits
 
-        self.encoder = Encoder(enc_h_dims, latent_dim, [None] + enc_scales, enc_ds_expansion_factor, [None] + enc_attns, enc_blocks_per_stages, enc_layers_per_blocks, drop_path=drop_path)
-        self.decoder = Decoder(dec_h_dims, latent_dim, dec_scales, dec_ds_expansion_factor, dec_blocks_per_stages, dec_layers_per_blocks, drop_path=drop_path)
+        self.encoder = Encoder(enc_h_dims, latent_dim, [None] + enc_scales, enc_ds_expansion_factor, [None] + enc_attns, enc_blocks_per_stages, enc_layers_per_blocks, drop_path=enc_drop_path)
+        self.decoder = Decoder(dec_h_dims, latent_dim, dec_scales, dec_ds_expansion_factor, dec_blocks_per_stages, dec_layers_per_blocks, drop_path=dec_drop_path)
         # self.decoder_mbp = MultiBranchProbabilisticDecoder(dec_h_dims[-2], dec_prob_dim)
 
         self.num_mixtures = dec_num_mixtures

@@ -35,7 +35,7 @@ from sklearn.model_selection import train_test_split
 
 from torchaudio.transforms import Resample
 
-from torch_audiomentations import SomeOf, OneOf, PolarityInversion, AddColoredNoise, Gain, HighPassFilter, LowPassFilter, BandPassFilter, PeakNormalization, PitchShift
+from torch_audiomentations import SomeOf, OneOf, PolarityInversion, TimeInversion, AddColoredNoise, Gain, HighPassFilter, LowPassFilter, BandPassFilter, PeakNormalization, PitchShift
 
 from tqdm import tqdm
 
@@ -62,10 +62,26 @@ apply_augmentations = SomeOf(
     ]
 )
 
+apply_augmentations_adv = SomeOf(
+    num_transforms = (1, 3),
+    transforms = [
+        PolarityInversion(),
+        TimeInversion(),
+        AddColoredNoise(),
+        Gain(),
+        OneOf(
+            transforms = [
+                HighPassFilter(),
+                LowPassFilter()
+            ]
+        )
+    ]
+)
+
 peak_norm = PeakNormalization(apply_to="only_too_loud_sounds", p=1., sample_rate=bitrate).cuda()
 
 class TrainerAE(nn.Module):
-    def __init__(self, backbone, prior, slicer, discriminator):
+    def __init__(self, backbone, prior, slicer):
         super().__init__()
 
         scales = [2048, 1024, 512, 256, 128]
@@ -74,11 +90,11 @@ class TrainerAE(nn.Module):
         self.backbone = backbone
         self.prior = prior
         self.slicer = slicer
-        self.discriminator = discriminator
         
         # self.translator = MoLTranslate(scales, num_mels)
 
         log_epsilon = 1e-7
+        self.num_skipped_features = 0
 
         stft = closs.MultiScaleSTFT(scales, bitrate, num_mels=num_mels)
         # self.entropy_distance = closs.AudioDistanceCE(stft, self.translator, 4096, 4)
@@ -97,7 +113,6 @@ class TrainerAE(nn.Module):
         self.backbone.freeze_encoder()
         self.backbone.cuda()
         self.distance.cuda()
-        self.discriminator.cuda()
 
     def split_features(self, features):
         feature_real = []
@@ -111,7 +126,28 @@ class TrainerAE(nn.Module):
             feature_fake.append(fake)
         return feature_real, feature_fake
 
-    def forward_wd(self, x):
+    def forward_nm(self, x):
+        x_subbands = self.backbone.decompose(x)
+        y_subbands = self.backbone.forward_nm(x_subbands)
+
+        y = self.backbone.recompose(y_subbands)
+
+        mb_dist = self.distance(y_subbands, x_subbands)
+        fb_dist = self.distance(y, x)
+
+        r_loss = mb_dist["spectral_distance"] + fb_dist["spectral_distance"]
+
+        # z_samples = self.prior.sample(z.shape[0] * z.shape[2])
+
+        # d_loss = slicer.fgw_dist(z.transpose(1, 2).reshape(-1, z.shape[1]), z_samples)
+
+        with torch.no_grad():
+            # f_loss = self.perceptual_distance.forward(self.resample_fp(x.squeeze(1)), self.resample_fp(y.squeeze(1)))
+            f_loss = F.l1_loss(y, x)
+
+        return (r_loss, torch.tensor(0.), f_loss)
+
+    def forward_wd(self, x, discriminator):
         x_subbands = self.backbone.decompose(x)
         y_subbands = self.backbone.forward_nm(x_subbands)
 
@@ -123,7 +159,7 @@ class TrainerAE(nn.Module):
         r_loss = mb_dist["spectral_distance"] + fb_dist["spectral_distance"]
 
         xy = torch.cat([x, y], 0)
-        features = self.discriminator(xy)
+        features = discriminator(xy)
 
         feature_real, feature_fake = self.split_features(features)
 
@@ -134,7 +170,7 @@ class TrainerAE(nn.Module):
         for scale_real, scale_fake in zip(feature_real, feature_fake):
             current_feature_distance = sum(
                 map(
-                    self.feature_matching_fun,
+                    closs.mean_difference,
                     scale_real[self.num_skipped_features:],
                     scale_fake[self.num_skipped_features:],
                 )) / len(scale_real[self.num_skipped_features:])
@@ -154,7 +190,7 @@ class TrainerAE(nn.Module):
 
         return (r_loss, gen_loss, loss_dis, f_loss)
 
-    def forward(self, x, x_quantized):
+    def forward(self, x):
         y_subbands, _, x_subbands, z, mask = self.backbone(x)
 
         # ce_mask = mask.repeat(1, 2048 // 16)
@@ -217,7 +253,7 @@ def real_eval(model, epoch):
 
     for test_file in test_files:
         out = get_song_features(model, f"../input/{test_file}")
-        # print(out, torch.min(out).item(), torch.max(out).item())
+        print(out, torch.min(out).item(), torch.max(out).item())
         torchaudio.save(f"../output/{slugify(test_file)}_epoch{epoch}.wav", out.cpu().unsqueeze(0), bitrate)
 
 def sample_from_prior(backbone, prior, num_samples):
@@ -237,44 +273,51 @@ def cyclic_kl(step, cycle_len, maxp=0.5, min_beta=0, max_beta=1):
     return min(((step % cycle_len) / (cycle_len * maxp * div_shift)) + (min_beta / max_beta), 1) * max_beta
 
 def eval(model, val_dl, hparams=None, stage=1):
-    loss_total = 0
-    d_loss_total = 0
+    valid_loss = 0
     r_loss_total = 0
     c_loss_total = 0
     f_loss_total = 0
+    d_loss_total = 0
     nb = 0
     
     model.eval()
     with torch.no_grad():
         for batch in tqdm(val_dl, position=0, leave=True):
             inp = batch['input'].unsqueeze(1)
-
+            
             mod = peak_norm(inp.cuda())
             # x_avg = F.avg_pool1d(mod, 16)
             # x_quantized = mu_law_encoding(x_avg.squeeze(1), hparams["quantize_bins"])
 
             if stage == 1:
                 r_loss, d_loss, f_loss = model(mod)
-                r_loss_beta, d_loss_beta = 1., 0.
-
-                loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
             elif stage == 2:
-                loss = r_loss 
+                r_loss, d_loss, f_loss = model.forward_nm(mod)
 
-            loss_total += loss.item()
-            d_loss_total += d_loss.item()
+            r_loss_beta, d_loss_beta = 1., 2e-5
+            loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
+
+            valid_loss += loss.item()
             r_loss_total += r_loss.item() / 2
-            c_loss_total += 0
             f_loss_total += f_loss.item()
+            d_loss_total += d_loss.item()
 
             nb += 1
 
-    print(f"Valid loss: {loss_total/nb}, D loss: {d_loss_total/nb}, R loss: {r_loss_total/nb}, C loss: {c_loss_total/nb}, F loss: {f_loss_total/nb}")
-    return loss_total/nb
+    print(f"Valid loss: {valid_loss/nb}, Dist Loss: {d_loss_total/nb}, Recon Loss: {r_loss_total/nb}, Time Loss: {f_loss_total/nb}")
+    return valid_loss/nb
 
-def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=False, compile=False, warmup=None, checkpoint=None):
+def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=False, compile=False, warmup=None, checkpoint=None, disc=None, disc_checkpoint=None, save_paths=None):
     print("Learning rate:", lr)
+
+    if stage == 1:
+        model.stage1()
+    elif stage == 2:
+        disc.cuda()
+        model.stage2()
+    
     opt = AdamW(model.parameters(), lr)
+    opt_dis = AdamW(disc.parameters(), lr)
     scaler = GradScaler(enabled=mixed_precision)
 
     val_loss_min = None
@@ -284,8 +327,13 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
         opt.load_state_dict(checkpoint["opt"])
         val_loss_min = checkpoint["loss"]
         print(f"Resuming from model with val loss: {val_loss_min}")
+    
+    if (disc_checkpoint is not None) and stage == 2:
+        disc.load_state_dict(disc_checkpoint["model"])
+        opt_dis.load_state_dict(disc_checkpoint["opt"])
+        print("Resuming from disc checkpoint")
 
-    early_stopping = EarlyStopping(patience=10, verbose=True, val_loss_min=val_loss_min, path="../models/ravae_stage1.pt")
+    early_stopping = EarlyStopping(patience=10, verbose=True, val_loss_min=val_loss_min)
 
     if compile:
         model = torch.compile(model)
@@ -295,7 +343,7 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
           opt, 
           init_lr=warmup[0], 
           peak_lr=lr, 
-          warmup_steps=warmup[1] * len(train_dl),
+          warmup_steps=warmup[1] * len(train_dl)
     )
 
     step = 0
@@ -303,6 +351,8 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
 
     model.prior.print_parameters()
     model.slicer.print_parameters()
+
+    total_batch = len(train_dl)
 
     # real_eval(model.backbone, i)
     while True:
@@ -323,13 +373,19 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
             real_imgs = batch["input"].unsqueeze(1)
 
             with torch.no_grad():
-                beginning = peak_norm(apply_augmentations(real_imgs, sample_rate=bitrate).cuda())
+                if stage == 1:
+                    beginning = peak_norm(apply_augmentations(real_imgs, sample_rate=bitrate).cuda())
+                elif stage == 2:
+                    beginning = peak_norm(apply_augmentations_adv(real_imgs, sample_rate=bitrate).cuda())
             #     x_avg = F.avg_pool1d(beginning, 16)
             #     x_quantized = mu_law_encoding(torch.clamp(x_avg, -1, 1).squeeze(1), hparams["quantize_bins"])
-                # x_quantized = utils.quantize_waveform(x_quantized, quantize_bins, pool=16).cuda()
+            #     x_quantized = utils.quantize_waveform(x_quantized, quantize_bins, pool=16).cuda()
 
             # Try set to none
             opt.zero_grad()
+
+            if stage == 2:
+                opt_dis.zero_grad()
 
             with torch.autocast('cuda', dtype=torch.float16, enabled=mixed_precision):
                 if stage == 1:
@@ -337,16 +393,17 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
                     
                     # skip = warmup[1] if warmup is not None else 2
 
-                    r_loss_beta, d_loss_beta = 1., 0.
-                    # d_loss_beta = cyclic_kl(step, total_batch * reg_loss_cycle, maxp=1, max_beta=1e-5) if i > reg_skip-1 else 0.
+                    r_loss_beta = 1.
+                    # d_loss_beta = cyclic_kl(step, total_batch * 1, maxp=1, max_beta=3e-7)
+                    d_loss_beta = 2e-5
 
                     loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
                 elif stage == 2:
-                    r_loss, adv_loss, disc_loss, f_loss = model.forward_wd(beginning)
+                    r_loss, adv_loss, disc_loss, f_loss = model.forward_wd(beginning, disc)
 
-                    r_loss_beta, adv_loss_beta, f_loss_beta = 1., 1., 0.2
-
+                    r_loss_beta, adv_loss_beta, disc_loss_beta, f_loss_beta = 1., 5., 5., 0.2
                     loss = (r_loss_beta * r_loss) + (adv_loss_beta * adv_loss) + (f_loss_beta * f_loss)
+                    disc_loss = disc_loss_beta * disc_loss
 
             training_loss += loss.item()
 
@@ -359,8 +416,13 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
                 adv_loss_total += adv_loss.item()
                 disc_loss_total += disc_loss.item()
 
-            scaler.scale(loss).backward()
-            scaler.step(opt)
+            if stage == 2 and (step % 2 == 0):
+                scaler.scale(disc_loss).backward()
+                scaler.step(opt_dis)
+            else:
+                scaler.scale(loss).backward()
+                scaler.step(opt)
+
             scaler.update()
 
             if warmup is not None:
@@ -376,40 +438,49 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
         epoch += 1
 
         valid_loss = eval(model, val_dl, hparams, stage)
-        early_stopping(valid_loss, model, {"opt": opt.state_dict()})
+        if early_stopping(valid_loss):
+            if stage == 1:
+                early_stopping.save_checkpoint(valid_loss, [{"model": model.state_dict(), "opt": opt.state_dict()}], [save_paths[0]])
+            elif stage == 2:
+                early_stopping.save_checkpoint(valid_loss, [
+                    {"model": model.state_dict(), "opt": opt.state_dict()}, 
+                    {"model": disc.state_dict(), "opt": opt_dis.state_dict()}
+                ], save_paths)
+            real_eval(model.backbone, epoch)
+        
         if early_stopping.early_stop:
             print("Early stopping")
             break
-        # else:
-            # real_eval(model.backbone, epoch)
-
-
-model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, drop_path=0.05, fast_recompose=True)
+            
+model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, enc_drop_path=0.05, dec_drop_path=0.05, fast_recompose=True)
+# model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, dec_drop_path=0.05, fast_recompose=True)
 prior = GaussianPrior(128, 3)
 slicer = MPSSlicer(128, 3, 50)
 discriminator = MultiScaleSpectralDiscriminator([4096, 2048, 1024, 512, 256])
-print(discriminator)
+# print(discriminator)
 
-trainer = TrainerAE(model, prior, slicer, discriminator)
+trainer = TrainerAE(model, prior, slicer)
 
 data_folder = "../data"
 
 audio_files = aggregate_wavs([f"{data_folder}/Classical", f"{data_folder}/Electronic", f"{data_folder}/Hip Hop", f"{data_folder}/Jazz", f"{data_folder}/Metal", f"{data_folder}/Pop", f"{data_folder}/R&B", f"{data_folder}/Rock"])
-X_train, X_test = train_test_split(audio_files[:70], train_size=0.8, random_state=42)
+X_train, X_test = train_test_split(audio_files, train_size=0.8, random_state=42)
 
 hparams = {
     "quantize_bins": 256
 }
 
 training_params = {
-    "batch_size": 2, # Set to multiple of 8 if mixed_precision is True
+    "batch_size": 28, # Set to multiple of 8 if mixed_precision is True
     "learning_rate": 1.5e-4,
-    "dataset_multiplier": 16,
-    "dataloader_num_workers": 0,
+    "dataset_multiplier": 384,
+    "dataloader_num_workers": 4,
     "dataloader_pin_mem": False,
-    "mixed_precision": False,
+    "mixed_precision": True,
     "compile": False,
-    "stage": 1
+    "warmup": None, #(1e-6, 1),
+    "stage": 1,
+    "save_paths": ["../models/ravae_stage1_cont_d_1e5.pt", "../models/ravae_disc.pt"]
 }
 
 train_ds = AudioFileDataset(X_train, sequence_length, multiplier=training_params["dataset_multiplier"])
@@ -420,9 +491,14 @@ val_dl = DataLoader(val_ds, batch_size=training_params["batch_size"], num_worker
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(pytorch_total_params)
 
-# checkpoint = torch.load("../models/ravae_stage1_epoch20.pt")
-checkpoint = None
-train(trainer, train_dl, val_dl, lr=training_params["learning_rate"], stage=training_params["stage"], mixed_precision=training_params["mixed_precision"], compile=training_params["compile"], hparams=hparams, checkpoint=checkpoint)
+checkpoint = torch.load("../models/ravae_stage1_cont.pt")
+# checkpoint = None
+# disc_checkpoint = torch.load("../models/ravae_disc.pt")
+disc_checkpoint = None
+train(trainer, train_dl, val_dl, lr=training_params["learning_rate"], 
+      stage=training_params["stage"], mixed_precision=training_params["mixed_precision"], 
+      compile=training_params["compile"], warmup=training_params["warmup"], hparams=hparams, 
+      checkpoint=checkpoint, disc=discriminator, disc_checkpoint=disc_checkpoint, save_paths=training_params["save_paths"])
 
 # trainer.load_state_dict(checkpoint["model"])
 # real_eval(trainer.backbone, 1001)
