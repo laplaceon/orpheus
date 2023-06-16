@@ -69,8 +69,8 @@ class EncodecConvNet(nn.Module):
         return features
 
 class ConvNet(nn.Module):
-    def __init__(self, in_size, out_size, capacity, n_layers, kernel_size,
-                 stride, conv) -> None:
+    def __init__(self, in_size, out_size, kernel_size, pad, conv, capacity = 64, n_layers = 4,
+                 stride = 4) -> None:
         super().__init__()
         channels = [in_size]
         channels += list(capacity * 2**np.arange(n_layers))
@@ -80,8 +80,6 @@ class ConvNet(nn.Module):
 
         net = []
         for i in range(n_layers):
-
-            pad = kernel_size / 2
             s = stride[i]
 
             net.append(
@@ -111,7 +109,7 @@ class MultiScaleDiscriminator(nn.Module):
         super().__init__()
         layers = []
         for i in range(n_discriminators):
-            layers.append(convnet())
+            layers.append(convnet)
         self.layers = nn.ModuleList(layers)
 
     def forward(self, x):
@@ -123,10 +121,10 @@ class MultiScaleDiscriminator(nn.Module):
 
 class MultiScaleSpectralDiscriminator(nn.Module):
     def __init__(self, scales: Sequence[int],
-                 convnet: Callable[[], nn.Module] = EncodecConvNet) -> None:
+                 convnet: Callable[[], nn.Module]) -> None:
         super().__init__()
         self.specs = nn.ModuleList([spectrogram(n) for n in scales])
-        self.nets = nn.ModuleList([convnet(32) for _ in scales])
+        self.nets = nn.ModuleList([convnet() for _ in scales])
 
     def forward(self, x):
         features = []
@@ -141,7 +139,7 @@ class MultiScaleSpectralDiscriminator1d(nn.Module):
                  convnet: Callable[[int], nn.Module]) -> None:
         super().__init__()
         self.specs = nn.ModuleList([spectrogram(n) for n in scales])
-        self.nets = nn.ModuleList([convnet(n + 2) for n in scales])
+        self.nets = nn.ModuleList([convnet for _ in scales])
 
     def forward(self, x):
         features = []
@@ -158,7 +156,7 @@ class MultiPeriodDiscriminator(nn.Module):
         self.periods = periods
 
         for _ in periods:
-            layers.append(convnet())
+            layers.append(convnet)
 
         self.layers = nn.ModuleList(layers)
 
@@ -176,7 +174,7 @@ class MultiPeriodDiscriminator(nn.Module):
 class CombineDiscriminators(nn.Module):
     def __init__(self, discriminators: Sequence[Type[nn.Module]]) -> None:
         super().__init__()
-        self.discriminators = nn.ModuleList(disc_cls()
+        self.discriminators = nn.ModuleList(disc_cls
                                             for disc_cls in discriminators)
 
     def forward(self, x):

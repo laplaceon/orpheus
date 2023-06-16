@@ -62,4 +62,4 @@ class GaussianPrior(nn.Module):
     def print_parameters(self):
         print(self.weights)
 
-gmm = GaussianPrior(128, 1)
+# gmm = GaussianPrior(128, 1)

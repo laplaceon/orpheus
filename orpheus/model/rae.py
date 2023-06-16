@@ -96,6 +96,9 @@ class Orpheus(nn.Module):
             param.requires_grad = False
         
         self.mask_embedding.requires_grad = False
+        
+        for param in self.pqmf.parameters():
+            param.requires_grad = False
 
     def forward_nm(self, x):
         z = self.encode(x)
