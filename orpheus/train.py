@@ -280,6 +280,8 @@ def eval(model, val_dl, hparams=None, stage=1):
     f_loss_total = 0
     d_loss_total = 0
     nb = 0
+
+    r_loss_beta, d_loss_beta, f_loss_beta = 1., 2e-4, 0.2
     
     model.eval()
     with torch.no_grad():
@@ -292,11 +294,10 @@ def eval(model, val_dl, hparams=None, stage=1):
 
             if stage == 1:
                 r_loss, d_loss, f_loss = model(mod)
+                loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
             elif stage == 2:
                 r_loss, d_loss, f_loss = model.forward_nm(mod)
-
-            r_loss_beta, d_loss_beta = 1., 2e-4
-            loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
+                loss = (r_loss_beta * r_loss) + (f_loss_beta * f_loss)
 
             valid_loss += loss.item()
             r_loss_total += r_loss.item() / 2
@@ -316,9 +317,10 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
     elif stage == 2:
         disc.cuda()
         model.stage2()
+
+        opt_dis = AdamW(disc.parameters(), lr)
     
     opt = AdamW(model.parameters(), lr)
-    opt_dis = AdamW(disc.parameters(), lr)
     scaler = GradScaler(enabled=mixed_precision)
 
     val_loss_min = None
@@ -393,7 +395,7 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
 
                     r_loss_beta = 1.
                     # d_loss_beta = cyclic_kl(step, total_batch * 1, maxp=1, max_beta=3e-7)
-                    d_loss_beta = 2e-4
+                    d_loss_beta = 0.
 
                     loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
                 elif stage == 2:
@@ -454,18 +456,18 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
             print("Early stopping")
             break
             
-# model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, enc_drop_path=0.05, dec_drop_path=0.05, fast_recompose=True)
-model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, dec_drop_path=0.025, fast_recompose=True)
+model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, enc_drop_path=0.05, dec_drop_path=0.05, fast_recompose=True)
+# model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, dec_drop_path=0.025, fast_recompose=True)
 prior = GaussianPrior(128, 3)
 slicer = MPSSlicer(128, 3, 50)
-# disc_scales = [4096, 2048, 1024, 512, 256]
-# discriminator = MultiScaleSpectralDiscriminator(disc_scales)
+disc_scales = [4096, 2048, 1024, 512, 256]
 conv_period = ConvNet(1, 1, (5, 1), (2, 1), nn.Conv2d)
 conv_scale = ConvNet(1, 1, 15, 7, nn.Conv1d)
-# conv_ms1d = ConvNet(1, 1, 5, 2, nn.Conv1d, stride=2)
-# MultiScaleSpectralDiscriminator1d(disc_scales)
-discriminator = CombineDiscriminators([MultiPeriodDiscriminator([2, 3, 5, 7, 11], conv_period), MultiScaleDiscriminator(3, conv_scale)])
-# print(discriminator)
+discriminator = CombineDiscriminators([
+    MultiPeriodDiscriminator([2, 3, 5, 7, 11], conv_period), 
+    MultiScaleDiscriminator(3, conv_scale), 
+    MultiScaleSpectralDiscriminator1d(disc_scales)
+])
 
 trainer = TrainerAE(model, prior, slicer)
 
@@ -488,7 +490,7 @@ training_params = {
     "compile": False,
     "warmup": None, #(1e-6, 1),
     "stage": 2,
-    "save_paths": ["../models/ravae_stage2_d1e4.pt", "../models/ravae_disc.pt"]
+    "save_paths": ["../models/ravae_stage2.pt", "../models/ravae_disc.pt"]
 }
 
 train_ds = AudioFileDataset(X_train, sequence_length, multiplier=training_params["dataset_multiplier"])

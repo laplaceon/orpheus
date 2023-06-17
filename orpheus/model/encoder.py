@@ -5,7 +5,7 @@ from torch.nn.utils import weight_norm
 
 from .blocks.odconv import ODConv1d as DyConv1d
 from .blocks.enc import EBlock_R, EBlock_DS, EBlock_DOWN
-from .blocks.attn import AttnBlock
+from .blocks.act import Snake
 
 from .mask import upsample_mask
 
@@ -65,12 +65,14 @@ class EncoderFinalBlock(nn.Module):
         super().__init__()
 
         self.norm = nn.Sequential(
+            # Snake(dim),
             nn.LeakyReLU(0.2),
             nn.GroupNorm(8, dim)
         )
 
         self.down = nn.Conv1d(dim, dim * 2, kernel_size=4, stride=2, padding=1)
         
+        # self.act = Snake(dim * 2)
         self.act = nn.LeakyReLU(0.2)
         self.to_latent = weight_norm(nn.Conv1d(dim * 2, latent_dim, kernel_size=3, padding=1))
 
@@ -115,7 +117,7 @@ class EncoderStage(nn.Module):
         if scale is None:
             self.expand = nn.Conv1d(in_channels, out_channels, 7, padding=3, bias=False)
         else:
-            self.downscale = EBlock_DOWN(in_channels, out_channels, scale, expansion_factor=1.5, activation=nn.LeakyReLU(0.2))
+            self.downscale = EBlock_DOWN(in_channels, out_channels, scale, expansion_factor=1.5)
 
         for _ in range(num_blocks):
             blocks.append(
@@ -172,7 +174,6 @@ class EncoderBlock(nn.Module):
                     dilation = dilation,
                     bias = False,
                     expansion_factor = ds_expansion_factor,
-                    activation = nn.LeakyReLU(0.2),
                     dynamic = True,
                     drop_path = drop_path
                 ) if ds else
@@ -182,7 +183,6 @@ class EncoderBlock(nn.Module):
                     kernel,
                     dilation = dilation,
                     bias = False,
-                    activation = nn.LeakyReLU(0.2),
                     drop_path = drop_path
                 )   
             )

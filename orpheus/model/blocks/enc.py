@@ -1,5 +1,6 @@
 from torch import nn
 
+from .act import Snake
 from .norm import GRN
 from .odconv import ODConv1d as DyConv1d
 from timm.models.layers import DropPath
@@ -13,7 +14,6 @@ class EBlock_R(nn.Module):
         dilation = 1,
         bias = False,
         num_groups = 4,
-        activation = nn.GELU(),
         dynamic = False,
         drop_path = 0.
     ):
@@ -21,7 +21,8 @@ class EBlock_R(nn.Module):
 
         padding = (kernel_size - 1) * dilation // 2
 
-        self.act = activation
+        # self.act = Snake(channels)
+        self.act = nn.LeakyReLU(0.2)
         self.norm = nn.GroupNorm(num_groups, channels)
         self.dw = DyConv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation) if dynamic else \
             nn.Conv1d(channels, channels, kernel_size=kernel_size, padding=padding, dilation=dilation, bias=bias)
@@ -63,7 +64,6 @@ class EBlock_DS(nn.Module):
         bias = False,
         num_groups = 4,
         expansion_factor = 2.,
-        activation = nn.GELU(),
         dynamic = False,
         drop_path=0.
     ):
@@ -72,7 +72,10 @@ class EBlock_DS(nn.Module):
         hidden_channels = int(channels * expansion_factor)
         padding = (kernel_size - 1) * dilation // 2
 
-        self.act = activation
+        # self.act1 = Snake(channels)
+        # self.act2 = Snake(hidden_channels)
+        # self.act3 = Snake(hidden_channels)
+        self.act = nn.LeakyReLU(0.2)
         self.norm = nn.GroupNorm(num_groups, channels)
         self.pw1 = nn.Conv1d(channels, hidden_channels, kernel_size=1, bias=bias)
         self.dw = DyConv1d(hidden_channels, hidden_channels, kernel_size=kernel_size, padding=padding, dilation=dilation, groups=hidden_channels) if dynamic else \
@@ -153,12 +156,12 @@ class EBlock_DOWN(nn.Module):
         scale,
         bias = False,
         num_groups = 4,
-        expansion_factor = 2.,
-        activation = nn.GELU()
+        expansion_factor = 2.
     ):
         super().__init__()
 
-        self.act = activation
+        # self.act = Snake(in_channels)
+        self.act = nn.LeakyReLU(0.2)
         self.norm = nn.GroupNorm(num_groups, in_channels)
         self.dw = nn.Conv1d(in_channels, out_channels, kernel_size=scale*2, stride=scale, padding=scale//2, bias=bias)
     

@@ -5,6 +5,8 @@ import torch
 import torch.nn as nn
 import torchaudio
 
+from .blocks.act import Snake
+
 from torch.nn.utils import weight_norm
 
 def spectrogram(n_fft: int):
@@ -91,7 +93,8 @@ class ConvNet(nn.Module):
                         stride=s,
                         padding=pad,
                     )))
-            net.append(nn.LeakyReLU(.2))
+            # net.append(Snake(channels[i + 1]))
+            net.append(nn.LeakyReLU(0.2))
         net.append(conv(channels[-1], out_size, 1))
 
         self.net = nn.Sequential(*net)
@@ -135,11 +138,10 @@ class MultiScaleSpectralDiscriminator(nn.Module):
         return features
 
 class MultiScaleSpectralDiscriminator1d(nn.Module):
-    def __init__(self, scales: Sequence[int],
-                 convnet: Callable[[int], nn.Module]) -> None:
+    def __init__(self, scales: Sequence[int]) -> None:
         super().__init__()
         self.specs = nn.ModuleList([spectrogram(n) for n in scales])
-        self.nets = nn.ModuleList([convnet for _ in scales])
+        self.nets = nn.ModuleList([ConvNet(n+2, 1, 5, 2, nn.Conv1d, stride=2) for n in scales])
 
     def forward(self, x):
         features = []

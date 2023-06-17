@@ -6,6 +6,7 @@ from einops.layers.torch import Rearrange
 from torch.nn.utils import weight_norm
 
 from .blocks.dec import  DBlock_DS, DBlock_R
+from .blocks.act import Snake
 
 class MultiBranchProbabilisticDecoder(nn.Module):
     def __init__(
@@ -16,6 +17,7 @@ class MultiBranchProbabilisticDecoder(nn.Module):
         super().__init__()
 
         self.prob_conv = nn.Sequential(
+            # Snake(penulti_dim),
             nn.LeakyReLU(0.2),
             nn.GroupNorm(8, penulti_dim),
             nn.Conv1d(penulti_dim, probabilistic_outputs, 7, padding=3),
@@ -50,6 +52,7 @@ class Decoder(nn.Module):
             stages.append(decoder_stage)
 
         self.final_conv = nn.Sequential(
+            # Snake(h_dims[-2]),
             nn.LeakyReLU(0.2),
             weight_norm(nn.Conv1d(h_dims[-2], h_dims[-1], 7, padding=3)),
             nn.Tanh()
@@ -80,6 +83,7 @@ class DecoderStage(nn.Module):
 
         blocks.append(
             nn.Sequential(
+                # Snake(in_channels),
                 nn.LeakyReLU(0.2),
                 weight_norm(nn.ConvTranspose1d(in_channels, out_channels, scale * 2, stride=scale, padding=scale//2, bias=False))
             )
@@ -126,7 +130,6 @@ class DecoderBlock(nn.Module):
                     dilation = dilation,
                     bias = False,
                     expansion_factor = ds_expansion_factor,
-                    activation = nn.LeakyReLU(0.2),
                     dynamic = False,
                     drop_path = drop_path
                 ) if ds else
@@ -136,7 +139,6 @@ class DecoderBlock(nn.Module):
                     kernel,
                     dilation = dilation,
                     bias = False,
-                    activation = nn.LeakyReLU(0.2),
                     drop_path = drop_path
                 )
             )
