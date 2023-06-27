@@ -8,24 +8,29 @@ import os
 def aggregate_wavs(dirs, random_state=4):
     files = []
 
-    for dir in dirs:
-        files += [f"{dir}/{x}" for x in os.listdir(dir) if x.endswith(".wav")]
+    for i, dir in enumerate(dirs):
+        files += [
+            # f"{dir}/{x}" for x in os.listdir(dir) if x.endswith(".wav")
+            {"file": f"{dir}/{x}", "genre": i} for x in os.listdir(dir) if x.endswith(".wav")
+        ]
     
     random.Random(random_state).shuffle(files)
 
     return files
 
 class AudioFileDataset(Dataset):
-    def __init__(self, files, extract_length, bitrate=44100, multiplier=1):
+    def __init__(self, inputs, extract_length, bitrate=44100, multiplier=1):
         self.multiplier = multiplier
 
         self.bitrate = bitrate
         self.extract_length = extract_length
 
-        self.files = [None] * len(files)
+        self.files = [None] * len(inputs)
+        self.genres = [None] * len(inputs)
 
-        for i in range(len(files)):
-            self.files[i] = torchaudio.load(files[i])
+        for i in range(len(inputs)):
+            self.files[i] = torchaudio.load(inputs[i]["file"])
+            self.genres[i] = inputs[i]["genre"]
 
     def __getitem__(self, i):
         idx = floor(i / self.multiplier)
@@ -52,7 +57,8 @@ class AudioFileDataset(Dataset):
             sample = data[sample_idx:sample_idx+extract_length]
 
         item = {
-            "input": sample
+            "input": sample,
+            "genre": self.genres[idx]
         }
 
         return item

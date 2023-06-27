@@ -1,5 +1,4 @@
 import torchaudio
-import cdpam
 
 import numpy as np
 
@@ -28,8 +27,6 @@ from early import EarlyStopping
 
 from lr_scheduler.warmup_lr_scheduler import WarmupLRScheduler
 
-from torchaudio.functional import mu_law_encoding
-
 from dataset import AudioFileDataset, aggregate_wavs
 from sklearn.model_selection import train_test_split
 
@@ -38,9 +35,6 @@ from torchaudio.transforms import Resample
 from torch_audiomentations import SomeOf, OneOf, PolarityInversion, TimeInversion, AddColoredNoise, Gain, HighPassFilter, LowPassFilter, BandPassFilter, PeakNormalization, PitchShift
 
 from tqdm import tqdm
-
-# torchaudio.USE_SOUNDFILE_LEGACY_INTERFACE = False
-torchaudio.set_audio_backend("soundfile")
 
 # Params
 bitrate = 44100
@@ -312,15 +306,18 @@ def eval(model, val_dl, hparams=None, stage=1):
 def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=False, compile=False, warmup=None, checkpoint=None, disc=None, disc_checkpoint=None, save_paths=None):
     print("Learning rate:", lr)
 
+    betas = (0.9, 0.999)
+
     if stage == 1:
         model.stage1()
     elif stage == 2:
         disc.cuda()
         model.stage2()
 
-        opt_dis = AdamW(disc.parameters(), lr)
+        # betas = (0.5, 0.99)
+        opt_dis = AdamW(disc.parameters(), lr, betas=betas)
     
-    opt = AdamW(model.parameters(), lr)
+    opt = AdamW(model.parameters(), lr, betas=betas)
     scaler = GradScaler(enabled=mixed_precision)
 
     val_loss_min = None
@@ -328,8 +325,9 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
     if checkpoint is not None:
         model.load_state_dict(checkpoint["model"])
         opt.load_state_dict(checkpoint["opt"])
-        val_loss_min = checkpoint["loss"]
-        print(f"Resuming from model with val loss: {val_loss_min}")
+        if stage == 1 or (disc_checkpoint is not None):
+            val_loss_min = checkpoint["loss"]
+        print(f"Resuming from model with val loss: {checkpoint['loss']}")
     
     if (disc_checkpoint is not None) and stage == 2:
         disc.load_state_dict(disc_checkpoint["model"])
@@ -456,8 +454,12 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
             print("Early stopping")
             break
             
-model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, enc_drop_path=0.05, dec_drop_path=0.05, fast_recompose=True)
+# model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, enc_drop_path=0.05, dec_drop_path=0.05, fast_recompose=True)
 # model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, dec_drop_path=0.025, fast_recompose=True)
+model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, fast_recompose=True)
+
+# print(model)
+
 prior = GaussianPrior(128, 3)
 slicer = MPSSlicer(128, 3, 50)
 disc_scales = [4096, 2048, 1024, 512, 256]
@@ -466,7 +468,7 @@ conv_scale = ConvNet(1, 1, 15, 7, nn.Conv1d)
 discriminator = CombineDiscriminators([
     MultiPeriodDiscriminator([2, 3, 5, 7, 11], conv_period), 
     MultiScaleDiscriminator(3, conv_scale), 
-    MultiScaleSpectralDiscriminator1d(disc_scales)
+    # MultiScaleSpectralDiscriminator1d(disc_scales)
 ])
 
 trainer = TrainerAE(model, prior, slicer)
@@ -490,7 +492,7 @@ training_params = {
     "compile": False,
     "warmup": None, #(1e-6, 1),
     "stage": 2,
-    "save_paths": ["../models/ravae_stage2.pt", "../models/ravae_disc.pt"]
+    "save_paths": ["../models/ravae_stage2_dp.pt", "../models/ravae_disc_wave_dp.pt"]
 }
 
 train_ds = AudioFileDataset(X_train, sequence_length, multiplier=training_params["dataset_multiplier"])
@@ -501,9 +503,13 @@ val_dl = DataLoader(val_ds, batch_size=training_params["batch_size"], num_worker
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(pytorch_total_params)
 
-checkpoint = torch.load("../models/ravae_stage1_cont_d_1e4.pt")
-# checkpoint = None
-# disc_checkpoint = torch.load("../models/ravae_disc.pt")
+# ../models/ravae_stage1_cont_d_1e4.pt = completed first stage model
+# ../models/ravae_disc_wave_1_5_e-4.pt = disc with l1 loss ~0.1
+# ../models/ravae_stage2.pt = gen with l1 loss ~0.1
+
+# checkpoint = torch.load("../models/ravae_stage1_cont_d_1e4.pt")
+checkpoint = None
+# disc_checkpoint = torch.load("../models/ravae_disc_wave_cont.pt")
 disc_checkpoint = None
 train(trainer, train_dl, val_dl, lr=training_params["learning_rate"], 
       stage=training_params["stage"], mixed_precision=training_params["mixed_precision"], 
@@ -513,3 +519,8 @@ train(trainer, train_dl, val_dl, lr=training_params["learning_rate"],
 # trainer.load_state_dict(checkpoint["model"])
 # real_eval(trainer.backbone, 1001)
 # sample_from_prior(trainer.backbone, trainer.prior, 64 * 4)
+
+checkpoint = torch.load("../models/ravae_stage2.pt")
+trainer.load_state_dict(checkpoint["model"])
+
+torch.save(trainer.backbone.state_dict(), "../models/orpheus_stage2.pt")

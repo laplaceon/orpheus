@@ -5,38 +5,7 @@ import torch.nn.functional as F
 import onnxruntime
 
 from model.rae import Orpheus
-
-class Encoder(nn.Module):
-    def __init__(
-        self,
-        encoder,
-        pqmf
-    ):
-        super().__init__()
-
-        self.encoder = encoder
-        self.pqmf = pqmf
-    
-    def forward(self, x):
-        x_mb = self.pqmf(x)
-        z = self.encoder(x_mb)
-        return z
-
-class Upscaler(nn.Module):
-    def __init__(
-        self,
-        decoder,
-        pqmf
-    ):
-        super().__init__()
-
-        self.decoder = decoder
-        self.pqmf = pqmf
-    
-    def forward(self, z):
-        y_mb = self.decoder(z)
-        y = self.pqmf.inverse(y_mb)
-        return y
+from exportable import Encoder, Upscaler
 
 model = Orpheus(fast_recompose=True)
 model.load_state_dict(torch.load("../models/rae_8.pt"))

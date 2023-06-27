@@ -1,0 +1,1989 @@
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+31865157
+Learning rate: 0.00015
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(10., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(1., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(1., device='cuda:0', requires_grad=True)
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+Epoch 1
+  0%|
+
+                                                | 0/3018 [00:05<?,
+?it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+509, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_r
+ate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+391, in train
+    r_loss, d_loss, f_loss = model(beginning)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+195, in forward
+    y_subbands, _, x_subbands, z, mask = self.backbone(x)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/rae.py", l
+ine 141, in forward
+    y_subbands, y_pre = self.decode(z_p)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/rae.py", l
+ine 71, in decode
+    return self.decoder(z)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/decoder.py
+", line 63, in forward
+    out = self.conv(out)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/co
+ntainer.py", line 217, in forward
+    input = module(input)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/decoder.py
+", line 104, in forward
+    return self.blocks(x)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/co
+ntainer.py", line 217, in forward
+    input = module(input)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/decoder.py
+", line 146, in forward
+    return self.conv(x)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/co
+ntainer.py", line 217, in forward
+    input = module(input)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/blocks/dec
+.py", line 74, in forward
+    return x + self.drop_path(self.net(x))
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/co
+ntainer.py", line 217, in forward
+    input = module(input)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/blocks/act
+.py", line 10, in forward
+    return x + (self.alpha + 1e-9).reciprocal() * (self.alpha * x).
+sin().pow(2)
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate
+126.00 MiB (GPU 0; 23.69 GiB total capacity; 23.08 GiB already allo
+cated; 14.06 MiB free; 23.36 GiB reserved in total by PyTorch) If r
+eserved memory is >> allocated memory try setting max_split_size_mb
+ to avoid fragmentation.  See documentation for Memory Management a
+nd PYTORCH_CUDA_ALLOC_CONF
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+31865157
+Learning rate: 0.00015
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(50., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(50., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(10., device='cuda:0', requires_grad=True)
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+Epoch 1
+  0%|
+
+                                                | 0/3018 [00:06<?,
+?it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+510, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_r
+ate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+392, in train
+    r_loss, d_loss, f_loss = model(beginning)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+195, in forward
+    y_subbands, _, x_subbands, z, mask = self.backbone(x)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/rae.py", l
+ine 141, in forward
+    y_subbands, y_pre = self.decode(z_p)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/rae.py", l
+ine 71, in decode
+    return self.decoder(z)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/decoder.py
+", line 63, in forward
+    out = self.conv(out)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/co
+ntainer.py", line 217, in forward
+    input = module(input)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/decoder.py
+", line 104, in forward
+    return self.blocks(x)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/co
+ntainer.py", line 217, in forward
+    input = module(input)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/decoder.py
+", line 146, in forward
+    return self.conv(x)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/co
+ntainer.py", line 217, in forward
+    input = module(input)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/blocks/dec
+.py", line 74, in forward
+    return x + self.drop_path(self.net(x))
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/co
+ntainer.py", line 217, in forward
+    input = module(input)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/blocks/act
+.py", line 10, in forward
+    return x + (self.alpha + 1e-9).reciprocal() * (self.alpha * x).
+sin().pow(2)
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate
+126.00 MiB (GPU 0; 23.69 GiB total capacity; 23.08 GiB already allo
+cated; 14.06 MiB free; 23.36 GiB reserved in total by PyTorch) If r
+eserved memory is >> allocated memory try setting max_split_size_mb
+ to avoid fragmentation.  See documentation for Memory Management a
+nd PYTORCH_CUDA_ALLOC_CONF
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+31865157
+Learning rate: 0.00015
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(100., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(5., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(100., device='cuda:0', requires_grad=True)
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+Epoch 1
+  0%|
+
+                                                | 0/3520 [00:05<?,
+?it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+510, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_r
+ate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+392, in train
+    r_loss, d_loss, f_loss = model(beginning)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+212, in forward
+    fb_dist = self.distance(y, x)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/core/loss.py", l
+ine 177, in forward
+    stfts_x = self.multiscale_stft(x)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/core/loss.py", l
+ine 99, in forward
+    y = stft(x)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torchaudio/transfor
+ms/_transforms.py", line 110, in forward
+    return F.spectrogram(
+  File "/usr/local/lib/python3.10/dist-packages/torchaudio/function
+al/functional.py", line 126, in spectrogram
+    spec_f = torch.stft(
+  File "/usr/local/lib/python3.10/dist-packages/torch/functional.py
+", line 641, in stft
+    return _VF.stft(input, n_fft, hop_length, win_length, window,
+# type: ignore[attr-defined]
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate
+50.00 MiB (GPU 0; 23.69 GiB total capacity; 23.11 GiB already alloc
+ated; 26.06 MiB free; 23.33 GiB reserved in total by PyTorch) If re
+served memory is >> allocated memory try setting max_split_size_mb
+to avoid fragmentation.  See documentation for Memory Management an
+d PYTORCH_CUDA_ALLOC_CONF
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+31865157
+Learning rate: 0.00015
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(5., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(100., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(100., device='cuda:0', requires_grad=True)
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+Epoch 1
+  0%|
+
+                                                | 0/4224 [00:04<?,
+?it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+510, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_r
+ate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+392, in train
+    r_loss, d_loss, f_loss = model(beginning)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+218, in forward
+    d_loss = slicer.fgw_dist(z.transpose(1, 2).reshape(-1, z.shape[
+1]), z_samples)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/slicer.py"
+, line 40, in fgw_dist
+    gw2 = torch.mean(torch.mean((posterior_diff - prior_diff2) ** p
+, dim=0), dim=0)
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate
+314.00 MiB (GPU 0; 23.69 GiB total capacity; 22.78 GiB already allo
+cated; 292.06 MiB free; 23.07 GiB reserved in total by PyTorch) If
+reserved memory is >> allocated memory try setting max_split_size_m
+b to avoid fragmentation.  See documentation for Memory Management
+and PYTORCH_CUDA_ALLOC_CONF
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+31865157
+Learning rate: 0.00015
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(5., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(50., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(5., device='cuda:0', requires_grad=True)
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+Epoch 1
+  1%|▉
+
+                                     | 30/5280 [00:23<1:09:29,  1.2
+6it/s]  1%|▉
+
+                                           | 30/5280 [00:23<1:08:44
+,  1.27it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+510, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_r
+ate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+427, in train
+    scaler.scale(loss).backward()
+  File "/usr/local/lib/python3.10/dist-packages/torch/_tensor.py",
+line 487, in backward
+    torch.autograd.backward(
+  File "/usr/local/lib/python3.10/dist-packages/torch/autograd/__in
+it__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++
+engine to run the backward pass
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+31865157
+Learning rate: 0.00015
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(50., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(50., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(1., device='cuda:0', requires_grad=True)
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+Epoch 1
+ 58%|██████████████████████████████████████████████████████████████
+██████████████████████████████████▊
+                                     | 2739/4694 [37:20<30:46,  1.0
+6it/s] 58%|████████████████████████████████████████████████████████
+████████████████████████████████████████▊
+                                           | 2739/4694 [37:21<26:40
+,  1.22it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+510, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_r
+ate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+392, in train
+    r_loss, d_loss, f_loss = model(beginning)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+195, in forward
+    y_subbands, _, x_subbands, z, mask = self.backbone(x)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/rae.py", l
+ine 137, in forward
+    z = self.encoder(x_subbands, mask)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/encoder.py
+", line 52, in forward
+    x = stage(x, mask)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/encoder.py
+", line 143, in forward
+    x = self.downscale(x, (upsample_mask(mask, self.mask_scale[0]).
+unsqueeze(1), upsample_mask(mask, self.mask_scale[1]).unsqueeze(1))
+ if mask is not None else None)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/mask.py",
+line 75, in upsample_mask
+    return mask.repeat_interleave(scale, axis=1)
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+31823877
+Learning rate: 0.00015
+Resuming from model with val loss: 9.812762280647329
+Parameter containing:
+tensor([-1.0431,  4.0576, -1.0643], requires_grad=True)
+tensor(0.8405) Parameter containing:
+tensor(48.9445, requires_grad=True)
+tensor(0.6425) Parameter containing:
+tensor(92.7547, requires_grad=True)
+tensor(-1.0062) Parameter containing:
+tensor(92.7992, requires_grad=True)
+Parameter containing:
+tensor([0.6123, 0.9671, 0.9559], requires_grad=True)
+Epoch 1
+  0%|
+
+                                                | 0/3520 [00:05<?,
+?it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+510, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_r
+ate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+402, in train
+    r_loss, adv_loss, disc_loss, fm_loss, f_loss = model.forward_wd
+(beginning, disc)
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+164, in forward_wd
+    features = discriminator(xy)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/discrimina
+tor.py", line 185, in forward
+    features.extend(disc(x))
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/discrimina
+tor.py", line 168, in forward
+    features.append(layer(self.fold(x, n)))
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/discrimina
+tor.py", line 104, in forward
+    x = layer(x)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/blocks/act
+.py", line 10, in forward
+    return x + (self.alpha + 1e-9).reciprocal() * (self.alpha * x).
+sin().pow(2)
+RuntimeError: The size of tensor a (64) must match the size of tens
+or b (16384) at non-singleton dimension 2
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+31823877
+Learning rate: 0.00015
+Resuming from model with val loss: 9.812762280647329
+Parameter containing:
+tensor([-1.0431,  4.0576, -1.0643], requires_grad=True)
+tensor(0.8405) Parameter containing:
+tensor(48.9445, requires_grad=True)
+tensor(0.6425) Parameter containing:
+tensor(92.7547, requires_grad=True)
+tensor(-1.0062) Parameter containing:
+tensor(92.7992, requires_grad=True)
+Parameter containing:
+tensor([0.6123, 0.9671, 0.9559], requires_grad=True)
+Epoch 1
+  0%|
+
+                                                | 0/3520 [00:05<?,
+?it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+510, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_r
+ate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+402, in train
+    r_loss, adv_loss, disc_loss, fm_loss, f_loss = model.forward_wd
+(beginning, disc)
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+164, in forward_wd
+    features = discriminator(xy)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/discrimina
+tor.py", line 186, in forward
+    features.extend(disc(x))
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/discrimina
+tor.py", line 152, in forward
+    features.append(net(spec_x))
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/discrimina
+tor.py", line 105, in forward
+    x = layer(x)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1538, in _call_impl
+    result = forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/co
+nv.py", line 313, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/co
+nv.py", line 309, in _conv_forward
+    return F.conv1d(input, weight, bias, self.stride,
+RuntimeError: Given groups=1, weight of size [64, 1, 5], expected i
+nput[48, 4098, 125] to have 1 channels, but got 4098 channels inste
+ad
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+31823877
+Learning rate: 0.00015
+Resuming from model with val loss: 9.812762280647329
+Parameter containing:
+tensor([-1.0431,  4.0576, -1.0643], requires_grad=True)
+tensor(0.8405) Parameter containing:
+tensor(48.9445, requires_grad=True)
+tensor(0.6425) Parameter containing:
+tensor(92.7547, requires_grad=True)
+tensor(-1.0062) Parameter containing:
+tensor(92.7992, requires_grad=True)
+Parameter containing:
+tensor([0.6123, 0.9671, 0.9559], requires_grad=True)
+Epoch 1
+  1%|▊
+
+                                       | 18/3520 [00:16<37:15,  1.5
+7it/s]  1%|▊
+
+                                             | 18/3520 [00:16<53:49
+,  1.08it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+509, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_r
+ate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+427, in train
+    scaler.scale(loss).backward()
+  File "/usr/local/lib/python3.10/dist-packages/torch/_tensor.py",
+line 487, in backward
+    torch.autograd.backward(
+  File "/usr/local/lib/python3.10/dist-packages/torch/autograd/__in
+it__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++
+engine to run the backward pass
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+31823877
+Learning rate: 0.00015
+Resuming from model with val loss: 9.812762280647329
+Parameter containing:
+tensor([-1.0431,  4.0576, -1.0643], requires_grad=True)
+tensor(0.8405) Parameter containing:
+tensor(48.9445, requires_grad=True)
+tensor(0.6425) Parameter containing:
+tensor(92.7547, requires_grad=True)
+tensor(-1.0062) Parameter containing:
+tensor(92.7992, requires_grad=True)
+Parameter containing:
+tensor([0.6123, 0.9671, 0.9559], requires_grad=True)
+Epoch 1
+  0%|▊
+
+                                       | 12/2640 [00:19<55:13,  1.2
+6s/it]  0%|▊
+
+                                           | 12/2640 [00:20<1:15:02
+,  1.71s/it]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+509, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_r
+ate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+385, in train
+    beginning = peak_norm(apply_augmentations_adv(real_imgs, sample
+_rate=bitrate).cuda())
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audioment
+ations/core/composition.py", line 210, in forward
+    inputs = self.transforms[i](**inputs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audioment
+ations/core/transforms_interface.py", line 341, in forward
+    perturbed: ObjectDict = self.apply_transform(
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audioment
+ations/augmentations/pitch_shift.py", line 121, in apply_transform
+    samples[i, ...] = pitch_shift(
+  File "/home/r/.local/lib/python3.10/site-packages/torch_pitch_shi
+ft/main.py", line 161, in pitch_shift
+    output = torch.istft(output[0], n_fft, hop_length)
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+31823877
+Learning rate: 0.00015
+Resuming from model with val loss: 9.812762280647329
+Parameter containing:
+tensor([-1.0431,  4.0576, -1.0643], requires_grad=True)
+tensor(0.8405) Parameter containing:
+tensor(48.9445, requires_grad=True)
+tensor(0.6425) Parameter containing:
+tensor(92.7547, requires_grad=True)
+tensor(-1.0062) Parameter containing:
+tensor(92.7992, requires_grad=True)
+Parameter containing:
+tensor([0.6123, 0.9671, 0.9559], requires_grad=True)
+Epoch 1
+  1%|█▊
+
+                                       | 26/2347 [00:39<54:35,  1.4
+1s/it]  1%|█▊
+
+                                             | 26/2347 [00:40<59:55
+,  1.55s/it]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+509, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_r
+ate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+385, in train
+    beginning = peak_norm(apply_augmentations_adv(real_imgs, sample
+_rate=bitrate).cuda())
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audioment
+ations/core/composition.py", line 210, in forward
+    inputs = self.transforms[i](**inputs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audioment
+ations/core/transforms_interface.py", line 341, in forward
+    perturbed: ObjectDict = self.apply_transform(
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audioment
+ations/augmentations/pitch_shift.py", line 121, in apply_transform
+    samples[i, ...] = pitch_shift(
+  File "/home/r/.local/lib/python3.10/site-packages/torch_pitch_shi
+ft/main.py", line 162, in pitch_shift
+    output = resampler(output)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1494, in _call_impl
+    def _call_impl(self, *args, **kwargs):
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+31823877
+Learning rate: 0.00015
+Resuming from model with val loss: 9.812762280647329
+Parameter containing:
+tensor([-1.0431,  4.0576, -1.0643], requires_grad=True)
+tensor(0.8405) Parameter containing:
+tensor(48.9445, requires_grad=True)
+tensor(0.6425) Parameter containing:
+tensor(92.7547, requires_grad=True)
+tensor(-1.0062) Parameter containing:
+tensor(92.7992, requires_grad=True)
+Parameter containing:
+tensor([0.6123, 0.9671, 0.9559], requires_grad=True)
+Epoch 1
+ 41%|██████████████████████████████████████████████████████████████
+███████▏
+                                      | 973/2347 [18:43<23:41,  1.0
+3s/it] 41%|████████████████████████████████████████████████████████
+█████████████▏
+                                            | 973/2347 [18:43<26:27
+,  1.16s/it]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+509, in <module>
+    stage=training_params["stage"], mixed_precision=training_params
+["mixed_precision"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+427, in train
+    scaler.scale(loss).backward()
+  File "/usr/local/lib/python3.10/dist-packages/torch/_tensor.py",
+line 487, in backward
+    torch.autograd.backward(
+  File "/usr/local/lib/python3.10/dist-packages/torch/autograd/__in
+it__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++
+engine to run the backward pass
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+31823877
+Learning rate: 0.00015
+Resuming from model with val loss: 9.812762280647329
+Parameter containing:
+tensor([-1.0431,  4.0576, -1.0643], requires_grad=True)
+tensor(0.8405) Parameter containing:
+tensor(48.9445, requires_grad=True)
+tensor(0.6425) Parameter containing:
+tensor(92.7547, requires_grad=True)
+tensor(-1.0062) Parameter containing:
+tensor(92.7992, requires_grad=True)
+Parameter containing:
+tensor([0.6123, 0.9671, 0.9559], requires_grad=True)
+Epoch 1
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [47:09<00:00,  1.2
+1s/it]
+Train loss: 14.319180534502573, Disc Loss: 25.934990146996164, Adv
+Loss: 0.4919239754467555, FM Loss: 0.2494465487024659, Recon Loss:
+4.41917225844209, Time Loss: 0.17510694981853048
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:37<00:00,  1.2
+8it/s]
+Valid loss: 8.840294053241788, Dist Loss: 0.0, Recon Loss: 4.406487
+389764347, Time Loss: 0.13659639995437262
+Validation loss decreased (inf --> 8.840294).  Saving model ...
+tensor([-0.0003,  0.0113,  0.0081,  ..., -0.0370, -0.0368, -0.0362]
+,
+       device='cuda:0') -0.3642602562904358 0.33560529351234436
+tensor([-0.0222, -0.0223, -0.0200,  ..., -0.0126, -0.0021,  0.0022]
+,
+       device='cuda:0') -1.2275837659835815 1.281455636024475
+tensor([-0.0176, -0.0175, -0.0158,  ..., -0.0041, -0.0001,  0.0038]
+,
+       device='cuda:0') -0.37003111839294434 0.38295114040374756
+Epoch 2
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:41<00:00,  1.1
+9s/it]
+Train loss: 15.430345046047865, Disc Loss: 25.804757403067747, Adv
+Loss: 1.080935568823731, FM Loss: 0.28811412757642735, Recon Loss:
+4.2935491080582775, Time Loss: 0.11101180347873904
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:34<00:00,  1.2
+9it/s]
+Valid loss: 8.435540317067499, Dist Loss: 0.0, Recon Loss: 4.203913
+081037531, Time Loss: 0.13857078922236596
+Validation loss decreased (8.840294 --> 8.435540).  Saving model ..
+.
+tensor([ 0.0520,  0.0661,  0.0665,  ..., -0.0262, -0.0240, -0.0231]
+,
+       device='cuda:0') -0.44246265292167664 0.37751340866088867
+tensor([ 0.0082,  0.0104,  0.0139,  ..., -0.0229, -0.0166, -0.0169]
+,
+       device='cuda:0') -1.5992610454559326 1.2920151948928833
+tensor([ 0.0108,  0.0131,  0.0158,  ..., -0.0083, -0.0057, -0.0032]
+,
+       device='cuda:0') -0.45716768503189087 0.42843642830848694
+Epoch 3
+  3%|████▊
+
+                                       | 67/2347 [01:23<46:26,  1.2
+2s/it]  3%|████▊
+
+                                             | 67/2347 [01:23<47:34
+,  1.25s/it]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+509, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_r
+ate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+429, in train
+    scaler.step(opt)
+  File "/usr/local/lib/python3.10/dist-packages/torch/cuda/amp/grad
+_scaler.py", line 374, in step
+    retval = self._maybe_opt_step(optimizer, optimizer_state, *args
+, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/cuda/amp/grad
+_scaler.py", line 289, in _maybe_opt_step
+    if not sum(v.item() for v in optimizer_state["found_inf_per_dev
+ice"].values()):
+  File "/usr/local/lib/python3.10/dist-packages/torch/cuda/amp/grad
+_scaler.py", line 289, in <genexpr>
+    if not sum(v.item() for v in optimizer_state["found_inf_per_dev
+ice"].values()):
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+^CTraceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+497, in <module>
+    train_ds = AudioFileDataset(X_train, sequence_length, multiplie
+r=training_params["dataset_multiplier"])
+  File "/home/r/Documents/Projects/orpheus/orpheus/dataset.py", lin
+e 28, in __init__
+    self.files[i] = torchaudio.load(files[i])
+  File "/usr/local/lib/python3.10/dist-packages/torchaudio/backend/
+soundfile_backend.py", line 230, in load
+    waveform = file_.read(frames, dtype, always_2d=True)
+  File "/home/r/.local/lib/python3.10/site-packages/soundfile.py",
+line 895, in read
+    frames = self._array_io('read', out, frames)
+  File "/home/r/.local/lib/python3.10/site-packages/soundfile.py",
+line 1344, in _array_io
+    return self._cdata_io(action, cdata, ctype, frames)
+  File "/home/r/.local/lib/python3.10/site-packages/soundfile.py",
+line 1353, in _cdata_io
+    frames = func(self._file, data, frames)
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+31823877
+Learning rate: 0.00015
+Resuming from model with val loss: 9.812762280647329
+Parameter containing:
+tensor([-1.0431,  4.0576, -1.0643], requires_grad=True)
+tensor(0.8405) Parameter containing:
+tensor(48.9445, requires_grad=True)
+tensor(0.6425) Parameter containing:
+tensor(92.7547, requires_grad=True)
+tensor(-1.0062) Parameter containing:
+tensor(92.7992, requires_grad=True)
+Parameter containing:
+tensor([0.6123, 0.9671, 0.9559], requires_grad=True)
+Epoch 1
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [44:28<00:00,  1.1
+4s/it]
+Train loss: 14.189170730535558, Disc Loss: 25.93381178099702, Adv L
+oss: 0.702231931747352, FM Loss: 0.23582964955262037, Recon Loss: 4
+.385171659255871, Time Loss: 0.16274611864113583
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:21<00:00,  1.3
+3it/s]
+Valid loss: 8.537740263865794, Dist Loss: 0.0, Recon Loss: 4.255403
+240454055, Time Loss: 0.1346689532471272
+Validation loss decreased (inf --> 8.537740).  Saving model ...
+tensor([ 0.0221,  0.0335,  0.0316,  ..., -0.0143, -0.0116, -0.0114]
+,
+       device='cuda:0') -0.34982338547706604 0.4109647274017334
+tensor([ 0.0007,  0.0008,  0.0015,  ..., -0.0306, -0.0295, -0.0273]
+,
+       device='cuda:0') -1.4260549545288086 1.3308780193328857
+tensor([ 0.0023,  0.0033,  0.0040,  ..., -0.0187, -0.0147, -0.0127]
+,
+       device='cuda:0') -0.4023670554161072 0.3220635652542114
+Epoch 2
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [45:28<00:00,  1.1
+6s/it]
+Train loss: 14.616407522811857, Disc Loss: 25.847158606732, Adv Los
+s: 0.9936263771528481, FM Loss: 0.25847761936781, Recon Loss: 4.226
+58525500645, Time Loss: 0.11106275841847703
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:28<00:00,  1.3
+1it/s]
+Valid loss: 8.305799637783123, Dist Loss: 0.0, Recon Loss: 4.139585
+800430844, Time Loss: 0.1331401430482911
+Validation loss decreased (8.537740 --> 8.305800).  Saving model ..
+.
+tensor([ 0.0526,  0.0657,  0.0618,  ..., -0.0178, -0.0161, -0.0145]
+,
+       device='cuda:0') -0.3662808835506439 0.3412211537361145
+tensor([ 0.0406,  0.0439,  0.0454,  ..., -0.0322, -0.0280, -0.0189]
+,
+       device='cuda:0') -1.3543709516525269 1.2958781719207764
+tensor([0.0374, 0.0411, 0.0418,  ..., 0.0007, 0.0028, 0.0054], devi
+ce='cuda:0') -0.4474378228187561 0.4061235189437866
+Epoch 3
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [45:17<00:00,  1.1
+6s/it]
+Train loss: 15.24758211744558, Disc Loss: 25.850007988922027, Adv L
+oss: 1.4270842088553872, FM Loss: 0.2726894227504527, Recon Loss: 4
+.18335816014001, Time Loss: 0.10991627700280829
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:21<00:00,  1.3
+3it/s]
+Valid loss: 8.202142230493653, Dist Loss: 0.0, Recon Loss: 4.087844
+85025747, Time Loss: 0.13226261741943415
+Validation loss decreased (8.305800 --> 8.202142).  Saving model ..
+.
+tensor([ 0.0102,  0.0185,  0.0182,  ..., -0.0275, -0.0255, -0.0241]
+,
+       device='cuda:0') -0.4055118262767792 0.3468495011329651
+tensor([ 0.0007,  0.0005,  0.0019,  ..., -0.0217, -0.0174, -0.0128]
+,
+       device='cuda:0') -1.3287327289581299 1.2510321140289307
+tensor([-0.0018, -0.0015, -0.0004,  ...,  0.0124,  0.0169,  0.0206]
+,
+       device='cuda:0') -0.3974705636501312 0.4285814166069031
+Epoch 4
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [44:52<00:00,  1.1
+5s/it]
+Train loss: 15.244140197126521, Disc Loss: 25.87833537494674, Adv L
+oss: 1.6986697196554112, FM Loss: 0.26490542489414676, Recon Loss:
+4.123707303505123, Time Loss: 0.11072759207895222
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:27<00:00,  1.3
+1it/s]
+Valid loss: 8.494630638135556, Dist Loss: 0.0, Recon Loss: 4.233948
+841614861, Time Loss: 0.13366472984472166
+EarlyStopping counter: 1 out of 10
+Epoch 5
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [45:53<00:00,  1.1
+7s/it]
+Train loss: 15.121122619472873, Disc Loss: 25.917780677460588, Adv
+Loss: 2.0284470118102895, FM Loss: 0.24374424756005006, Recon Loss:
+ 4.108898966983881, Time Loss: 0.1096338292176692
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:25<00:00,  1.3
+2it/s]
+Valid loss: 8.263122030579861, Dist Loss: 0.0, Recon Loss: 4.118273
+208250991, Time Loss: 0.13287799389718744
+EarlyStopping counter: 2 out of 10
+Epoch 6
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [45:15<00:00,  1.1
+6s/it]
+Train loss: 15.143412376699622, Disc Loss: 25.911422827013208, Adv
+Loss: 2.2007674358223266, FM Loss: 0.2387756165617011, Recon Loss:
+4.083560999576518, Time Loss: 0.10860934623401623
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:27<00:00,  1.3
+1it/s]
+Valid loss: 8.213969376058758, Dist Loss: 0.0, Recon Loss: 4.093643
+65272262, Time Loss: 0.13341029747381325
+EarlyStopping counter: 3 out of 10
+Epoch 7
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [45:35<00:00,  1.1
+7s/it]
+Train loss: 15.434979488761261, Disc Loss: 25.907907701320834, Adv
+Loss: 2.3358006064923305, FM Loss: 0.24897839579116957, Recon Loss:
+ 4.0598098585643205, Time Loss: 0.10971678429948659
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:28<00:00,  1.3
+1it/s]
+Valid loss: 8.211716807883683, Dist Loss: 0.0, Recon Loss: 4.092526
+443569177, Time Loss: 0.13331958244743503
+EarlyStopping counter: 4 out of 10
+Epoch 8
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [44:44<00:00,  1.1
+4s/it]
+Train loss: 15.79544019800681, Disc Loss: 25.908473583297827, Adv L
+oss: 2.527519339848743, FM Loss: 0.2574577315289465, Recon Loss: 4.
+05939340621906, Time Loss: 0.10903886197714995
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:22<00:00,  1.3
+3it/s]
+Valid loss: 8.225330475444892, Dist Loss: 0.0, Recon Loss: 4.099809
+215665879, Time Loss: 0.128560186657274
+EarlyStopping counter: 5 out of 10
+Epoch 9
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [45:06<00:00,  1.1
+5s/it]
+Train loss: 16.399154383119342, Disc Loss: 25.83027535151257, Adv L
+oss: 2.263431999294312, FM Loss: 0.29887831581873137, Recon Loss: 4
+.079053175616986, Time Loss: 0.108728513716826
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:20<00:00,  1.3
+3it/s]
+Valid loss: 8.04566255826154, Dist Loss: 0.0, Recon Loss: 4.0097193
+23868239, Time Loss: 0.1311195932449281
+Validation loss decreased (8.202142 --> 8.045663).  Saving model ..
+.
+tensor([ 0.0173,  0.0279,  0.0252,  ..., -0.0244, -0.0224, -0.0213]
+,
+       device='cuda:0') -0.415262371301651 0.3635338842868805
+tensor([-0.0018,  0.0002,  0.0002,  ..., -0.0221, -0.0109, -0.0061]
+,
+       device='cuda:0') -1.4204022884368896 1.2386008501052856
+tensor([-7.7629e-03, -5.5074e-03, -5.9798e-03,  ...,  5.6756e-05,
+         3.3586e-03,  6.0766e-03], device='cuda:0') -0.439952552318
+573 0.4207322597503662
+Epoch 10
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [44:36<00:00,  1.1
+4s/it]
+Train loss: 16.645466307553527, Disc Loss: 25.864168353216872, Adv
+Loss: 2.715567538013954, FM Loss: 0.2926559545763208, Recon Loss: 4
+.038400032391282, Time Loss: 0.10891640517094006
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:22<00:00,  1.3
+3it/s]
+Valid loss: 8.08525073995379, Dist Loss: 0.0, Recon Loss: 4.0296531
+40186654, Time Loss: 0.12972230741236948
+EarlyStopping counter: 1 out of 10
+Epoch 11
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [44:49<00:00,  1.1
+5s/it]
+Train loss: 16.63768898135406, Disc Loss: 25.888807520238604, Adv L
+oss: 2.889536301328824, FM Loss: 0.28330870775857475, Recon Loss: 4
+.040985723632826, Time Loss: 0.10803984656841084
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:23<00:00,  1.3
+2it/s]
+Valid loss: 8.018015574759072, Dist Loss: 0.0, Recon Loss: 3.995901
+559849208, Time Loss: 0.13106223979244544
+Validation loss decreased (8.045663 --> 8.018016).  Saving model ..
+.
+tensor([ 0.0648,  0.0733,  0.0704,  ..., -0.0267, -0.0245, -0.0234]
+,
+       device='cuda:0') -0.39757391810417175 0.36662864685058594
+tensor([ 0.0270,  0.0262,  0.0261,  ..., -0.0266, -0.0148, -0.0087]
+,
+       device='cuda:0') -1.56321382522583 1.290295958518982
+tensor([0.0271, 0.0268, 0.0270,  ..., 0.0037, 0.0068, 0.0093], devi
+ce='cuda:0') -0.43556293845176697 0.5149155855178833
+Epoch 12
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [45:20<00:00,  1.1
+6s/it]
+Train loss: 16.608341482785796, Disc Loss: 25.880052993182787, Adv
+Loss: 2.770896440269493, FM Loss: 0.2905877807773221, Recon Loss: 4
+.012850336587627, Time Loss: 0.10809378883066104
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:23<00:00,  1.3
+2it/s]
+Valid loss: 8.094259812031735, Dist Loss: 0.0, Recon Loss: 4.034090
+072982762, Time Loss: 0.13039836791396345
+EarlyStopping counter: 1 out of 10
+Epoch 13
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [45:09<00:00,  1.1
+5s/it]
+Train loss: 16.618408617995676, Disc Loss: 25.901669684703876, Adv
+Loss: 2.775786014226939, FM Loss: 0.2924786483576108, Recon Loss: 3
+.9965390758815094, Time Loss: 0.10847203777948236
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:17<00:00,  1.3
+4it/s]
+Valid loss: 8.039229819478127, Dist Loss: 0.0, Recon Loss: 4.006642
+495143962, Time Loss: 0.12972415672389875
+EarlyStopping counter: 2 out of 10
+Epoch 14
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [45:07<00:00,  1.1
+5s/it]
+Train loss: 16.761501052199804, Disc Loss: 25.879027748189177, Adv
+Loss: 2.8834553585694502, FM Loss: 0.2944033752363389, Recon Loss:
+3.99498732424209, Time Loss: 0.10723490216247468
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:28<00:00,  1.3
+1it/s]
+Valid loss: 7.9580758702409735, Dist Loss: 0.0, Recon Loss: 3.96594
+60923131524, Time Loss: 0.13091844070886835
+Validation loss decreased (8.018016 --> 7.958076).  Saving model ..
+.
+tensor([ 0.0893,  0.1010,  0.0963,  ..., -0.0346, -0.0331, -0.0299]
+,
+       device='cuda:0') -0.350424200296402 0.36044836044311523
+tensor([ 0.0306,  0.0316,  0.0286,  ..., -0.0381, -0.0322, -0.0260]
+,
+       device='cuda:0') -1.448793888092041 1.4126662015914917
+tensor([ 0.0305,  0.0324,  0.0296,  ..., -0.0144, -0.0111, -0.0055]
+,
+       device='cuda:0') -0.510453999042511 0.4830993711948395
+Epoch 15
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [45:04<00:00,  1.1
+5s/it]
+Train loss: 16.714549338101428, Disc Loss: 25.658193971026844, Adv
+Loss: 2.1242366834655946, FM Loss: 0.31899359970840435, Recon Loss:
+ 4.105194328691688, Time Loss: 0.1081320178850971
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:23<00:00,  1.3
+2it/s]
+Valid loss: 7.940496475570653, Dist Loss: 0.0, Recon Loss: 3.957152
+6611074677, Time Loss: 0.13095584625673354
+Validation loss decreased (7.958076 --> 7.940496).  Saving model ..
+.
+tensor([-0.0164, -0.0083, -0.0122,  ..., -0.0188, -0.0181, -0.0166]
+,
+       device='cuda:0') -0.37587007880210876 0.3848164677619934
+tensor([-0.0061, -0.0060, -0.0058,  ..., -0.0370, -0.0367, -0.0334]
+,
+       device='cuda:0') -1.3086682558059692 1.5111720561981201
+tensor([-0.0128, -0.0120, -0.0121,  ..., -0.0241, -0.0182, -0.0119]
+,
+       device='cuda:0') -0.4851608872413635 0.43626466393470764
+Epoch 16
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [44:47<00:00,  1.1
+5s/it]
+Train loss: 16.44230442550978, Disc Loss: 25.67493742011078, Adv Lo
+ss: 2.009867592979402, FM Loss: 0.31305761219442374, Recon Loss: 4.
+085658207415112, Time Loss: 0.10831880516443651
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:37<00:00,  1.2
+8it/s]
+Valid loss: 8.14424397064027, Dist Loss: 0.0, Recon Loss: 4.0588532
+9360247, Time Loss: 0.13268697747938474
+EarlyStopping counter: 1 out of 10
+Epoch 17
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [45:23<00:00,  1.1
+6s/it]
+Train loss: 16.44638143969334, Disc Loss: 25.650191734128676, Adv L
+oss: 2.0759600333371058, FM Loss: 0.3103276477451268, Recon Loss: 4
+.081929336571419, Time Loss: 0.10818719159308575
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:23<00:00,  1.3
+2it/s]
+Valid loss: 8.038015476889667, Dist Loss: 0.0, Recon Loss: 4.006013
+985996149, Time Loss: 0.12993754386216452
+EarlyStopping counter: 2 out of 10
+Epoch 18
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:00<00:00,  1.1
+8s/it]
+Train loss: 16.391849731555837, Disc Loss: 25.595913666382614, Adv
+Loss: 1.8526842257902376, FM Loss: 0.3191378267968417, Recon Loss:
+4.078186492387619, Time Loss: 0.10769490584648565
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:26<00:00,  1.3
+2it/s]
+Valid loss: 8.2617559506093, Dist Loss: 0.0, Recon Loss: 4.11799932
+1354309, Time Loss: 0.12878648065398662
+EarlyStopping counter: 3 out of 10
+Epoch 19
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [45:27<00:00,  1.1
+6s/it]
+Train loss: 16.39518485497961, Disc Loss: 25.563025937366852, Adv L
+oss: 1.8162182034661936, FM Loss: 0.3210755044671389, Recon Loss: 4
+.078709353982107, Time Loss: 0.10852237311312884
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:30<00:00,  1.3
+0it/s]
+Valid loss: 8.307294592946716, Dist Loss: 0.0, Recon Loss: 4.140591
+588905763, Time Loss: 0.1305570493323738
+EarlyStopping counter: 4 out of 10
+Epoch 20
+ 56%|██████████████████████████████████████████████████████████████
+██████████████████████████████▊
+                                     | 1312/2347 [26:00<19:17,  1.1
+2s/it] 56%|████████████████████████████████████████████████████████
+████████████████████████████████████▊
+                                           | 1312/2347 [26:00<20:31
+,  1.19s/it]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+509, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_r
+ate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+428, in train
+    scaler.scale(loss).backward()
+  File "/usr/local/lib/python3.10/dist-packages/torch/_tensor.py",
+line 487, in backward
+    torch.autograd.backward(
+  File "/usr/local/lib/python3.10/dist-packages/torch/autograd/__in
+it__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++
+engine to run the backward pass
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+31823877
+Learning rate: 0.0002
+Resuming from model with val loss: 9.812762280647329
+Parameter containing:
+tensor([-1.0431,  4.0576, -1.0643], requires_grad=True)
+tensor(0.8405) Parameter containing:
+tensor(48.9445, requires_grad=True)
+tensor(0.6425) Parameter containing:
+tensor(92.7547, requires_grad=True)
+tensor(-1.0062) Parameter containing:
+tensor(92.7992, requires_grad=True)
+Parameter containing:
+tensor([0.6123, 0.9671, 0.9559], requires_grad=True)
+Epoch 1
+  0%|▏
+
+                                      | 2/2347 [00:09<2:50:09,  4.3
+5s/it]  0%|▏
+
+                                            | 2/2347 [00:10<3:18:49
+,  5.09s/it]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+509, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_r
+ate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+428, in train
+    scaler.scale(loss).backward()
+  File "/usr/local/lib/python3.10/dist-packages/torch/_tensor.py",
+line 487, in backward
+    torch.autograd.backward(
+  File "/usr/local/lib/python3.10/dist-packages/torch/autograd/__in
+it__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++
+engine to run the backward pass
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+31823877
+Learning rate: 0.0002
+Resuming from model with val loss: 9.812762280647329
+Parameter containing:
+tensor([-1.0431,  4.0576, -1.0643], requires_grad=True)
+tensor(0.8405) Parameter containing:
+tensor(48.9445, requires_grad=True)
+tensor(0.6425) Parameter containing:
+tensor(92.7547, requires_grad=True)
+tensor(-1.0062) Parameter containing:
+tensor(92.7992, requires_grad=True)
+Parameter containing:
+tensor([0.6123, 0.9671, 0.9559], requires_grad=True)
+Epoch 1
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [47:38<00:00,  1.2
+2s/it]
+Train loss: 9.33983063261002, Disc Loss: 15.991608303152962, Adv Lo
+ss: -0.04182573212020998, FM Loss: 0.0803896461490067, Recon Loss:
+3.886938222174854, Time Loss: 0.22063706186371862
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:55<00:00,  1.2
+3it/s]
+Valid loss: 7.848327547362554, Dist Loss: 0.0, Recon Loss: 3.897456
+7544115057, Time Loss: 0.2670702127076597
+Validation loss decreased (inf --> 7.848328).  Saving model ...
+tensor([-0.0864, -0.0811, -0.0863,  ...,  0.0236,  0.0235,  0.0237]
+,
+       device='cuda:0') -0.3177034854888916 0.39660295844078064
+tensor([-0.0413, -0.0409, -0.0418,  ..., -0.0204, -0.0287, -0.0350]
+,
+       device='cuda:0') -1.2644076347351074 1.3427232503890991
+tensor([-0.0357, -0.0356, -0.0376,  ..., -0.0034, -0.0017,  0.0010]
+,
+       device='cuda:0') -0.39213722944259644 0.3828299641609192
+Epoch 2
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [47:05<00:00,  1.2
+0s/it]
+Train loss: 9.46737860759675, Disc Loss: 15.98706793246698, Adv Los
+s: 0.3675092673575975, FM Loss: 0.07147166085944158, Recon Loss: 3.
+835213981387866, Time Loss: 0.22151066835225264
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:55<00:00,  1.2
+4it/s]
+Valid loss: 7.767067642796791, Dist Loss: 0.0, Recon Loss: 3.856740
+377627605, Time Loss: 0.26793445382755904
+Validation loss decreased (7.848328 --> 7.767068).  Saving model ..
+.
+tensor([0.0095, 0.0146, 0.0111,  ..., 0.0251, 0.0244, 0.0237], devi
+ce='cuda:0') -0.3310983180999756 0.36180755496025085
+tensor([ 0.0073,  0.0072,  0.0087,  ..., -0.0241, -0.0357, -0.0424]
+,
+       device='cuda:0') -1.3318629264831543 1.3245618343353271
+tensor([ 0.0063,  0.0056,  0.0057,  ..., -0.0056, -0.0044, -0.0019]
+,
+       device='cuda:0') -0.3764256238937378 0.3703311085700989
+Epoch 3
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:42<00:00,  1.1
+9s/it]
+Train loss: 9.864212566809702, Disc Loss: 15.985959469535578, Adv L
+oss: 0.45342187999307626, FM Loss: 0.0873740496511504, Recon Loss:
+3.831658590180243, Time Loss: 0.22059489499331536
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:51<00:00,  1.2
+4it/s]
+Valid loss: 7.891182278043367, Dist Loss: 0.0, Recon Loss: 3.918935
+7883479365, Time Loss: 0.2665534871527243
+EarlyStopping counter: 1 out of 10
+Epoch 4
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [47:13<00:00,  1.2
+1s/it]
+Train loss: 10.078784060468053, Disc Loss: 15.984824376864081, Adv
+Loss: 0.3792791313753262, FM Loss: 0.10379626449240387, Recon Loss:
+ 3.8117786643349674, Time Loss: 0.22127061118191235
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:52<00:00,  1.2
+4it/s]
+Valid loss: 7.588568945759606, Dist Loss: 0.0, Recon Loss: 3.767596
+3894065845, Time Loss: 0.2668809015018266
+Validation loss decreased (7.767068 --> 7.588569).  Saving model ..
+.
+tensor([0.0384, 0.0456, 0.0440,  ..., 0.0220, 0.0225, 0.0222], devi
+ce='cuda:0') -0.3290935158729553 0.3442854583263397
+tensor([ 0.0133,  0.0131,  0.0128,  ..., -0.0267, -0.0250, -0.0238]
+,
+       device='cuda:0') -1.2240091562271118 1.2280741930007935
+tensor([ 0.0133,  0.0129,  0.0121,  ..., -0.0213, -0.0198, -0.0178]
+,
+       device='cuda:0') -0.3588957190513611 0.3710953891277313
+Epoch 5
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:47<00:00,  1.2
+0s/it]
+Train loss: 10.205801277095631, Disc Loss: 15.984088730293992, Adv
+Loss: 0.2031244831385895, FM Loss: 0.11898721793279986, Recon Loss:
+ 3.8114706386034674, Time Loss: 0.22084604383695872
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:50<00:00,  1.2
+5it/s]
+Valid loss: 7.813509708774963, Dist Loss: 0.0, Recon Loss: 3.879772
+3369663375, Time Loss: 0.2698251498225296
+EarlyStopping counter: 1 out of 10
+Epoch 6
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [47:16<00:00,  1.2
+1s/it]
+Train loss: 10.150950557382044, Disc Loss: 15.982307866425224, Adv
+Loss: 0.10630687247147497, FM Loss: 0.12068395366758096, Recon Loss
+: 3.8154807438177913, Time Loss: 0.22055888456908704
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:57<00:00,  1.2
+3it/s]
+Valid loss: 7.5868224488409455, Dist Loss: 0.0, Recon Loss: 3.76698
+82871832514, Time Loss: 0.26422933544297234
+Validation loss decreased (7.588569 --> 7.586822).  Saving model ..
+.
+tensor([-0.0234, -0.0138, -0.0177,  ...,  0.0218,  0.0222,  0.0225]
+,
+       device='cuda:0') -0.34391194581985474 0.3832046389579773
+tensor([-0.0082, -0.0093, -0.0107,  ..., -0.0358, -0.0318, -0.0332]
+,
+       device='cuda:0') -1.2057640552520752 1.3793646097183228
+tensor([-0.0037, -0.0045, -0.0067,  ..., -0.0279, -0.0278, -0.0255]
+,
+       device='cuda:0') -0.40178585052490234 0.3940850794315338
+Epoch 7
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:31<00:00,  1.1
+9s/it]
+Train loss: 10.611051647217161, Disc Loss: 15.982201347464848, Adv
+Loss: 0.3652465765050588, FM Loss: 0.12902842433492223, Recon Loss:
+ 3.832615899694286, Time Loss: 0.22140597775546753
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:59<00:00,  1.2
+2it/s]
+Valid loss: 7.923820062634079, Dist Loss: 0.0, Recon Loss: 3.934935
+4235439526, Time Loss: 0.2697461017580414
+EarlyStopping counter: 1 out of 10
+Epoch 8
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:45<00:00,  1.2
+0s/it]
+Train loss: 10.990385962081149, Disc Loss: 15.981146144013634, Adv
+Loss: 0.5356102704900246, FM Loss: 0.14117748909012837, Recon Loss:
+ 3.8156115517090066, Time Loss: 0.22095033631179503
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:53<00:00,  1.2
+4it/s]
+Valid loss: 8.047994682695432, Dist Loss: 0.0, Recon Loss: 3.997671
+3438050306, Time Loss: 0.26325998513037546
+EarlyStopping counter: 2 out of 10
+Epoch 9
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [47:12<00:00,  1.2
+1s/it]
+Train loss: 11.506411938449906, Disc Loss: 15.968686754367278, Adv
+Loss: 0.6485002547769176, FM Loss: 0.16318470678991798, Recon Loss:
+ 3.7971174101348018, Time Loss: 0.22062635183981952
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:57<00:00,  1.2
+3it/s]
+Valid loss: 7.7114652011422935, Dist Loss: 0.0, Recon Loss: 3.82923
+42901636025, Time Loss: 0.2649831170917471
+EarlyStopping counter: 3 out of 10
+Epoch 10
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [47:30<00:00,  1.2
+1s/it]
+Train loss: 11.292298786681817, Disc Loss: 15.970893694077546, Adv
+Loss: 0.6240013075423434, FM Loss: 0.1486654651383415, Recon Loss:
+3.8474993918060902, Time Loss: 0.1634847275201671
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:55<00:00,  1.2
+4it/s]
+Valid loss: 7.684564082748439, Dist Loss: 0.0, Recon Loss: 3.829124
+645642568, Time Loss: 0.13157394754317997
+EarlyStopping counter: 4 out of 10
+Epoch 11
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:21<00:00,  1.1
+9s/it]
+Train loss: 10.26257245226723, Disc Loss: 15.96291475820196, Adv Lo
+ss: 0.2810811716087026, FM Loss: 0.11896001606938379, Recon Loss: 3
+.8011460511492423, Time Loss: 0.10939396485133937
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:52<00:00,  1.2
+4it/s]
+Valid loss: 7.839742988703401, Dist Loss: 0.0, Recon Loss: 3.906788
+1797810022, Time Loss: 0.1308331561371608
+EarlyStopping counter: 5 out of 10
+Epoch 12
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:43<00:00,  1.1
+9s/it]
+Train loss: 10.133686397651637, Disc Loss: 15.95810809011504, Adv L
+oss: 0.07912587774119888, FM Loss: 0.12346994719405757, Recon Loss:
+ 3.79257509542822, Time Loss: 0.10903487607843072
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:56<00:00,  1.2
+3it/s]
+Valid loss: 7.666550453517465, Dist Loss: 0.0, Recon Loss: 3.820381
+1141863797, Time Loss: 0.12894118910106422
+EarlyStopping counter: 6 out of 10
+Epoch 13
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:40<00:00,  1.1
+9s/it]
+Train loss: 10.22095781333608, Disc Loss: 15.95607091499787, Adv Lo
+ss: 0.025398244642429166, FM Loss: 0.13106684772115998, Recon Loss:
+ 3.7871209769539496, Time Loss: 0.10885400869488766
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:54<00:00,  1.2
+4it/s]
+Valid loss: 7.581437028855643, Dist Loss: 0.0, Recon Loss: 3.777372
+4402439046, Time Loss: 0.13346073906900427
+Validation loss decreased (7.586822 --> 7.581437).  Saving model ..
+.
+tensor([-0.0275, -0.0172, -0.0174,  ..., -0.0303, -0.0301, -0.0285]
+,
+       device='cuda:0') -0.40937918424606323 0.3337855041027069
+tensor([-0.0011,  0.0013,  0.0030,  ..., -0.0428, -0.0418, -0.0310]
+,
+       device='cuda:0') -1.3296279907226562 1.3060072660446167
+tensor([-0.0062, -0.0042, -0.0032,  ..., -0.0242, -0.0237, -0.0210]
+,
+       device='cuda:0') -0.40591734647750854 0.42068353295326233
+Epoch 14
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [47:15<00:00,  1.2
+1s/it]
+Train loss: 10.505677750225416, Disc Loss: 15.957891723476779, Adv
+Loss: 0.3500823421990257, FM Loss: 0.1302966397012809, Recon Loss:
+3.774834899430992, Time Loss: 0.10882484448282426
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:53<00:00,  1.2
+4it/s]
+Valid loss: 7.715121404072698, Dist Loss: 0.0, Recon Loss: 3.844575
+140301576, Time Loss: 0.1298555738627403
+EarlyStopping counter: 1 out of 10
+Epoch 15
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [47:41<00:00,  1.2
+2s/it]
+Train loss: 10.420319525901947, Disc Loss: 15.961749707072858, Adv
+Loss: 0.3536469142996711, FM Loss: 0.12690337627656317, Recon Loss:
+ 3.7643027033356846, Time Loss: 0.1075836056815623
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:55<00:00,  1.2
+3it/s]
+Valid loss: 7.5873618507710185, Dist Loss: 0.0, Recon Loss: 3.78042
+58145912337, Time Loss: 0.13255110126642392
+EarlyStopping counter: 2 out of 10
+Epoch 16
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:56<00:00,  1.2
+0s/it]
+Train loss: 10.188435248125854, Disc Loss: 15.962851512569237, Adv
+Loss: 0.1328494279598956, FM Loss: 0.12691970779685502, Recon Loss:
+ 3.758594530818307, Time Loss: 0.10813598893344732
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:52<00:00,  1.2
+4it/s]
+Valid loss: 7.324503578562956, Dist Loss: 0.0, Recon Loss: 3.649408
+785204262, Time Loss: 0.12842996988693026
+Validation loss decreased (7.581437 --> 7.324504).  Saving model ..
+.
+tensor([ 0.0203,  0.0313,  0.0280,  ..., -0.0321, -0.0310, -0.0301]
+,
+       device='cuda:0') -0.3810076415538788 0.34217748045921326
+tensor([ 0.0114,  0.0121,  0.0103,  ..., -0.0342, -0.0376, -0.0369]
+,
+       device='cuda:0') -1.2386188507080078 1.2119077444076538
+tensor([ 0.0101,  0.0110,  0.0092,  ..., -0.0303, -0.0304, -0.0289]
+,
+       device='cuda:0') -0.46637454628944397 0.4276009500026703
+Epoch 17
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [47:12<00:00,  1.2
+1s/it]
+Train loss: 9.95465459852052, Disc Loss: 15.957898380911802, Adv Lo
+ss: -0.20260467984394973, FM Loss: 0.13113053544917713, Recon Loss:
+ 3.7673294324797673, Time Loss: 0.10772100966511049
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:52<00:00,  1.2
+4it/s]
+Valid loss: 7.720324147498993, Dist Loss: 0.0, Recon Loss: 3.846928
+012431988, Time Loss: 0.1323406500535584
+EarlyStopping counter: 1 out of 10
+Epoch 18
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:28<00:00,  1.1
+9s/it]
+Train loss: 9.894334582201612, Disc Loss: 15.957285896889646, Adv L
+oss: -0.3066187282801182, FM Loss: 0.13352483254470468, Recon Loss:
+ 3.765241930522358, Time Loss: 0.10793341779910762
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:58<00:00,  1.2
+3it/s]
+Valid loss: 7.391685711667322, Dist Loss: 0.0, Recon Loss: 3.682798
+494472211, Time Loss: 0.13044359709502687
+EarlyStopping counter: 2 out of 10
+Epoch 19
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [47:26<00:00,  1.2
+1s/it]
+Train loss: 9.875341909105442, Disc Loss: 15.95506564230933, Adv Lo
+ss: -0.37587259208896995, FM Loss: 0.13733871063375452, Recon Loss:
+ 3.7522200182950085, Time Loss: 0.1071075451328976
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:52<00:00,  1.2
+4it/s]
+Valid loss: 7.361725464387078, Dist Loss: 0.0, Recon Loss: 3.667847
+630518665, Time Loss: 0.13015102390739336
+EarlyStopping counter: 3 out of 10
+Epoch 20
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:45<00:00,  1.2
+0s/it]
+Train loss: 9.911505251373693, Disc Loss: 15.958780491052407, Adv L
+oss: -0.3522152927107744, FM Loss: 0.13812409292447805, Recon Loss:
+ 3.7506243417656164, Time Loss: 0.10747811409974535
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:52<00:00,  1.2
+4it/s]
+Valid loss: 7.623717668718537, Dist Loss: 0.0, Recon Loss: 3.798744
+0960573786, Time Loss: 0.13114736706424612
+EarlyStopping counter: 4 out of 10
+Epoch 21
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:41<00:00,  1.1
+9s/it]
+Train loss: 9.86169128312321, Disc Loss: 15.959226539198978, Adv Lo
+ss: -0.410940006940376, FM Loss: 0.1390883807786536, Recon Loss: 3.
+7454468156613845, Time Loss: 0.10763786369668812
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:50<00:00,  1.2
+5it/s]
+Valid loss: 7.622991678052704, Dist Loss: 0.0, Recon Loss: 3.798302
+947764096, Time Loss: 0.13192901899958795
+EarlyStopping counter: 5 out of 10
+Epoch 22
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:40<00:00,  1.1
+9s/it]
+Train loss: 9.770752555723641, Disc Loss: 15.959779106305923, Adv L
+oss: -0.5438589738895399, FM Loss: 0.1420365322586014, Recon Loss:
+3.7369370092774736, Time Loss: 0.10747251829626868
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:55<00:00,  1.2
+4it/s]
+Valid loss: 7.523767609409417, Dist Loss: 0.0, Recon Loss: 3.748915
+1117951947, Time Loss: 0.12968689959743765
+EarlyStopping counter: 6 out of 10
+Epoch 23
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:40<00:00,  1.1
+9s/it]
+Train loss: 9.587912545287463, Disc Loss: 15.96095747230507, Adv Lo
+ss: -0.7423418692746059, FM Loss: 0.14205554235626597, Recon Loss:
+3.7445651828658595, Time Loss: 0.10706321750999666
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:59<00:00,  1.2
+2it/s]
+Valid loss: 7.508271722614866, Dist Loss: 0.0, Recon Loss: 3.741205
+929491345, Time Loss: 0.12929929920124744
+EarlyStopping counter: 7 out of 10
+Epoch 24
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [47:37<00:00,  1.2
+2s/it]
+Train loss: 9.452653779239922, Disc Loss: 15.956393800596507, Adv L
+oss: -0.856787338224329, FM Loss: 0.14264672778746804, Recon Loss:
+3.7282483934289505, Time Loss: 0.10667649256545633
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:52<00:00,  1.2
+4it/s]
+Valid loss: 7.709065450314159, Dist Loss: 0.0, Recon Loss: 3.841590
+382983778, Time Loss: 0.12942341095061888
+EarlyStopping counter: 8 out of 10
+Epoch 25
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:57<00:00,  1.2
+0s/it]
+Train loss: 9.32547907957281, Disc Loss: 15.95799158500213, Adv Los
+s: -1.0651301029239455, FM Loss: 0.14721253195568812, Recon Loss: 3
+.7231757325926993, Time Loss: 0.10676833702799712
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:55<00:00,  1.2
+3it/s]
+Valid loss: 7.588949320466596, Dist Loss: 0.0, Recon Loss: 3.781780
+5012405628, Time Loss: 0.12694157728865058
+EarlyStopping counter: 9 out of 10
+Epoch 26
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [47:06<00:00,  1.2
+0s/it]
+Train loss: 9.387715791508041, Disc Loss: 15.957106146144014, Adv L
+oss: -1.0197994198045377, FM Loss: 0.14725271061627876, Recon Loss:
+ 3.7312251439641066, Time Loss: 0.10693046603467701
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:53<00:00,  1.2
+4it/s]
+Valid loss: 7.30745530494027, Dist Loss: 0.0, Recon Loss: 3.6408609
+21073407, Time Loss: 0.12866730439386234
+Validation loss decreased (7.324504 --> 7.307455).  Saving model ..
+.
+tensor([ 0.0037,  0.0097,  0.0054,  ..., -0.0349, -0.0343, -0.0330]
+,
+       device='cuda:0') -0.400939404964447 0.33744922280311584
+tensor([0.0114, 0.0099, 0.0073,  ..., 0.0265, 0.0264, 0.0275], devi
+ce='cuda:0') -1.279729962348938 1.2817636728286743
+tensor([ 0.0015,  0.0006, -0.0006,  ...,  0.0471,  0.0479,  0.0490]
+,
+       device='cuda:0') -0.41097593307495117 0.4346873164176941
+Epoch 27
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:55<00:00,  1.2
+0s/it]
+Train loss: 9.450344376631072, Disc Loss: 15.962881471026844, Adv L
+oss: -0.8748576973263741, FM Loss: 0.143981283453611, Recon Loss: 3
+.7227867477540517, Time Loss: 0.10666506825880798
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:55<00:00,  1.2
+3it/s]
+Valid loss: 7.604717681923757, Dist Loss: 0.0, Recon Loss: 3.789539
+1734738975, Time Loss: 0.12819672988972022
+EarlyStopping counter: 1 out of 10
+Epoch 28
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [47:02<00:00,  1.2
+0s/it]
+Train loss: 9.29036163278067, Disc Loss: 15.959752476565829, Adv Lo
+ss: -1.065446539132403, FM Loss: 0.1454015275900751, Recon Loss: 3.
+72389614587141, Time Loss: 0.10646298367087263
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:58<00:00,  1.2
+3it/s]
+Valid loss: 7.507015038998813, Dist Loss: 0.0, Recon Loss: 3.740647
+926850457, Time Loss: 0.12859597882125812
+EarlyStopping counter: 2 out of 10
+Epoch 29
+  1%|█▎
+
+                                       | 18/2347 [00:29<55:08,  1.4
+2s/it]  1%|█▎
+
+                                           | 18/2347 [00:31<1:07:06
+,  1.73s/it]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+512, in <module>
+    # checkpoint = None
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line
+386, in train
+    if stage == 1:
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audioment
+ations/core/composition.py", line 210, in forward
+    inputs = self.transforms[i](**inputs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audioment
+ations/core/transforms_interface.py", line 341, in forward
+    perturbed: ObjectDict = self.apply_transform(
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audioment
+ations/augmentations/pitch_shift.py", line 121, in apply_transform
+    samples[i, ...] = pitch_shift(
+  File "/home/r/.local/lib/python3.10/site-packages/torch_pitch_shi
+ft/main.py", line 160, in pitch_shift
+    output = stretcher(output)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/mo
+dule.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torchaudio/transfor
+ms/_transforms.py", line 1110, in forward
+    return F.phase_vocoder(complex_specgrams, rate, self.phase_adva
+nce)
+  File "/usr/local/lib/python3.10/dist-packages/torchaudio/function
+al/functional.py", line 781, in phase_vocoder
+    norm_0 = complex_specgrams_0.abs()
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+31823877
+Learning rate: 0.00015
+Resuming from model with val loss: 9.812762280647329
+Parameter containing:
+tensor([-1.0431,  4.0576, -1.0643], requires_grad=True)
+tensor(0.8405) Parameter containing:
+tensor(48.9445, requires_grad=True)
+tensor(0.6425) Parameter containing:
+tensor(92.7547, requires_grad=True)
+tensor(-1.0062) Parameter containing:
+tensor(92.7992, requires_grad=True)
+Parameter containing:
+tensor([0.6123, 0.9671, 0.9559], requires_grad=True)
+Epoch 1
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:56<00:00,  1.2
+0s/it]
+Train loss: 11.443111842675162, Disc Loss: 15.900734315083085, Adv
+Loss: 0.31450481114105105, FM Loss: 0.1386850338364135, Recon Loss:
+ 4.177445999652617, Time Loss: 0.21892061112127154
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:57<00:00,  1.2
+3it/s]
+Valid loss: 8.088118701817839, Dist Loss: 0.0, Recon Loss: 4.017407
+705268015, Time Loss: 0.26651650240083163
+Validation loss decreased (inf --> 8.088119).  Saving model ...
+tensor([0.0601, 0.0700, 0.0698,  ..., 0.0247, 0.0254, 0.0251], devi
+ce='cuda:0') -0.30114784836769104 0.3675262928009033
+tensor([ 0.0219,  0.0229,  0.0254,  ..., -0.0295, -0.0246, -0.0217]
+,
+       device='cuda:0') -1.3644293546676636 1.2751082181930542
+tensor([0.0237, 0.0257, 0.0286,  ..., 0.0176, 0.0193, 0.0196], devi
+ce='cuda:0') -0.543692409992218 0.3948034346103668
+Epoch 2
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [47:02<00:00,  1.2
+0s/it]
+Train loss: 11.93186726182077, Disc Loss: 15.8792041702173, Adv Los
+s: 0.6631180804284725, FM Loss: 0.1491873976419365, Recon Loss: 4.1
+42505189739596, Time Loss: 0.22030568535550382
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:56<00:00,  1.2
+3it/s]
+Valid loss: 8.705712350101244, Dist Loss: 0.0, Recon Loss: 4.327010
+549922209, Time Loss: 0.2584562631263644
+EarlyStopping counter: 1 out of 10
+Epoch 3
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:59<00:00,  1.2
+0s/it]
+Train loss: 12.652407951745065, Disc Loss: 15.864444636770346, Adv
+Loss: 1.0218397155943757, FM Loss: 0.16362945465621007, Recon Loss:
+ 4.178995605118487, Time Loss: 0.22112886800022394
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:57<00:00,  1.2
+3it/s]
+Valid loss: 8.359041702199022, Dist Loss: 0.0, Recon Loss: 4.152989
+136502527, Time Loss: 0.2653171522082726
+EarlyStopping counter: 2 out of 10
+Epoch 4
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:21<00:00,  1.1
+9s/it]
+Train loss: 12.982890140466807, Disc Loss: 15.845733915636984, Adv
+Loss: 1.097549080899486, FM Loss: 0.17762405922121324, Recon Loss:
+4.166425256460943, Time Loss: 0.2212164174998675
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:58<00:00,  1.2
+3it/s]
+Valid loss: 8.617385704228989, Dist Loss: 0.0, Recon Loss: 4.282059
+118329362, Time Loss: 0.2663373644677906
+EarlyStopping counter: 3 out of 10
+Epoch 5
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:06<00:00,  1.1
+8s/it]
+Train loss: 13.535345144154013, Disc Loss: 15.839459283127397, Adv
+Loss: 1.1035911712841526, FM Loss: 0.20640396878828024, Recon Loss:
+ 4.151841614263637, Time Loss: 0.22089821419908384
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:53<00:00,  1.2
+4it/s]
+Valid loss: 8.47129673039893, Dist Loss: 0.0, Recon Loss: 4.2090742
+88860497, Time Loss: 0.26574066956567194
+EarlyStopping counter: 4 out of 10
+Epoch 6
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [47:03<00:00,  1.2
+0s/it]
+Train loss: 13.424420288485774, Disc Loss: 15.847894253302087, Adv
+Loss: 0.9436407036409512, FM Loss: 0.21064212833204624, Recon Loss:
+ 4.133966115875147, Time Loss: 0.2213579393101084
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:58<00:00,  1.2
+3it/s]
+Valid loss: 8.486000133332443, Dist Loss: 0.0, Recon Loss: 4.216042
+257045765, Time Loss: 0.26957812377297696
+EarlyStopping counter: 5 out of 10
+Epoch 7
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:14<00:00,  1.1
+8s/it]
+Train loss: 13.551979593586607, Disc Loss: 15.852980533659991, Adv
+Loss: 0.950516455723064, FM Loss: 0.21778602421309118, Recon Loss:
+4.122860717021713, Time Loss: 0.220736916573392
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [08:00<00:00,  1.2
+2it/s]
+Valid loss: 8.502528368512857, Dist Loss: 0.0, Recon Loss: 4.224265
+7983932625, Time Loss: 0.2699838690967434
+EarlyStopping counter: 6 out of 10
+Epoch 8
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:04<00:00,  1.1
+8s/it]
+Train loss: 13.557499142367636, Disc Loss: 15.851119780570942, Adv
+Loss: 0.9694248974755006, FM Loss: 0.21985107733942266, Recon Loss:
+ 4.095532798746773, Time Loss: 0.22062856344959306
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:54<00:00,  1.2
+4it/s]
+Valid loss: 8.401671759720758, Dist Loss: 0.0, Recon Loss: 4.174124
+859869988, Time Loss: 0.2671101697842754
+EarlyStopping counter: 7 out of 10
+Epoch 9
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:04<00:00,  1.1
+8s/it]
+Train loss: 13.70494661830972, Disc Loss: 15.852697592671495, Adv L
+oss: 1.0940766564114428, FM Loss: 0.22051442832605453, Recon Loss:
+4.10029360787839, Time Loss: 0.21916897857778367
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:52<00:00,  1.2
+4it/s]
+Valid loss: 8.264794640484213, Dist Loss: 0.0, Recon Loss: 4.106003
+799877135, Time Loss: 0.26393523870045527
+EarlyStopping counter: 8 out of 10
+Epoch 10
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:32<00:00,  1.1
+9s/it]
+Train loss: 13.8320959105002, Disc Loss: 15.857028254154239, Adv Lo
+ss: 1.147641312380166, FM Loss: 0.22684538897728485, Recon Loss: 4.
+073773720744929, Time Loss: 0.22186942735681342
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [07:58<00:00,  1.2
+3it/s]
+Valid loss: 8.30277668353443, Dist Loss: 0.0, Recon Loss: 4.1242020
+96279475, Time Loss: 0.2718624317894802
+EarlyStopping counter: 9 out of 10
+Epoch 11
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+█████████████████████████████████████| 2347/2347 [46:52<00:00,  1.2
+0s/it]
+Train loss: 13.850002177888198, Disc Loss: 15.854225474009374, Adv
+Loss: 1.1524208566204863, FM Loss: 0.22616711077306134, Recon Loss:
+ 4.087122672153728, Time Loss: 0.22061116704229197
+100%|██████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████
+███████████████████████████████████████| 587/587 [08:00<00:00,  1.2
+2it/s]
+Valid loss: 8.117819865680024, Dist Loss: 0.0, Recon Loss: 4.032335
+717592775, Time Loss: 0.2657421373046643
+EarlyStopping counter: 10 out of 10
+Early stopping
+r@Azumith:~/Documents/Projects/orpheus/orpheus$
