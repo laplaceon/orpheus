@@ -1,0 +1,1420 @@
+r@Azumith:~$ cd Documents/Projects/orpheus/orpheus/
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+^CTraceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 283, in <module>
+    val_ds = AudioFileDataset(X_test, sequence_length, multiplier=training_params["dataset_multiplier"])
+  File "/home/r/Documents/Projects/orpheus/orpheus/dataset.py", line 32, in __init__
+    self.files[i] = torchaudio.load(inputs[i]["file"])
+  File "/usr/local/lib/python3.10/dist-packages/torchaudio/backend/sox_io_backend.py", line 251, in load
+    ret = torch.ops.torchaudio.sox_io_load_audio_file(
+  File "/usr/local/lib/python3.10/dist-packages/torch/_ops.py", line 502, in __call__
+    return self._op(*args, **kwargs or {})
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+  0%|                                                                                                                                                                                  | 0/220 [00:00<?, ?it/s]
+/home/r/Documents/Projects/orpheus/orpheus/model/pqmf.py:105: UserWarning: Applied workaround for CuDNN issue, install nvrtc.so (Triggered internally at ../aten/src/ATen/native/cudnn/Conv_v8.cpp:80.)
+  x = nn.functional.conv1d(x, hk, padding=p)[..., :-1]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [01:34<00:00,  2.32it/s]
+Train loss: 0.2411382850090211
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [00:21<00:00,  2.54it/s]
+Valid loss: 0.13713173141533677
+Validation loss decreased (inf --> 0.137132).  Saving model ...
+Epoch 2
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [01:34<00:00,  2.34it/s]
+Train loss: 0.12611941850998185
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [00:21<00:00,  2.58it/s]
+Valid loss: 0.1197202365506779
+Validation loss decreased (0.137132 --> 0.119720).  Saving model ...
+Epoch 3
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [01:34<00:00,  2.32it/s]
+Train loss: 0.11003880184143781
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [00:21<00:00,  2.54it/s]
+Valid loss: 0.11034963808276436
+Validation loss decreased (0.119720 --> 0.110350).  Saving model ...
+Epoch 4
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [01:35<00:00,  2.30it/s]
+Train loss: 0.10406975316899744
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [00:21<00:00,  2.56it/s]
+Valid loss: 0.09253198352049698
+Validation loss decreased (0.110350 --> 0.092532).  Saving model ...
+Epoch 5
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [01:35<00:00,  2.30it/s]
+Train loss: 0.10314490707083182
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [00:21<00:00,  2.55it/s]
+Valid loss: 0.09703805622729388
+EarlyStopping counter: 1 out of 10
+Epoch 6
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [01:34<00:00,  2.32it/s]
+Train loss: 0.10000179761343382
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [00:21<00:00,  2.54it/s]
+Valid loss: 0.09654923115264286
+EarlyStopping counter: 2 out of 10
+Epoch 7
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [01:34<00:00,  2.33it/s]
+Train loss: 0.09737954071976922
+ 35%|██████████████████████████████████████████████████████████▋                                                                                                               | 19/55 [00:08<00:12,  2.77it/s]
+ 35%|██████████████████████████████████████████████████████████▋                                                                                                               | 19/55 [00:09<00:17,  2.06it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 288, in <module>
+    train(model, encoder, upscaler, train_dl, val_dl, lr=training_params["learning_rate"], cfg_rate=training_params["cfg_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 158, in train
+    valid_loss = eval(model, encoder, val_dl, cfg_rate)
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 98, in eval
+    loss = model(
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/models.py", line 40, in forward
+    return self.diffusion(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/diffusion.py", line 93, in forward
+    v_pred = self.net(x_noisy, sigmas, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 594, in forward
+    return net(x, features=features, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 552, in forward
+    return net(x, embedding=embedding, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 431, in forward
+    return self.net(x, features, embedding, channels)  # type: ignore
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 105, in forward
+    x = super().forward(x, *args)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 92, in forward
+    return self.block(*args_fn(*args), **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 382, in forward
+    q, k, v = (self.to_q(x), *torch.chunk(self.to_kv(context), chunks=2, dim=-1))
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/linear.py", line 114, in forward
+    return F.linear(input, self.weight, self.bias)
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+  0%|                                                                                                                                                                                  | 0/220 [00:00<?, ?it/s]
+/home/r/Documents/Projects/orpheus/orpheus/model/pqmf.py:105: UserWarning: Applied workaround for CuDNN issue, install nvrtc.so (Triggered internally at ../aten/src/ATen/native/cudnn/Conv_v8.cpp:80.)
+  x = nn.functional.conv1d(x, hk, padding=p)[..., :-1]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [01:35<00:00,  2.30it/s]
+Train loss: 0.2479965320534327
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [00:21<00:00,  2.53it/s]
+Valid loss: 0.13976782458749684
+Validation loss decreased (inf --> 0.139768).  Saving model ...
+Epoch 2
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [01:34<00:00,  2.32it/s]
+Train loss: 0.12298130279576236
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [00:21<00:00,  2.57it/s]
+Valid loss: 0.10519500449299812
+Validation loss decreased (0.139768 --> 0.105195).  Saving model ...
+Epoch 3
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [01:34<00:00,  2.32it/s]
+Train loss: 0.1183183693242344
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [00:21<00:00,  2.53it/s]
+Valid loss: 0.10774922574108298
+EarlyStopping counter: 1 out of 10
+Epoch 4
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [01:35<00:00,  2.31it/s]
+Train loss: 0.1062996853058311
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [00:21<00:00,  2.53it/s]
+Valid loss: 0.10126356313174421
+Validation loss decreased (0.105195 --> 0.101264).  Saving model ...
+Epoch 5
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [01:35<00:00,  2.30it/s]
+Train loss: 0.09830621642653238
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [00:21<00:00,  2.52it/s]
+Valid loss: 0.10274162265387449
+EarlyStopping counter: 1 out of 10
+Epoch 6
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [01:36<00:00,  2.29it/s]
+Train loss: 0.09872404419901697
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [00:22<00:00,  2.49it/s]
+Valid loss: 0.10489531565796245
+EarlyStopping counter: 2 out of 10
+Epoch 7
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [01:35<00:00,  2.29it/s]
+Train loss: 0.09752730904147029
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [00:22<00:00,  2.48it/s]
+Valid loss: 0.09716112166643143
+Validation loss decreased (0.101264 --> 0.097161).  Saving model ...
+Epoch 8
+ 46%|█████████████████████████████████████████████████████████████████████████████▏                                                                                          | 101/220 [00:44<00:50,  2.37it/s]
+ 46%|█████████████████████████████████████████████████████████████████████████████▏                                                                                          | 101/220 [00:45<00:53,  2.22it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 290, in <module>
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 141, in train
+    with torch.autocast('cuda', dtype=torch.float16, enabled=mixed_precision):
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/models.py", line 40, in forward
+    return self.diffusion(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/diffusion.py", line 93, in forward
+    v_pred = self.net(x_noisy, sigmas, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 594, in forward
+    return net(x, features=features, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 552, in forward
+    return net(x, embedding=embedding, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 431, in forward
+    return self.net(x, features, embedding, channels)  # type: ignore
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 105, in forward
+    x = super().forward(x, *args)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 92, in forward
+    return self.block(*args_fn(*args), **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 408, in forward
+    scale_shift = to_scale_shift(features)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/container.py", line 217, in forward
+    input = module(input)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/linear.py", line 114, in forward
+    return F.linear(input, self.weight, self.bias)
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+^CTraceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 272, in <module>
+    train_ds = AudioFileDataset(X_train, sequence_length, multiplier=training_params["dataset_multiplier"])
+  File "/home/r/Documents/Projects/orpheus/orpheus/dataset.py", line 32, in __init__
+    self.files[i] = torchaudio.load(inputs[i]["file"])
+  File "/usr/local/lib/python3.10/dist-packages/torchaudio/backend/sox_io_backend.py", line 251, in load
+    ret = torch.ops.torchaudio.sox_io_load_audio_file(
+  File "/usr/local/lib/python3.10/dist-packages/torch/_ops.py", line 502, in __call__
+    return self._op(*args, **kwargs or {})
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+^CTraceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 277, in <module>
+    train_ds = AudioFileDataset(X_train, sequence_length, multiplier=training_params["dataset_multiplier"])
+  File "/home/r/Documents/Projects/orpheus/orpheus/dataset.py", line 32, in __init__
+    self.files[i] = torchaudio.load(inputs[i]["file"])
+  File "/usr/local/lib/python3.10/dist-packages/torchaudio/backend/sox_io_backend.py", line 251, in load
+    ret = torch.ops.torchaudio.sox_io_load_audio_file(
+  File "/usr/local/lib/python3.10/dist-packages/torch/_ops.py", line 502, in __call__
+    return self._op(*args, **kwargs or {})
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+  0%|                                                                                                                                                                                  | 0/294 [00:00<?, ?it/s]
+/home/r/Documents/Projects/orpheus/orpheus/model/pqmf.py:105: UserWarning: Applied workaround for CuDNN issue, install nvrtc.so (Triggered internally at ../aten/src/ATen/native/cudnn/Conv_v8.cpp:80.)
+  x = nn.functional.conv1d(x, hk, padding=p)[..., :-1]
+  0%|                                                                                                                                                                                  | 0/294 [00:05<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 284, in <module>
+    train(model, encoder, upscaler, train_dl, val_dl, lr=training_params["learning_rate"], cfg_rate=training_params["cfg_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 148, in train
+    loss = model(
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/models.py", line 40, in forward
+    return self.diffusion(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/diffusion.py", line 93, in forward
+    v_pred = self.net(x_noisy, sigmas, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 594, in forward
+    return net(x, features=features, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 534, in forward
+    assert exists(embedding), msg
+AssertionError: ClassiferFreeGuidancePlugin requires embedding
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+  0%|                                                                                                                                                                                  | 0/294 [00:00<?, ?it/s]
+/home/r/Documents/Projects/orpheus/orpheus/model/pqmf.py:105: UserWarning: Applied workaround for CuDNN issue, install nvrtc.so (Triggered internally at ../aten/src/ATen/native/cudnn/Conv_v8.cpp:80.)
+  x = nn.functional.conv1d(x, hk, padding=p)[..., :-1]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [02:45<00:00,  1.77it/s]
+Train loss: 0.21015750178370346
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 74/74 [00:41<00:00,  1.78it/s]
+Valid loss: 0.11947473959141486
+Validation loss decreased (inf --> 0.119475).  Saving model ...
+Epoch 2
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [02:45<00:00,  1.77it/s]
+Train loss: 0.11190704467902783
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 74/74 [00:41<00:00,  1.80it/s]
+Valid loss: 0.11235562326839647
+Validation loss decreased (0.119475 --> 0.112356).  Saving model ...
+Epoch 3
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [02:46<00:00,  1.77it/s]
+Train loss: 0.10622721608905565
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 74/74 [00:41<00:00,  1.80it/s]
+Valid loss: 0.09979184077599564
+Validation loss decreased (0.112356 --> 0.099792).  Saving model ...
+Epoch 4
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [02:46<00:00,  1.76it/s]
+Train loss: 0.10081764275119418
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 74/74 [00:41<00:00,  1.79it/s]
+Valid loss: 0.10621928750864558
+EarlyStopping counter: 1 out of 10
+Epoch 5
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [02:45<00:00,  1.78it/s]
+Train loss: 0.09663750220495625
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 74/74 [00:41<00:00,  1.79it/s]
+Valid loss: 0.10278247971389745
+EarlyStopping counter: 2 out of 10
+Epoch 6
+  7%|████████████                                                                                                                                                             | 21/294 [00:14<02:33,  1.78it/s]
+  7%|████████████                                                                                                                                                             | 21/294 [00:15<03:20,  1.36it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 284, in <module>
+    checkpoint = None
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 145, in train
+    with torch.no_grad():
+KeyboardInterrupt
+^[[A
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+  0%|                                                                                                                                                                                  | 0/440 [00:00<?, ?it/s]
+/home/r/Documents/Projects/orpheus/orpheus/model/pqmf.py:105: UserWarning: Applied workaround for CuDNN issue, install nvrtc.so (Triggered internally at ../aten/src/ATen/native/cudnn/Conv_v8.cpp:80.)
+  x = nn.functional.conv1d(x, hk, padding=p)[..., :-1]
+  3%|█████▊                                                                                                                                                                   | 15/440 [00:14<04:55,  1.44it/s]
+  3%|█████▊                                                                                                                                                                   | 15/440 [00:15<07:07,  1.01s/it]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 285, in <module>
+    train(model, encoder, upscaler, train_dl, val_dl, lr=training_params["learning_rate"], cfg_rate=training_params["cfg_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 149, in train
+    loss = model(
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/models.py", line 40, in forward
+    return self.diffusion(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/diffusion.py", line 93, in forward
+    v_pred = self.net(x_noisy, sigmas, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 594, in forward
+    return net(x, features=features, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 552, in forward
+    return net(x, embedding=embedding, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 431, in forward
+    return self.net(x, features, embedding, channels)  # type: ignore
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 103, in forward
+    x, ps = pack([x], "b d *")
+  File "/home/r/.local/lib/python3.10/site-packages/einops/packing.py", line 88, in pack
+    return backend.concat(reshaped_tensors, axis=n_axes_before), packed_shapes
+  File "/home/r/.local/lib/python3.10/site-packages/einops/_backends.py", line 307, in concat
+    return self.torch.cat(tensors, dim=axis)
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 39, in <module>
+    SomeOf(
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audiomentations/core/composition.py", line 171, in __init__
+    assert self.min_num_transforms >= 1, "min_num_transforms must be >= 1"
+TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 39, in <module>
+    SomeOf(
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audiomentations/core/composition.py", line 171, in __init__
+    assert self.min_num_transforms >= 1, "min_num_transforms must be >= 1"
+AssertionError: min_num_transforms must be >= 1
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 440/440 [06:13<00:00,  1.18it/s]
+Train loss: 0.18065823463045738
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 110/110 [01:26<00:00,  1.27it/s]
+Valid loss: 0.11245338605208831
+Validation loss decreased (inf --> 0.112453).  Saving model ...
+^CTraceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 302, in <module>
+
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 187, in train
+    real_eval(model, encoder, upscaler, genre_embedder, epoch)
+  File "/home/r/Documents/Projects/orpheus/orpheus/early.py", line 58, in save_checkpoint
+    torch.save(chk, path)
+  File "/usr/local/lib/python3.10/dist-packages/torch/serialization.py", line 440, in save
+    with _open_zipfile_writer(f) as opened_zipfile:
+  File "/usr/local/lib/python3.10/dist-packages/torch/serialization.py", line 291, in __exit__
+    self.file_like.write_end_of_file()
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 440/440 [06:14<00:00,  1.17it/s]
+Train loss: 0.1809476537121968
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 110/110 [01:26<00:00,  1.27it/s]
+Valid loss: 0.10793228335678577
+Validation loss decreased (inf --> 0.107932).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:25<00:00,  3.18s/it]
+Epoch 2
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 440/440 [06:13<00:00,  1.18it/s]
+Train loss: 0.10510698489167473
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 110/110 [01:27<00:00,  1.25it/s]
+Valid loss: 0.09993812763555483
+Validation loss decreased (0.107932 --> 0.099938).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:25<00:00,  3.19s/it]
+Epoch 3
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 440/440 [06:14<00:00,  1.17it/s]
+Train loss: 0.09861468449234963
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 110/110 [01:27<00:00,  1.26it/s]
+Valid loss: 0.09999133033508605
+EarlyStopping counter: 1 out of 10
+Epoch 4
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 440/440 [06:18<00:00,  1.16it/s]
+Train loss: 0.09477114304053512
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 110/110 [01:25<00:00,  1.29it/s]
+Valid loss: 0.09004908088933337
+Validation loss decreased (0.099938 --> 0.090049).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:25<00:00,  3.18s/it]
+Epoch 5
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 440/440 [06:17<00:00,  1.17it/s]
+Train loss: 0.09206505418670448
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 110/110 [01:27<00:00,  1.25it/s]
+Valid loss: 0.09383745298466899
+EarlyStopping counter: 1 out of 10
+Epoch 6
+  1%|█▏                                                                                                                                                                        | 3/440 [00:05<10:15,  1.41s/it]
+  1%|█▏                                                                                                                                                                        | 3/440 [00:05<13:35,  1.87s/it]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 310, in <module>
+    "dataloader_pin_mem": False,
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 171, in train
+
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/models.py", line 40, in forward
+    return self.diffusion(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/diffusion.py", line 93, in forward
+    v_pred = self.net(x_noisy, sigmas, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 594, in forward
+    return net(x, features=features, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 552, in forward
+    return net(x, embedding=embedding, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 431, in forward
+    return self.net(x, features, embedding, channels)  # type: ignore
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 105, in forward
+    x = super().forward(x, *args)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 92, in forward
+    return self.block(*args_fn(*args), **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 382, in forward
+    q, k, v = (self.to_q(x), *torch.chunk(self.to_kv(context), chunks=2, dim=-1))
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/linear.py", line 114, in forward
+    return F.linear(input, self.weight, self.bias)
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+  0%|                                                                                                                                                                                 | 0/1174 [00:12<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 322, in <module>
+    train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=training_params["learning_rate"], cfg_rate=training_params["cfg_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 166, in train
+    genres = genre_embedder(genres)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 263, in forward
+    return self.net(x)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/container.py", line 217, in forward
+    input = module(input)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/linear.py", line 114, in forward
+    return F.linear(input, self.weight, self.bias)
+RuntimeError: mat1 and mat2 shapes cannot be multiplied (576x8 and 32x32)
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+  0%|                                                                                                                                                                                 | 0/1174 [00:15<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/r/.local/lib/python3.10/site-packages/einops/einops.py", line 412, in reduce
+    return _apply_recipe(recipe, tensor, reduction_type=reduction)
+  File "/home/r/.local/lib/python3.10/site-packages/einops/einops.py", line 235, in _apply_recipe
+    _reconstruct_from_shape(recipe, backend.shape(tensor))
+  File "/home/r/.local/lib/python3.10/site-packages/einops/einops.py", line 165, in _reconstruct_from_shape_uncached
+    raise EinopsError('Expected {} dimensions, got {}'.format(len(self.input_composite_axes), len(shape)))
+einops.EinopsError: Expected 3 dimensions, got 4
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 322, in <module>
+    train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=training_params["learning_rate"], cfg_rate=training_params["cfg_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 173, in train
+    loss = model(
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/models.py", line 40, in forward
+    return self.diffusion(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/diffusion.py", line 93, in forward
+    v_pred = self.net(x_noisy, sigmas, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 594, in forward
+    return net(x, features=features, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 552, in forward
+    return net(x, embedding=embedding, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 431, in forward
+    return self.net(x, features, embedding, channels)  # type: ignore
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 105, in forward
+    x = super().forward(x, *args)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 92, in forward
+    return self.block(*args_fn(*args), **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 384, in forward
+    return skip + self.attention(q, k, v)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 285, in forward
+    q, k, v = map(lambda t: rearrange(t, "b n (h d) -> b h n d", h=h), (q, k, v))
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 285, in <lambda>
+    q, k, v = map(lambda t: rearrange(t, "b n (h d) -> b h n d", h=h), (q, k, v))
+  File "/home/r/.local/lib/python3.10/site-packages/einops/einops.py", line 483, in rearrange
+    return reduce(cast(Tensor, tensor), pattern, reduction='rearrange', **axes_lengths)
+  File "/home/r/.local/lib/python3.10/site-packages/einops/einops.py", line 420, in reduce
+    raise EinopsError(message + '\n {}'.format(e))
+einops.EinopsError:  Error while processing rearrange-reduction pattern "b n (h d) -> b h n d".
+ Input tensor shape: torch.Size([72, 72, 8, 512]). Additional info: {'h': 8}.
+ Expected 3 dimensions, got 4
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+  0%|                                                                                                                                                                                  | 0/196 [00:12<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 322, in <module>
+    train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=training_params["learning_rate"], cfg_rate=training_params["cfg_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 173, in train
+    loss = model(
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/models.py", line 40, in forward
+    return self.diffusion(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/diffusion.py", line 93, in forward
+    v_pred = self.net(x_noisy, sigmas, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 594, in forward
+    return net(x, features=features, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 536, in forward
+    embedding_mask = fixed_embedding(embedding)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 325, in forward
+    assert length <= max_length, assert_message
+AssertionError: Input sequence length must be <= max_length
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+  0%|                                                                                                                                                                                  | 0/196 [00:00<?, ?it/s]
+torch.Size([72, 8, 32])
+  0%|                                                                                                                                                                                  | 0/196 [00:14<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 324, in <module>
+    train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=training_params["learning_rate"], cfg_rate=training_params["cfg_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 175, in train
+    loss = model(
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/models.py", line 40, in forward
+    return self.diffusion(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/diffusion.py", line 93, in forward
+    v_pred = self.net(x_noisy, sigmas, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 594, in forward
+    return net(x, features=features, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 536, in forward
+    embedding_mask = fixed_embedding(embedding)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 325, in forward
+    assert length <= max_length, assert_message
+AssertionError: Input sequence length must be <= max_length
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+  1%|█▋                                                                                                                                                                        | 2/196 [00:15<25:06,  7.77s/it]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 322, in <module>
+    train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=training_params["learning_rate"], cfg_rate=training_params["cfg_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 169, in train
+    encoded_wave = encoder(audio_wave.cuda())
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/exportable.py", line 16, in forward
+    z = self.encoder(x_mb)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/encoder.py", line 52, in forward
+    x = stage(x, mask)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/encoder.py", line 148, in forward
+    x = block(x, upsample_mask(mask, self.mask_scale[1]).unsqueeze(1) if mask is not None else None)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/encoder.py", line 194, in forward
+    x = conv(x, mask)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/blocks/enc.py", line 101, in forward
+    x = self.dw(x, mask)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/blocks/odconv.py", line 148, in forward
+    return self._forward_impl(x, mask)
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/blocks/odconv.py", line 132, in _forward_impl_common
+    output = output * filter_attention
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 2.53 GiB (GPU 0; 23.69 GiB total capacity; 15.59 GiB already allocated; 256.06 MiB free; 23.09 GiB reserved in total by PyTorch) If reserved
+ memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [06:17<00:00,  1.71s/it]
+Train loss: 0.2684840735048056
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [01:32<00:00,  1.68s/it]
+Valid loss: 0.16210059008815073
+Validation loss decreased (inf --> 0.162101).  Saving model ...
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 322, in <module>
+    train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=training_params["learning_rate"], cfg_rate=training_params["cfg_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 195, in train
+    real_eval(model, encoder, upscaler, genre_embedder, epoch)
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 92, in real_eval
+    noisy_latent = torch.lerp(encoded_wave, noise, 0.225)
+RuntimeError: The size of tensor a (1024) must match the size of tensor b (2097152) at non-singleton dimension 2
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [06:15<00:00,  1.71s/it]
+Train loss: 0.2667613582177596
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [01:31<00:00,  1.67s/it]
+Valid loss: 0.1532546340064569
+Validation loss decreased (inf --> 0.153255).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:27<00:00,  3.43s/it]
+Epoch 2
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [06:15<00:00,  1.71s/it]
+Train loss: 0.1310026690025221
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [01:31<00:00,  1.67s/it]
+Valid loss: 0.11920722289518877
+Validation loss decreased (0.153255 --> 0.119207).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:27<00:00,  3.45s/it]
+Epoch 3
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [06:14<00:00,  1.70s/it]
+Train loss: 0.11585396860133518
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [01:31<00:00,  1.67s/it]
+Valid loss: 0.11578277471390637
+Validation loss decreased (0.119207 --> 0.115783).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:27<00:00,  3.42s/it]
+Epoch 4
+  2%|███                                                                                                                                                                       | 4/220 [00:11<07:31,  2.09s/it]
+  2%|███                                                                                                                                                                       | 4/220 [00:12<11:06,  3.09s/it]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 322, in <module>
+    train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=training_params["learning_rate"], cfg_rate=training_params["cfg_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 161, in train
+    for batch in tqdm(train_dl, position=0, leave=True):
+  File "/home/r/.local/lib/python3.10/site-packages/tqdm/std.py", line 1178, in __iter__
+    for obj in iterable:
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/dataloader.py", line 633, in __next__
+    data = self._next_data()
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/dataloader.py", line 1328, in _next_data
+    idx, data = self._get_data()
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/dataloader.py", line 1294, in _get_data
+    success, data = self._try_get_data()
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/dataloader.py", line 1132, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+  File "/usr/lib/python3.10/multiprocessing/queues.py", line 113, in get
+    if not self._poll(timeout):
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 257, in poll
+    return self._poll(timeout)
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 424, in _poll
+    r = wait([self], timeout)
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/usr/lib/python3.10/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [06:14<00:00,  1.70s/it]
+Train loss: 0.27022480206056076
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [01:31<00:00,  1.67s/it]
+Valid loss: 0.15324127714742314
+Validation loss decreased (inf --> 0.153241).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:28<00:00,  3.53s/it]
+Epoch 2
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [06:14<00:00,  1.70s/it]
+Train loss: 0.13020449426363814
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [01:32<00:00,  1.67s/it]
+Valid loss: 0.12852420969442888
+Validation loss decreased (0.153241 --> 0.128524).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:27<00:00,  3.42s/it]
+Epoch 3
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [06:16<00:00,  1.71s/it]
+Train loss: 0.11521951400420882
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [01:32<00:00,  1.68s/it]
+Valid loss: 0.11453871076757258
+Validation loss decreased (0.128524 --> 0.114539).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:27<00:00,  3.43s/it]
+Epoch 4
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [06:12<00:00,  1.69s/it]
+Train loss: 0.10946800485253334
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [01:32<00:00,  1.68s/it]
+Valid loss: 0.10830135887319392
+Validation loss decreased (0.114539 --> 0.108301).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:27<00:00,  3.42s/it]
+Epoch 5
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [06:13<00:00,  1.70s/it]
+Train loss: 0.10636170555583456
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [01:32<00:00,  1.68s/it]
+Valid loss: 0.11201689690351486
+EarlyStopping counter: 1 out of 10
+Epoch 6
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [06:18<00:00,  1.72s/it]
+Train loss: 0.10274913773279298
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [01:31<00:00,  1.66s/it]
+Valid loss: 0.10673955699259585
+Validation loss decreased (0.108301 --> 0.106740).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:27<00:00,  3.48s/it]
+Epoch 7
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 220/220 [06:16<00:00,  1.71s/it]
+Train loss: 0.10412392479113557
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 55/55 [01:31<00:00,  1.67s/it]
+Valid loss: 0.10566511777314273
+Validation loss decreased (0.106740 --> 0.105665).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:27<00:00,  3.46s/it]
+Epoch 8
+ 41%|█████████████████████████████████████████████████████████████████████▉                                                                                                   | 91/220 [02:36<03:54,  1.82s/it]
+ 41%|█████████████████████████████████████████████████████████████████████▉                                                                                                   | 91/220 [02:37<03:42,  1.73s/it]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 322, in <module>
+    train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=training_params["learning_rate"], cfg_rate=training_params["cfg_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 173, in train
+    loss = model(
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/models.py", line 40, in forward
+    return self.diffusion(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/diffusion.py", line 93, in forward
+    v_pred = self.net(x_noisy, sigmas, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 594, in forward
+    return net(x, features=features, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 552, in forward
+    return net(x, embedding=embedding, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 431, in forward
+    return self.net(x, features, embedding, channels)  # type: ignore
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 105, in forward
+    x = super().forward(x, *args)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 92, in forward
+    return self.block(*args_fn(*args), **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 384, in forward
+    return skip + self.attention(q, k, v)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 287, in forward
+    sim = einsum("... n d, ... m d -> ... n m", q, k) * scale
+  File "/usr/local/lib/python3.10/dist-packages/torch/functional.py", line 378, in einsum
+    return _VF.einsum(equation, operands)  # type: ignore[attr-defined]
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+  3%|████▍                                                                                                                                                                   | 35/1320 [01:04<37:46,  1.76s/it]
+  3%|████▍                                                                                                                                                                   | 35/1320 [01:05<40:07,  1.87s/it]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 322, in <module>
+    train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=training_params["learning_rate"], cfg_rate=training_params["cfg_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 173, in train
+    loss = model(
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/models.py", line 40, in forward
+    return self.diffusion(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/diffusion.py", line 93, in forward
+    v_pred = self.net(x_noisy, sigmas, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 594, in forward
+    return net(x, features=features, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 552, in forward
+    return net(x, embedding=embedding, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 431, in forward
+    return self.net(x, features, embedding, channels)  # type: ignore
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 105, in forward
+    x = super().forward(x, *args)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 92, in forward
+    return self.block(*args_fn(*args), **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 408, in forward
+    scale_shift = to_scale_shift(features)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/container.py", line 217, in forward
+    input = module(input)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/linear.py", line 114, in forward
+    return F.linear(input, self.weight, self.bias)
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+ 14%|███████████████████████▍                                                                                                                                               | 185/1320 [05:14<29:23,  1.55s/it]
+ 14%|███████████████████████▍                                                                                                                                               | 185/1320 [05:16<32:23,  1.71s/it]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 322, in <module>
+    train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=training_params["learning_rate"], cfg_rate=training_params["cfg_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 173, in train
+    loss = model(
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/models.py", line 40, in forward
+    return self.diffusion(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/audio_diffusion_pytorch/diffusion.py", line 93, in forward
+    v_pred = self.net(x_noisy, sigmas, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 594, in forward
+    return net(x, features=features, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 552, in forward
+    return net(x, embedding=embedding, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 431, in forward
+    return self.net(x, features, embedding, channels)  # type: ignore
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/apex.py", line 382, in forward
+    x = self.block(x, features, embedding, channels)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 105, in forward
+    x = super().forward(x, *args)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 77, in forward
+    x = block(x, *args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 92, in forward
+    return self.block(*args_fn(*args), **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/a_unet/blocks.py", line 63, in forward
+    return forward_fn(*args, **kwargs)
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+  4%|███████▏                                                                                                                                                                | 56/1320 [01:39<31:10,  1.48s/it]
+  4%|███████▏                                                                                                                                                                | 56/1320 [01:42<38:28,  1.83s/it]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 322, in <module>
+    train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=training_params["learning_rate"], cfg_rate=training_params["cfg_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_diffusion.py", line 161, in train
+    for batch in tqdm(train_dl, position=0, leave=True):
+  File "/home/r/.local/lib/python3.10/site-packages/tqdm/std.py", line 1178, in __iter__
+    for obj in iterable:
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/dataloader.py", line 633, in __next__
+    data = self._next_data()
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/dataloader.py", line 1328, in _next_data
+    idx, data = self._get_data()
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/dataloader.py", line 1294, in _get_data
+    success, data = self._try_get_data()
+  File "/usr/local/lib/python3.10/dist-packages/torch/utils/data/dataloader.py", line 1132, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+  File "/usr/lib/python3.10/multiprocessing/queues.py", line 113, in get
+    if not self._poll(timeout):
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 257, in poll
+    return self._poll(timeout)
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 424, in _poll
+    r = wait([self], timeout)
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/usr/lib/python3.10/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train_diffusion.py
+Epoch 1
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:15<00:00,  1.90s/it]
+Train loss: 0.13083300728103373
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:18<00:00,  1.70s/it]
+Valid loss: 0.10142138028884826
+Validation loss decreased (inf --> 0.101421).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:24<00:00,  3.05s/it]
+Epoch 2
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:05<00:00,  1.90s/it]
+Train loss: 0.09661065804212016
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:19<00:00,  1.70s/it]
+Valid loss: 0.09685069483508464
+Validation loss decreased (0.101421 --> 0.096851).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:25<00:00,  3.20s/it]
+Epoch 3
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:10<00:00,  1.90s/it]
+Train loss: 0.09145513997497307
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:16<00:00,  1.69s/it]
+Valid loss: 0.09435815493367156
+Validation loss decreased (0.096851 --> 0.094358).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:24<00:00,  3.05s/it]
+Epoch 4
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:18<00:00,  1.91s/it]
+Train loss: 0.08985839543937113
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:13<00:00,  1.68s/it]
+Valid loss: 0.0898353997174473
+Validation loss decreased (0.094358 --> 0.089835).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:24<00:00,  3.04s/it]
+Epoch 5
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:10<00:00,  1.90s/it]
+Train loss: 0.08688077796726555
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:14<00:00,  1.68s/it]
+Valid loss: 0.08961444701619294
+Validation loss decreased (0.089835 --> 0.089614).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:24<00:00,  3.04s/it]
+Epoch 6
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:16<00:00,  1.91s/it]
+Train loss: 0.08611521694422072
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:15<00:00,  1.68s/it]
+Valid loss: 0.0894370518726151
+Validation loss decreased (0.089614 --> 0.089437).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:24<00:00,  3.05s/it]
+Epoch 7
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:13<00:00,  1.90s/it]
+Train loss: 0.08361356673060934
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:10<00:00,  1.67s/it]
+Valid loss: 0.08660757395939357
+Validation loss decreased (0.089437 --> 0.086608).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:24<00:00,  3.04s/it]
+Epoch 8
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:13<00:00,  1.90s/it]
+Train loss: 0.08260960003687941
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:14<00:00,  1.68s/it]
+Valid loss: 0.0881004467049018
+EarlyStopping counter: 1 out of 10
+Epoch 9
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:14<00:00,  1.90s/it]
+Train loss: 0.08142574535749433
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:10<00:00,  1.67s/it]
+Valid loss: 0.08314679806329767
+Validation loss decreased (0.086608 --> 0.083147).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:24<00:00,  3.05s/it]
+Epoch 10
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:14<00:00,  1.90s/it]
+Train loss: 0.07794347009740554
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:16<00:00,  1.69s/it]
+Valid loss: 0.08130157088898883
+Validation loss decreased (0.083147 --> 0.081302).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:24<00:00,  3.02s/it]
+Epoch 11
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:15<00:00,  1.90s/it]
+Train loss: 0.07163600460348533
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:15<00:00,  1.69s/it]
+Valid loss: 0.070042733128379
+Validation loss decreased (0.081302 --> 0.070043).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:24<00:00,  3.05s/it]
+Epoch 12
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:14<00:00,  1.90s/it]
+Train loss: 0.06345624387505412
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:15<00:00,  1.68s/it]
+Valid loss: 0.06688471037108883
+Validation loss decreased (0.070043 --> 0.066885).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:24<00:00,  3.08s/it]
+Epoch 13
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:22<00:00,  1.91s/it]
+Train loss: 0.0608197222915962
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:14<00:00,  1.68s/it]
+Valid loss: 0.0633995329809128
+Validation loss decreased (0.066885 --> 0.063400).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:24<00:00,  3.05s/it]
+Epoch 14
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:11<00:00,  1.90s/it]
+Train loss: 0.06096760055535747
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:16<00:00,  1.69s/it]
+Valid loss: 0.0647887074813044
+EarlyStopping counter: 1 out of 10
+Epoch 15
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:12<00:00,  1.90s/it]
+Train loss: 0.05960274418241628
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:15<00:00,  1.69s/it]
+Valid loss: 0.06646373312362805
+EarlyStopping counter: 2 out of 10
+Epoch 16
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:15<00:00,  1.90s/it]
+Train loss: 0.05942892451854692
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:18<00:00,  1.69s/it]
+Valid loss: 0.0644799829492358
+EarlyStopping counter: 3 out of 10
+Epoch 17
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:14<00:00,  1.90s/it]
+Train loss: 0.059061922215471074
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:23<00:00,  1.71s/it]
+Valid loss: 0.06373337641687823
+EarlyStopping counter: 4 out of 10
+Epoch 18
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:13<00:00,  1.90s/it]
+Train loss: 0.05864096030091559
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:14<00:00,  1.68s/it]
+Valid loss: 0.06545770450868979
+EarlyStopping counter: 5 out of 10
+Epoch 19
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:20<00:00,  1.91s/it]
+Train loss: 0.05809653448052006
+ 70%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████▎                                                 | 207/294 [05:54<01:39,  1.15s/it]
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:17<00:00,  1.69s/it]
+Valid loss: 0.06366364222628121
+EarlyStopping counter: 6 out of 10
+Epoch 20
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:20<00:00,  1.91s/it]
+Train loss: 0.05713329822764283
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:24<00:00,  1.72s/it]
+Valid loss: 0.06398216145252492
+EarlyStopping counter: 7 out of 10
+Epoch 21
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:33<00:00,  1.92s/it]
+Train loss: 0.05769799518505241
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:22<00:00,  1.71s/it]
+Valid loss: 0.06331113279879498
+Validation loss decreased (0.063400 --> 0.063311).  Saving model ...
+Generating variations
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:24<00:00,  3.05s/it]
+Epoch 22
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [37:19<00:00,  1.91s/it]
+Train loss: 0.057345660533470434
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 294/294 [08:18<00:00,  1.69s/it]
+Valid loss: 0.06448169409291071
+EarlyStopping counter: 1 out of 10
+Epoch 23
+  5%|███████▊                                                                                                                                                                | 55/1174 [01:49<32:33,  1.75s/it]
