@@ -10,7 +10,7 @@ class TrainerAE(nn.Module):
         super().__init__()
 
         scales = [2048, 1024, 512, 256, 128]
-        num_mels = 128
+        num_mels = [320, 160, 80, 40, 20]
 
         self.backbone = backbone
         self.prior = prior
@@ -62,21 +62,19 @@ class TrainerAE(nn.Module):
         mb_dist = self.distance(y_subbands, x_subbands)
         fb_dist = self.distance(y, x)
 
-        r_loss = mb_dist["spectral_distance"] + fb_dist["spectral_distance"]
-
         # z_samples = self.prior.sample(z.shape[0] * z.shape[2])
 
-        # d_loss = slicer.fgw_dist(z.transpose(1, 2).reshape(-1, z.shape[1]), z_samples)
+        # d_loss = self.slicer.fgw_dist(z.transpose(1, 2).reshape(-1, z.shape[1]), z_samples)
 
         with torch.no_grad():
             # f_loss = self.perceptual_distance.forward(self.resample_fp(x.squeeze(1)), self.resample_fp(y.squeeze(1)))
-            f_loss = F.l1_loss(y, x)
+            f_loss = F.mse_loss(y, x)
 
-        return (r_loss, torch.tensor(0.), f_loss)
+        return (mb_dist["spectral_distance"], fb_dist["spectral_distance"], torch.tensor(0.), f_loss)
 
     def forward_wd(self, x, discriminator):
         x_subbands = self.backbone.decompose(x)
-        y_subbands = self.backbone.forward_nm(x_subbands)
+        y_subbands, _ = self.backbone.forward_nm(x_subbands)
 
         y = self.backbone.recompose(y_subbands)
 
@@ -112,12 +110,15 @@ class TrainerAE(nn.Module):
         feature_matching_distance = feature_matching_distance / len(feature_real)
 
         with torch.no_grad():
-            f_loss = F.l1_loss(y, x)
+            f_loss = F.mse_loss(y, x)
 
         return (r_loss, loss_adv, loss_dis, feature_matching_distance, f_loss)
 
     def forward(self, x):
-        y_subbands, _, x_subbands, z, mask = self.backbone(x)
+        # y_subbands, _, x_subbands, z, mask = self.backbone(x)
+
+        x_subbands = self.backbone.decompose(x)
+        y_subbands, z = self.backbone.forward_nm(x_subbands)
 
         # ce_mask = mask.repeat(1, 2048 // 16)
 
@@ -136,7 +137,7 @@ class TrainerAE(nn.Module):
         mb_dist = self.distance(y_subbands, x_subbands)
         fb_dist = self.distance(y, x)
 
-        r_loss = mb_dist["spectral_distance"] + fb_dist["spectral_distance"]
+        # r_loss = fb_dist["spectral_distance"] + fb_dist["spectral_distance"]
 
         z_samples = self.prior.sample(z.shape[0] * z.shape[2])
 
@@ -144,6 +145,6 @@ class TrainerAE(nn.Module):
 
         with torch.no_grad():
             # f_loss = self.perceptual_distance.forward(self.resample_fp(x.squeeze(1)), self.resample_fp(y.squeeze(1)))
-            f_loss = F.l1_loss(y, x)
+            f_loss = F.mse_loss(y, x)
 
-        return (r_loss, d_loss, f_loss)
+        return (mb_dist["spectral_distance"], fb_dist["spectral_distance"], d_loss, f_loss)

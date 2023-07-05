@@ -72,10 +72,9 @@ class EBlock_DS(nn.Module):
         hidden_channels = int(channels * expansion_factor)
         padding = (kernel_size - 1) * dilation // 2
 
-        # self.act1 = Snake(channels)
-        # self.act2 = Snake(hidden_channels)
-        # self.act3 = Snake(hidden_channels)
-        self.act = nn.LeakyReLU(0.2)
+        self.act1 = Snake(channels)
+        self.act2 = nn.ELU()
+        self.act3 = Snake(hidden_channels)
         self.norm = nn.GroupNorm(num_groups, channels)
         self.pw1 = nn.Conv1d(channels, hidden_channels, kernel_size=1, bias=bias)
         self.dw = DyConv1d(hidden_channels, hidden_channels, kernel_size=kernel_size, padding=padding, dilation=dilation, groups=hidden_channels) if dynamic else \
@@ -89,10 +88,10 @@ class EBlock_DS(nn.Module):
     
     def forward(self, x, mask=None):
         residual = x
-        x = self.act(x)
+        x = self.act1(x)
         x = self.norm(x)
         x = self.pw1(x)
-        x = self.act(x)
+        x = self.act2(x)
 
         if mask is not None:
             x = x * (1. - mask)
@@ -105,7 +104,7 @@ class EBlock_DS(nn.Module):
         if mask is not None:
             x = x * (1. - mask)
             
-        x = self.act(x)
+        x = self.act3(x)
         x = self.grn(x, mask=mask)
         x = self.pw2(x)
         
@@ -160,8 +159,8 @@ class EBlock_DOWN(nn.Module):
     ):
         super().__init__()
 
-        # self.act = Snake(in_channels)
-        self.act = nn.LeakyReLU(0.2)
+        self.act = Snake(in_channels)
+        # self.act = nn.LeakyReLU(0.2)
         self.norm = nn.GroupNorm(num_groups, in_channels)
         self.dw = nn.Conv1d(in_channels, out_channels, kernel_size=scale*2, stride=scale, padding=scale//2, bias=bias)
     

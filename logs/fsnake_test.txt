@@ -1,0 +1,870 @@
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+TrainerAE(
+  (backbone): Orpheus(
+    (pqmf): PQMF()
+    (encoder): Encoder(
+      (stages): ModuleList(
+        (0): EncoderStage(
+          (expand): Conv1d(16, 96, kernel_size=(7,), stride=(1,), padding=(3,), bias=False)
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): Snake()
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(1,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): Snake()
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): Snake()
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (3): EBlock_DS(
+                  (act1): Snake()
+                  (act2): Snake()
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(27,), dilation=(27,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (1): EncoderStage(
+          (downscale): EBlock_DOWN(
+            (act): Snake()
+            (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+            (dw): Conv1d(96, 192, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+          )
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): Snake()
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+                  (pw1): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(1,), groups=288, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): Snake()
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+                  (pw1): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=288, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): Snake()
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+                  (pw1): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=288, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (2): EncoderStage(
+          (downscale): EBlock_DOWN(
+            (act): Snake()
+            (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+            (dw): Conv1d(192, 384, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+          )
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): Snake()
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+                  (pw1): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(1,), groups=576, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): Snake()
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+                  (pw1): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=576, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): Snake()
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+                  (pw1): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=576, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (3): EncoderStage(
+          (downscale): EBlock_DOWN(
+            (act): Snake()
+            (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+            (dw): Conv1d(384, 768, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+          )
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): Snake()
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 768, eps=1e-05, affine=True)
+                  (pw1): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(1,), groups=1152, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): Snake()
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 768, eps=1e-05, affine=True)
+                  (pw1): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=1152, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): Snake()
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 768, eps=1e-05, affine=True)
+                  (pw1): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=1152, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+      )
+      (final_block): EncoderFinalBlock(
+        (norm): Sequential(
+          (0): Snake()
+          (1): GroupNorm(8, 768, eps=1e-05, affine=True)
+        )
+        (down): Conv1d(768, 1536, kernel_size=(4,), stride=(2,), padding=(1,))
+        (act): LeakyReLU(negative_slope=0.2)
+        (to_latent): Conv1d(1536, 128, kernel_size=(3,), stride=(1,), padding=(1,))
+      )
+    )
+    (decoder): Decoder(
+      (from_latent): Conv1d(128, 1536, kernel_size=(3,), stride=(1,), padding=(1,))
+      (final_conv): Sequential(
+        (0): Snake()
+        (1): Conv1d(96, 16, kernel_size=(7,), stride=(1,), padding=(3,))
+        (2): Tanh()
+      )
+      (conv): Sequential(
+        (0): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(1536, 768, kernel_size=(4,), stride=(2,), padding=(1,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 768, eps=1e-05, affine=True)
+                    (2): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): Snake()
+                    (4): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(1,), groups=1152, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 768, eps=1e-05, affine=True)
+                    (2): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): Snake()
+                    (4): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=1152, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 768, eps=1e-05, affine=True)
+                    (2): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): Snake()
+                    (4): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=1152, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (1): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(768, 384, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 384, eps=1e-05, affine=True)
+                    (2): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): Snake()
+                    (4): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(1,), groups=576, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 384, eps=1e-05, affine=True)
+                    (2): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): Snake()
+                    (4): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=576, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 384, eps=1e-05, affine=True)
+                    (2): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): Snake()
+                    (4): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=576, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (2): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(384, 192, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 192, eps=1e-05, affine=True)
+                    (2): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): Snake()
+                    (4): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(1,), groups=288, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 192, eps=1e-05, affine=True)
+                    (2): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): Snake()
+                    (4): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=288, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 192, eps=1e-05, affine=True)
+                    (2): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): Snake()
+                    (4): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=288, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (3): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(192, 96, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): Snake()
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(1,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): Snake()
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): Snake()
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (3): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): Snake()
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(27,), dilation=(27,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+  (prior): GaussianPrior(
+    (locs): ParameterList(
+        (0): Parameter containing: [torch.float32 of size 128]
+        (1): Parameter containing: [torch.float32 of size 128]
+        (2): Parameter containing: [torch.float32 of size 128]
+    )
+    (scale): ParameterList(
+        (0): Parameter containing: [torch.float32 of size 128]
+        (1): Parameter containing: [torch.float32 of size 128]
+        (2): Parameter containing: [torch.float32 of size 128]
+    )
+  )
+  (slicer): MPSSlicer(
+    (locations): ParameterList(
+        (0): Parameter containing: [torch.float32 of size 128]
+        (1): Parameter containing: [torch.float32 of size 128]
+        (2): Parameter containing: [torch.float32 of size 128]
+    )
+    (scales): ParameterList(
+        (0): Parameter containing: [torch.float32 of size ]
+        (1): Parameter containing: [torch.float32 of size ]
+        (2): Parameter containing: [torch.float32 of size ]
+    )
+  )
+  (distance): AudioDistanceV1(
+    (multiscale_stft): MultiScaleSTFT(
+      (stfts): ModuleList(
+        (0-4): 5 x Spectrogram()
+      )
+      (mel_scales): ModuleList(
+        (0-4): 5 x MelScale()
+      )
+    )
+  )
+)
+31121696
+Learning rate: 0.00015
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(5., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(1., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(100., device='cuda:0', requires_grad=True)
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+Epoch 1
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [59:17<00:00,  1.32it/s]
+Train loss: 23.851488284674613, Dist Loss: 11406.820793603703, Recon Loss: 11.925744142337306, FB Loss: 11.017692305353991, Time Loss: 0.5841262026491143
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:59<00:00,  2.45it/s]
+Valid loss: 16.10967633752644, Dist Loss: 14631.649654459912, Recon Loss: 8.05483816876322, FB Loss: 7.831822069986918, Time Loss: 0.2747653059953319
+Validation loss decreased (inf --> 16.109676).  Saving model ...
+tensor([ 0.1186,  0.1203,  0.1130,  ..., -1.7175, -0.8992, -0.2402],
+       device='cuda:0') -7.061610698699951 9.083854675292969
+tensor([ 0.0232,  0.0215,  0.0228,  ..., -1.7359, -0.8051, -0.3067],
+       device='cuda:0') -7.848928928375244 9.714767456054688
+tensor([ 0.0063,  0.0053,  0.0048,  ..., -1.7174, -0.8975, -0.2394],
+       device='cuda:0') -7.0302815437316895 9.053960800170898
+Epoch 2
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:44<00:00,  1.29it/s]
+Train loss: 14.638345381733098, Dist Loss: 11667.457231961263, Recon Loss: 7.319172690866549, FB Loss: 8.030331810941886, Time Loss: 0.22321731154975558
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:54<00:00,  2.47it/s]
+Valid loss: 11.946461696234838, Dist Loss: 12198.554967201142, Recon Loss: 5.973230848117419, FB Loss: 6.214952259697338, Time Loss: 0.26565870119090584
+Validation loss decreased (16.109676 --> 11.946462).  Saving model ...
+tensor([-0.0829, -0.0909, -0.0930,  ..., -0.5000, -0.4065, -0.3967],
+       device='cuda:0') -5.849318981170654 8.233080863952637
+tensor([-0.0261, -0.0273, -0.0197,  ..., -0.7406, -0.6378, -0.6315],
+       device='cuda:0') -6.299175262451172 8.502375602722168
+tensor([-0.0276, -0.0288, -0.0208,  ..., -0.5599, -0.4655, -0.4493],
+       device='cuda:0') -5.810489654541016 8.258343696594238
+Epoch 3
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:01:04<00:00,  1.28it/s]
+Train loss: 12.419907103003366, Dist Loss: 9846.116320265066, Recon Loss: 6.209953551501683, FB Loss: 6.79641482755891, Time Loss: 0.1882723796577798
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:03<00:00,  2.43it/s]
+Valid loss: 11.871834975085022, Dist Loss: 10997.539176044107, Recon Loss: 5.935917487542511, FB Loss: 5.802594467566001, Time Loss: 0.22242202513313375
+Validation loss decreased (11.946462 --> 11.871835).  Saving model ...
+tensor([-0.0492, -0.0554, -0.0554,  ...,  0.1602,  0.7238,  0.7552],
+       device='cuda:0') -6.260513782501221 7.359384536743164
+tensor([-0.0055, -0.0100, -0.0055,  ...,  0.2424,  0.8005,  0.8358],
+       device='cuda:0') -6.373621463775635 7.31981086730957
+tensor([-0.0056, -0.0106, -0.0061,  ...,  0.1631,  0.7279,  0.7589],
+       device='cuda:0') -6.237215518951416 7.327999114990234
+Epoch 4
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:10<00:00,  1.30it/s]
+Train loss: 11.49698130994032, Dist Loss: 8880.995890854265, Recon Loss: 5.74849065497016, FB Loss: 6.259774440900285, Time Loss: 0.1717468994567635
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:00<00:00,  2.44it/s]
+Valid loss: 10.102327674170368, Dist Loss: 10254.335157664102, Recon Loss: 5.051163837085184, FB Loss: 5.2707612217995745, Time Loss: 0.2264920551761401
+Validation loss decreased (11.871835 --> 10.102328).  Saving model ...
+tensor([-0.0907, -0.0939, -0.1062,  ...,  0.5101,  0.6084,  0.3321],
+       device='cuda:0') -5.073538303375244 6.56438684463501
+tensor([-0.0097, -0.0113, -0.0114,  ...,  0.5059,  0.5484,  0.2502],
+       device='cuda:0') -5.135323524475098 6.534643173217773
+tensor([-0.0068, -0.0081, -0.0077,  ...,  0.4888,  0.5730,  0.2888],
+       device='cuda:0') -5.0582804679870605 6.547544956207275
+Epoch 5
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [59:58<00:00,  1.30it/s]
+Train loss: 10.795494047286006, Dist Loss: 8524.910908150074, Recon Loss: 5.397747023643003, FB Loss: 5.881486467061573, Time Loss: 0.16295169051347716
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:04<00:00,  2.42it/s]
+Valid loss: 9.796497556582423, Dist Loss: 9803.716081713494, Recon Loss: 4.898248778291212, FB Loss: 5.067578268619778, Time Loss: 0.22104204862078675
+Validation loss decreased (10.102328 --> 9.796498).  Saving model ...
+tensor([0.0176, 0.0170, 0.0125,  ..., 0.3431, 0.8647, 0.9317], device='cuda:0') -6.000313758850098 5.499478340148926
+tensor([-0.0098, -0.0093, -0.0045,  ...,  0.3262,  0.8462,  0.9185],
+       device='cuda:0') -5.989985942840576 5.479302883148193
+tensor([-0.0077, -0.0072, -0.0023,  ...,  0.3430,  0.8640,  0.9306],
+       device='cuda:0') -5.990923881530762 5.482136249542236
+Epoch 6
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:12<00:00,  1.30it/s]
+Train loss: 10.358488371791767, Dist Loss: 8170.219217788833, Recon Loss: 5.179244185895883, FB Loss: 5.642622155944083, Time Loss: 0.15897185086861132
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:58<00:00,  2.45it/s]
+Valid loss: 9.318533721124496, Dist Loss: 9415.084107485094, Recon Loss: 4.659266860562248, FB Loss: 4.76261934429864, Time Loss: 0.20953565329833676
+Validation loss decreased (9.796498 --> 9.318534).  Saving model ...
+tensor([0.1958, 0.2060, 0.2173,  ..., 0.3743, 0.9314, 1.0253], device='cuda:0') -5.7601399421691895 5.49112606048584
+tensor([-0.0241, -0.0214, -0.0208,  ...,  0.3595,  0.9263,  1.0346],
+       device='cuda:0') -5.7839837074279785 5.524388313293457
+tensor([-0.0241, -0.0210, -0.0203,  ...,  0.3821,  0.9439,  1.0432],
+       device='cuda:0') -5.752137660980225 5.440077304840088
+Epoch 7
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:01:02<00:00,  1.28it/s]
+Train loss: 9.993990784459385, Dist Loss: 7961.919947178454, Recon Loss: 4.996995392229692, FB Loss: 5.426185346635088, Time Loss: 0.15512536174701436
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:59<00:00,  2.45it/s]
+Valid loss: 9.0149271999957, Dist Loss: 9330.663879914422, Recon Loss: 4.50746359999785, FB Loss: 4.553818320496931, Time Loss: 0.2047605255786869
+Validation loss decreased (9.318534 --> 9.014927).  Saving model ...
+tensor([0.0203, 0.0208, 0.0183,  ..., 0.2141, 0.7573, 0.8117], device='cuda:0') -5.522520542144775 5.034016132354736
+tensor([-0.0014, -0.0030, -0.0033,  ...,  0.1572,  0.6966,  0.7485],
+       device='cuda:0') -5.444707870483398 5.042093276977539
+tensor([-0.0015, -0.0030, -0.0031,  ...,  0.1834,  0.7216,  0.7711],
+       device='cuda:0') -5.459906101226807 5.038350582122803
+Epoch 8
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:01:24<00:00,  1.27it/s]
+Train loss: 9.611062164452923, Dist Loss: 7697.958913899809, Recon Loss: 4.805531082226461, FB Loss: 5.2094521530648725, Time Loss: 0.1493042365826022
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:01<00:00,  2.44it/s]
+Valid loss: 8.994372831292615, Dist Loss: 9108.53643746839, Recon Loss: 4.497186415646308, FB Loss: 4.592204892858736, Time Loss: 0.18870211051526325
+Validation loss decreased (9.014927 --> 8.994373).  Saving model ...
+tensor([-0.0194, -0.0170, -0.0180,  ..., -0.2773,  0.4452,  0.7611],
+       device='cuda:0') -4.453492164611816 5.129245758056641
+tensor([ 0.0041,  0.0047,  0.0045,  ..., -0.3699,  0.3613,  0.6855],
+       device='cuda:0') -4.628411769866943 5.139570713043213
+tensor([ 0.0054,  0.0061,  0.0059,  ..., -0.2953,  0.4269,  0.7431],
+       device='cuda:0') -4.444720268249512 5.110710620880127
+Epoch 9
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:45<00:00,  1.29it/s]
+Train loss: 9.341243429899114, Dist Loss: 7715.6277218507, Recon Loss: 4.670621714949557, FB Loss: 5.060444820775445, Time Loss: 0.14640399054943576
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:59<00:00,  2.45it/s]
+Valid loss: 8.972883711478577, Dist Loss: 8751.894243854476, Recon Loss: 4.486441855739288, FB Loss: 4.484463145623216, Time Loss: 0.18672968922230515
+Validation loss decreased (8.994373 --> 8.972884).  Saving model ...
+tensor([ 0.0233,  0.0192,  0.0229,  ..., -0.2669,  0.4334,  0.7548],
+       device='cuda:0') -4.391948223114014 5.029256820678711
+tensor([ 0.0075,  0.0027,  0.0075,  ..., -0.3311,  0.3674,  0.6877],
+       device='cuda:0') -4.652154922485352 5.0271430015563965
+tensor([ 0.0093,  0.0045,  0.0092,  ..., -0.2970,  0.4022,  0.7230],
+       device='cuda:0') -4.291338920593262 5.024999141693115
+Epoch 10
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:06<00:00,  1.30it/s]
+Train loss: 9.16474895066894, Dist Loss: 7634.128351888507, Recon Loss: 4.58237447533447, FB Loss: 4.938905201061868, Time Loss: 0.14416802669055903
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:00<00:00,  2.44it/s]
+Valid loss: 8.412685144495924, Dist Loss: 8851.692064431498, Recon Loss: 4.206342572247962, FB Loss: 4.253344636353358, Time Loss: 0.20202787322019192
+Validation loss decreased (8.972884 --> 8.412685).  Saving model ...
+tensor([-0.0043, -0.0058, -0.0096,  ..., -0.4475,  0.2150,  0.5246],
+       device='cuda:0') -4.4679484367370605 4.724878311157227
+tensor([ 1.9911e-03,  4.5238e-04, -1.3116e-03,  ..., -5.1237e-01,
+         1.5676e-01,  4.7195e-01], device='cuda:0') -4.625235557556152 4.609158039093018
+tensor([ 1.7210e-03,  4.2673e-04, -1.2314e-03,  ..., -5.2932e-01,
+         1.3138e-01,  4.4181e-01], device='cuda:0') -4.4252610206604 4.622847557067871
+Epoch 11
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:15<00:00,  1.30it/s]
+Train loss: 9.000783049303468, Dist Loss: 7620.171244832166, Recon Loss: 4.500391524651734, FB Loss: 4.857965395965625, Time Loss: 0.14238811569851056
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:03<00:00,  2.43it/s]
+Valid loss: 8.477834272628343, Dist Loss: 8548.617133639334, Recon Loss: 4.238917136314171, FB Loss: 4.270311358433972, Time Loss: 0.20370930580507957
+EarlyStopping counter: 1 out of 10
+Epoch 12
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [59:53<00:00,  1.31it/s]
+Train loss: 8.856199238317593, Dist Loss: 7498.087776044302, Recon Loss: 4.428099619158797, FB Loss: 4.782970677551738, Time Loss: 0.1394607689807808
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:05<00:00,  2.42it/s]
+Valid loss: 8.212427549508401, Dist Loss: 8846.319131932429, Recon Loss: 4.106213774754201, FB Loss: 4.137609388596764, Time Loss: 0.19241597224185578
+Validation loss decreased (8.412685 --> 8.212428).  Saving model ...
+tensor([-0.0050, -0.0050, -0.0064,  ..., -0.3359,  0.2195,  0.5012],
+       device='cuda:0') -4.466472148895264 4.302842617034912
+tensor([-0.0034, -0.0036, -0.0050,  ..., -0.4961,  0.0576,  0.3410],
+       device='cuda:0') -4.507220268249512 4.31446647644043
+tensor([-0.0028, -0.0028, -0.0040,  ..., -0.4424,  0.1133,  0.3969],
+       device='cuda:0') -4.366024494171143 4.2667460441589355
+Epoch 13
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:40<00:00,  1.29it/s]
+Train loss: 8.747492148208782, Dist Loss: 7420.744321051891, Recon Loss: 4.373746074104391, FB Loss: 4.718281036953139, Time Loss: 0.13731253787622802
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:59<00:00,  2.45it/s]
+Valid loss: 8.30520714040103, Dist Loss: 8263.139086123829, Recon Loss: 4.152603570200515, FB Loss: 4.153906591096972, Time Loss: 0.19442201055605376
+EarlyStopping counter: 1 out of 10
+Epoch 14
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:11<00:00,  1.30it/s]
+Train loss: 8.652375462921722, Dist Loss: 7399.641574126586, Recon Loss: 4.326187731460861, FB Loss: 4.661861828148593, Time Loss: 0.1324087984984543
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:59<00:00,  2.45it/s]
+Valid loss: 8.143776254718917, Dist Loss: 8252.891199167178, Recon Loss: 4.0718881273594585, FB Loss: 4.045957011096116, Time Loss: 0.18883035175527685
+Validation loss decreased (8.212428 --> 8.143776).  Saving model ...
+tensor([-0.0061, -0.0100, -0.0127,  ..., -0.0135,  0.2624,  0.3648],
+       device='cuda:0') -4.080422878265381 4.155801296234131
+tensor([-0.0056, -0.0091, -0.0110,  ..., -0.1049,  0.1692,  0.2702],
+       device='cuda:0') -4.060414791107178 4.172210216522217
+tensor([-0.0060, -0.0094, -0.0111,  ..., -0.0824,  0.1920,  0.2943],
+       device='cuda:0') -3.8301279544830322 4.125584125518799
+Epoch 15
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:20<00:00,  1.30it/s]
+Train loss: 8.534630191239795, Dist Loss: 7293.231136053839, Recon Loss: 4.267315095619898, FB Loss: 4.5851039883935, Time Loss: 0.12578062067053575
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:04<00:00,  2.42it/s]
+Valid loss: 8.032199661817014, Dist Loss: 8371.02028384363, Recon Loss: 4.016099830908507, FB Loss: 3.9989306719583384, Time Loss: 0.18296300550507066
+Validation loss decreased (8.143776 --> 8.032200).  Saving model ...
+tensor([ 0.0099,  0.0087,  0.0097,  ...,  0.2039,  0.1889, -0.1502],
+       device='cuda:0') -3.052086114883423 2.973498582839966
+tensor([ 0.0006, -0.0006,  0.0003,  ...,  0.1292,  0.1149, -0.2226],
+       device='cuda:0') -3.1750757694244385 3.086966037750244
+tensor([-0.0005, -0.0016, -0.0006,  ...,  0.1292,  0.1136, -0.2235],
+       device='cuda:0') -2.988490581512451 2.738692283630371
+Epoch 16
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:33<00:00,  1.29it/s]
+Train loss: 8.389408070125832, Dist Loss: 7190.339473430176, Recon Loss: 4.194704035062916, FB Loss: 4.501567753213591, Time Loss: 0.12231759413934745
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:01<00:00,  2.44it/s]
+Valid loss: 7.983370263491213, Dist Loss: 8401.172240171156, Recon Loss: 3.9916851317456064, FB Loss: 3.952735347479734, Time Loss: 0.1830972327423969
+Validation loss decreased (8.032200 --> 7.983370).  Saving model ...
+tensor([ 0.0315,  0.0311,  0.0315,  ...,  0.6071,  0.2716, -0.4262],
+       device='cuda:0') -2.540020704269409 2.7764506340026855
+tensor([-0.0037, -0.0043, -0.0035,  ...,  0.4915,  0.1560, -0.5420],
+       device='cuda:0') -2.661977767944336 2.6655020713806152
+tensor([-0.0036, -0.0040, -0.0029,  ...,  0.4961,  0.1595, -0.5394],
+       device='cuda:0') -2.501842498779297 2.6212549209594727
+Epoch 17
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:19<00:00,  1.30it/s]
+Train loss: 8.312532318059972, Dist Loss: 7138.436147838539, Recon Loss: 4.156266159029986, FB Loss: 4.4593036162584045, Time Loss: 0.12081401156595681
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:05<00:00,  2.42it/s]
+Valid loss: 8.03433670055318, Dist Loss: 8172.4167270432945, Recon Loss: 4.01716835027659, FB Loss: 3.9626636568082456, Time Loss: 0.16839436898634688
+EarlyStopping counter: 1 out of 10
+Epoch 18
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [59:38<00:00,  1.31it/s]
+Train loss: 8.221999202934692, Dist Loss: 7177.3997218908535, Recon Loss: 4.110999601467346, FB Loss: 4.412683940309639, Time Loss: 0.12022489314052841
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:03<00:00,  2.43it/s]
+Valid loss: 8.07503176669652, Dist Loss: 7948.464469012857, Recon Loss: 4.03751588334826, FB Loss: 3.932691479866509, Time Loss: 0.17891322621985242
+EarlyStopping counter: 2 out of 10
+Epoch 19
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:42<00:00,  1.29it/s]
+Train loss: 8.156769687386843, Dist Loss: 7291.336248787098, Recon Loss: 4.078384843693422, FB Loss: 4.3669151137827, Time Loss: 0.1188811772412882
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:02<00:00,  2.43it/s]
+Valid loss: 7.899816203564152, Dist Loss: 7967.673320919732, Recon Loss: 3.949908101782076, FB Loss: 3.8884073763933458, Time Loss: 0.1913550027683409
+Validation loss decreased (7.983370 --> 7.899816).  Saving model ...
+tensor([ 4.0273e-03,  5.6601e-04, -1.0011e-03,  ...,  7.0184e-01,
+         2.2689e-01, -4.8767e-01], device='cuda:0') -2.315439462661743 2.0604870319366455
+tensor([-0.0024, -0.0062, -0.0080,  ...,  0.6251,  0.1495, -0.5640],
+       device='cuda:0') -2.37846040725708 2.1354172229766846
+tensor([-0.0019, -0.0056, -0.0072,  ...,  0.6245,  0.1510, -0.5599],
+       device='cuda:0') -2.3093793392181396 1.941293478012085
+Epoch 20
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [59:59<00:00,  1.30it/s]
+Train loss: 8.10319314431677, Dist Loss: 7145.951198452729, Recon Loss: 4.051596572158385, FB Loss: 4.329890264416432, Time Loss: 0.11895581540795663
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:00<00:00,  2.44it/s]
+Valid loss: 7.759555460037934, Dist Loss: 7632.1820977128145, Recon Loss: 3.879777730018967, FB Loss: 3.841890254662431, Time Loss: 0.16609203933184455
+Validation loss decreased (7.899816 --> 7.759555).  Saving model ...
+tensor([ 0.0043,  0.0023,  0.0024,  ...,  0.6578,  0.2639, -0.3248],
+       device='cuda:0') -2.109084129333496 1.7950100898742676
+tensor([-0.0079, -0.0095, -0.0082,  ...,  0.5263,  0.1327, -0.4552],
+       device='cuda:0') -2.2902820110321045 1.9799878597259521
+tensor([-0.0083, -0.0100, -0.0085,  ...,  0.5402,  0.1453, -0.4429],
+       device='cuda:0') -2.147784948348999 1.7721389532089233
+Epoch 21
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:32<00:00,  1.29it/s]
+Train loss: 8.045952632064559, Dist Loss: 7097.698319424148, Recon Loss: 4.022976316032279, FB Loss: 4.291754896863248, Time Loss: 0.11685809174522402
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:01<00:00,  2.44it/s]
+Valid loss: 7.737188788045204, Dist Loss: 7903.760477251251, Recon Loss: 3.868594394022602, FB Loss: 3.795939074058143, Time Loss: 0.17470073108751727
+Validation loss decreased (7.759555 --> 7.737189).  Saving model ...
+tensor([-0.0009, -0.0003,  0.0021,  ...,  0.1577,  0.0397, -0.1385],
+       device='cuda:0') -1.400395154953003 1.3060327768325806
+tensor([-0.0112, -0.0112, -0.0090,  ...,  0.0750, -0.0439, -0.2182],
+       device='cuda:0') -1.482372522354126 1.2358062267303467
+tensor([-0.0107, -0.0106, -0.0083,  ...,  0.1117, -0.0071, -0.1849],
+       device='cuda:0') -1.4175572395324707 1.1180505752563477
+Epoch 22
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:35<00:00,  1.29it/s]
+Train loss: 7.988132968881458, Dist Loss: 7083.434120389518, Recon Loss: 3.994066484440729, FB Loss: 4.264899425319676, Time Loss: 0.11667130282962188
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:05<00:00,  2.42it/s]
+Valid loss: 7.595417157551702, Dist Loss: 7909.282091806857, Recon Loss: 3.797708578775851, FB Loss: 3.7458922651801037, Time Loss: 0.17539952472594028
+Validation loss decreased (7.737189 --> 7.595417).  Saving model ...
+tensor([0.0137, 0.0119, 0.0139,  ..., 0.0771, 0.0652, 0.0592], device='cuda:0') -1.24080491065979 0.9942238926887512
+tensor([-0.0010, -0.0026, -0.0001,  ..., -0.0164, -0.0248, -0.0270],
+       device='cuda:0') -1.3188550472259521 1.2161825895309448
+tensor([-0.0011, -0.0027, -0.0002,  ..., -0.0055, -0.0167, -0.0200],
+       device='cuda:0') -1.2269456386566162 0.7955787181854248
+Epoch 23
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:16<00:00,  1.30it/s]
+Train loss: 7.9588988875652, Dist Loss: 6907.208454224725, Recon Loss: 3.9794494437826, FB Loss: 4.234082364253811, Time Loss: 0.11652772673526735
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:01<00:00,  2.44it/s]
+Valid loss: 7.548799689015091, Dist Loss: 7830.410827740697, Recon Loss: 3.7743998445075455, FB Loss: 3.72357097395031, Time Loss: 0.17878691220613993
+Validation loss decreased (7.595417 --> 7.548800).  Saving model ...
+tensor([0.0061, 0.0065, 0.0051,  ..., 0.0632, 0.0645, 0.0586], device='cuda:0') -1.2258539199829102 1.1168612241744995
+tensor([-0.0018, -0.0015, -0.0023,  ..., -0.0390, -0.0405, -0.0475],
+       device='cuda:0') -1.3293002843856812 1.2009856700897217
+tensor([-0.0019, -0.0015, -0.0022,  ..., -0.0253, -0.0246, -0.0295],
+       device='cuda:0') -1.2482481002807617 0.9604100584983826
+Epoch 24
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:52<00:00,  1.29it/s]
+Train loss: 7.879285131559302, Dist Loss: 6987.184539651891, Recon Loss: 3.939642565779651, FB Loss: 4.193721604692616, Time Loss: 0.11625819473853156
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:00<00:00,  2.44it/s]
+Valid loss: 8.10746511405737, Dist Loss: 8048.541492988547, Recon Loss: 4.053732557028685, FB Loss: 3.8241358713153275, Time Loss: 0.17956936231527154
+EarlyStopping counter: 1 out of 10
+Epoch 25
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:52<00:00,  1.29it/s]
+Train loss: 7.831377071170133, Dist Loss: 7050.011265602323, Recon Loss: 3.9156885355850664, FB Loss: 4.143276892878626, Time Loss: 0.11627367741980284
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:00<00:00,  2.44it/s]
+Valid loss: 7.524676231143828, Dist Loss: 7804.252584896055, Recon Loss: 3.762338115571914, FB Loss: 3.6624416716054107, Time Loss: 0.16893264781041117
+Validation loss decreased (7.548800 --> 7.524676).  Saving model ...
+tensor([-0.0262, -0.0291, -0.0257,  ...,  0.0553,  0.0649,  0.0745],
+       device='cuda:0') -0.5486166477203369 0.46780991554260254
+tensor([-0.0004, -0.0040, -0.0004,  ..., -0.0681, -0.0532, -0.0401],
+       device='cuda:0') -1.1597449779510498 1.1702322959899902
+tensor([-0.0002, -0.0038, -0.0001,  ..., -0.0336, -0.0259, -0.0156],
+       device='cuda:0') -0.36392247676849365 0.33278223872184753
+Epoch 26
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:50<00:00,  1.29it/s]
+Train loss: 7.779436107996326, Dist Loss: 7034.615214558728, Recon Loss: 3.889718053998163, FB Loss: 4.11060047906462, Time Loss: 0.11562169127802761
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:03<00:00,  2.43it/s]
+Valid loss: 7.491232480060506, Dist Loss: 7614.5636768243585, Recon Loss: 3.745616240030253, FB Loss: 3.6260079707969393, Time Loss: 0.17426854692870716
+Validation loss decreased (7.524676 --> 7.491232).  Saving model ...
+tensor([-0.0022,  0.0003, -0.0006,  ...,  0.0041,  0.0137,  0.0160],
+       device='cuda:0') -0.3656017482280731 0.4139159321784973
+tensor([-0.0055, -0.0041, -0.0057,  ..., -0.0670, -0.0577, -0.0569],
+       device='cuda:0') -1.205328106880188 1.1754120588302612
+tensor([-0.0053, -0.0038, -0.0053,  ..., -0.0525, -0.0427, -0.0392],
+       device='cuda:0') -0.3807952404022217 0.37433332204818726
+Epoch 27
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:01:07<00:00,  1.28it/s]
+Train loss: 7.732716850996728, Dist Loss: 7152.205395445399, Recon Loss: 3.866358425498364, FB Loss: 4.0779819673916915, Time Loss: 0.1159934500447809
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:59<00:00,  2.45it/s]
+Valid loss: 7.606279953984223, Dist Loss: 8241.857185636713, Recon Loss: 3.8031399769921115, FB Loss: 3.6475226200825106, Time Loss: 0.17034058197138885
+EarlyStopping counter: 1 out of 10
+Epoch 28
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:07<00:00,  1.30it/s]
+Train loss: 7.718837857703528, Dist Loss: 7091.446934807692, Recon Loss: 3.859418928851764, FB Loss: 4.066498256257914, Time Loss: 0.11740190351820774
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:00<00:00,  2.44it/s]
+Valid loss: 7.467331077617925, Dist Loss: 7612.848121656064, Recon Loss: 3.7336655388089626, FB Loss: 3.615955704927851, Time Loss: 0.17097918126074474
+Validation loss decreased (7.491232 --> 7.467331).  Saving model ...
+tensor([ 0.0128,  0.0122,  0.0139,  ..., -0.0513, -0.0471, -0.0436],
+       device='cuda:0') -0.4653230905532837 0.4336140751838684
+tensor([-0.0011, -0.0033, -0.0019,  ..., -0.0860, -0.0790, -0.0723],
+       device='cuda:0') -1.201704502105713 1.234053611755371
+tensor([-0.0019, -0.0040, -0.0024,  ..., -0.0615, -0.0556, -0.0508],
+       device='cuda:0') -0.35182905197143555 0.3493024706840515
+Epoch 29
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:07<00:00,  1.30it/s]
+Train loss: 7.671993780501812, Dist Loss: 7009.049198626863, Recon Loss: 3.835996890250906, FB Loss: 4.042846597251762, Time Loss: 0.1164022156757211
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:58<00:00,  2.45it/s]
+Valid loss: 7.321491401483903, Dist Loss: 7436.642317243898, Recon Loss: 3.6607457007419515, FB Loss: 3.535120762389604, Time Loss: 0.1723395377632351
+Validation loss decreased (7.467331 --> 7.321491).  Saving model ...
+tensor([-0.0010,  0.0002,  0.0035,  ...,  0.0647,  0.0644,  0.0641],
+       device='cuda:0') -0.4544637203216553 0.5223519802093506
+tensor([-0.0006, -0.0006,  0.0025,  ..., -0.0085, -0.0030,  0.0039],
+       device='cuda:0') -1.191840410232544 1.2434817552566528
+tensor([-0.0002, -0.0002,  0.0030,  ...,  0.0665,  0.0708,  0.0748],
+       device='cuda:0') -0.4176506996154785 0.454089492559433
+Epoch 30
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:50<00:00,  1.29it/s]
+Train loss: 7.644899989881056, Dist Loss: 7168.152721871505, Recon Loss: 3.822449994940528, FB Loss: 4.019547787228695, Time Loss: 0.11640087136455932
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:58<00:00,  2.45it/s]
+Valid loss: 7.361101544086125, Dist Loss: 8075.556886221319, Recon Loss: 3.6805507720430626, FB Loss: 3.5113800757991394, Time Loss: 0.17675646307685428
+EarlyStopping counter: 1 out of 10
+Epoch 31
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:10<00:00,  1.30it/s]
+Train loss: 7.629227518171872, Dist Loss: 7349.342076487271, Recon Loss: 3.814613759085936, FB Loss: 4.007763491725231, Time Loss: 0.116517846485061
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:59<00:00,  2.45it/s]
+Valid loss: 7.507678265059827, Dist Loss: 7905.0561733473305, Recon Loss: 3.7538391325299134, FB Loss: 3.5655477568887974, Time Loss: 0.17755787034326248
+EarlyStopping counter: 2 out of 10
+Epoch 32
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:31<00:00,  1.29it/s]
+Train loss: 7.578729520313375, Dist Loss: 6997.843693047724, Recon Loss: 3.7893647601566873, FB Loss: 3.9769535512176533, Time Loss: 0.11685276865041734
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:01<00:00,  2.44it/s]
+Valid loss: 7.410674112212718, Dist Loss: 7594.814391465975, Recon Loss: 3.705337056106359, FB Loss: 3.555894579554335, Time Loss: 0.17009204278959458
+EarlyStopping counter: 3 out of 10
+Epoch 33
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:12<00:00,  1.30it/s]
+Train loss: 7.544296551827527, Dist Loss: 6908.275004727819, Recon Loss: 3.7721482759137634, FB Loss: 3.956254342438365, Time Loss: 0.1166731438795553
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:01<00:00,  2.44it/s]
+Valid loss: 7.442711571412355, Dist Loss: 7530.489208422893, Recon Loss: 3.7213557857061774, FB Loss: 3.571291527918697, Time Loss: 0.18083663558959484
+EarlyStopping counter: 4 out of 10
+Epoch 34
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:37<00:00,  1.29it/s]
+Train loss: 7.553182696199031, Dist Loss: 6946.194539847454, Recon Loss: 3.7765913480995157, FB Loss: 3.962147465908228, Time Loss: 0.11603634337040278
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:04<00:00,  2.42it/s]
+Valid loss: 7.2939332449456495, Dist Loss: 7457.435880644764, Recon Loss: 3.6469666224728248, FB Loss: 3.4935563975339043, Time Loss: 0.17697700774523206
+Validation loss decreased (7.321491 --> 7.293933).  Saving model ...
+tensor([-0.0086, -0.0086, -0.0094,  ...,  0.0299,  0.0307,  0.0271],
+       device='cuda:0') -0.5996143817901611 0.49887311458587646
+tensor([-0.0020, -0.0023, -0.0025,  ..., -0.0458, -0.0343, -0.0303],
+       device='cuda:0') -1.2302191257476807 1.2572706937789917
+tensor([-0.0014, -0.0016, -0.0018,  ..., -0.0328, -0.0283, -0.0272],
+       device='cuda:0') -0.40617507696151733 0.3645646274089813
+Epoch 35
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:12<00:00,  1.30it/s]
+Train loss: 7.522261202868676, Dist Loss: 6926.667334733336, Recon Loss: 3.761130601434338, FB Loss: 3.9386613689486807, Time Loss: 0.11685619894647277
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:01<00:00,  2.44it/s]
+Valid loss: 7.387644585393357, Dist Loss: 7736.094610107006, Recon Loss: 3.6938222926966784, FB Loss: 3.5397708834334574, Time Loss: 0.17163626430595844
+EarlyStopping counter: 1 out of 10
+Epoch 36
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:00:08<00:00,  1.30it/s]
+Train loss: 7.483851488570127, Dist Loss: 6950.028833637148, Recon Loss: 3.7419257442850635, FB Loss: 3.912527799250778, Time Loss: 0.11709258700238837
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:04<00:00,  2.42it/s]
+Valid loss: 7.214535818392414, Dist Loss: 7681.052532241535, Recon Loss: 3.607267909196207, FB Loss: 3.4774912699320857, Time Loss: 0.1762655892562489
+Validation loss decreased (7.293933 --> 7.214536).  Saving model ...
+tensor([0.0050, 0.0033, 0.0029,  ..., 0.0186, 0.0212, 0.0255], device='cuda:0') -0.6098024249076843 0.49091488122940063
+tensor([-0.0034, -0.0056, -0.0061,  ..., -0.0552, -0.0428, -0.0288],
+       device='cuda:0') -1.221840262413025 1.2666456699371338
+tensor([-0.0042, -0.0062, -0.0066,  ..., -0.0138, -0.0060,  0.0038],
+       device='cuda:0') -0.44386300444602966 0.3823007643222809
+Epoch 37
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [1:01:06<00:00,  1.28it/s]
+Train loss: 7.457007647068591, Dist Loss: 7096.180423874727, Recon Loss: 3.7285038235342953, FB Loss: 3.8906288845873305, Time Loss: 0.11764795443104221
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:59<00:00,  2.45it/s]
+Valid loss: 7.223672712072603, Dist Loss: 7845.506616751623, Recon Loss: 3.6118363560363016, FB Loss: 3.4582716811454683, Time Loss: 0.1731693122961941
+EarlyStopping counter: 1 out of 10
+Epoch 38
+  1%|██▏                                                                                                                                                                   | 62/4694 [00:53<1:13:57,  1.04it/s]
+  1%|██▏                                                                                                                                                                   | 62/4694 [00:54<1:07:22,  1.15it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line 385, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line 255, in train
+    mb_loss, fb_loss, d_loss, f_loss = model(beginning)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/Documents/Projects/orpheus/orpheus/train_helper.py", line 142, in forward
+    z_samples = self.prior.sample(z.shape[0] * z.shape[2])
+  File "/home/r/Documents/Projects/orpheus/orpheus/model/prior.py", line 53, in sample
+    component = Normal(2 * F.sigmoid(mu) - 1, F.sigmoid(scale))
+  File "/usr/local/lib/python3.10/dist-packages/torch/distributions/normal.py", line 56, in __init__
+    super().__init__(batch_shape, validate_args=validate_args)
+  File "/usr/local/lib/python3.10/dist-packages/torch/distributions/distribution.py", line 61, in __init__
+    if not valid.all():
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$

@@ -52,8 +52,8 @@ class Decoder(nn.Module):
             stages.append(decoder_stage)
 
         self.final_conv = nn.Sequential(
-            # Snake(h_dims[-2]),
-            nn.LeakyReLU(0.2),
+            Snake(h_dims[-2]),
+            # nn.LeakyReLU(0.2),
             weight_norm(nn.Conv1d(h_dims[-2], h_dims[-1], 7, padding=3)),
             nn.Tanh()
         )
@@ -83,8 +83,8 @@ class DecoderStage(nn.Module):
 
         blocks.append(
             nn.Sequential(
-                # Snake(in_channels),
-                nn.LeakyReLU(0.2),
+                Snake(in_channels),
+                # nn.LeakyReLU(0.2),
                 weight_norm(nn.ConvTranspose1d(in_channels, out_channels, scale * 2, stride=scale, padding=scale//2, bias=False))
             )
         )

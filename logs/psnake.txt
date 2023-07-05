@@ -1,0 +1,707 @@
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+TrainerAE(
+  (backbone): Orpheus(
+    (pqmf): PQMF()
+    (encoder): Encoder(
+      (stages): ModuleList(
+        (0): EncoderStage(
+          (expand): Conv1d(16, 96, kernel_size=(7,), stride=(1,), padding=(3,), bias=False)
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(1,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (3): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(27,), dilation=(27,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (1): EncoderStage(
+          (downscale): EBlock_DOWN(
+            (act): Snake()
+            (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+            (dw): Conv1d(96, 192, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+          )
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+                  (pw1): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(1,), groups=288, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+                  (pw1): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=288, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+                  (pw1): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=288, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (2): EncoderStage(
+          (downscale): EBlock_DOWN(
+            (act): Snake()
+            (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+            (dw): Conv1d(192, 384, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+          )
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+                  (pw1): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(1,), groups=576, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+                  (pw1): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=576, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+                  (pw1): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=576, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (3): EncoderStage(
+          (downscale): EBlock_DOWN(
+            (act): Snake()
+            (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+            (dw): Conv1d(384, 768, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+          )
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 768, eps=1e-05, affine=True)
+                  (pw1): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(1,), groups=1152, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 768, eps=1e-05, affine=True)
+                  (pw1): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=1152, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 768, eps=1e-05, affine=True)
+                  (pw1): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=1152, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+      )
+      (final_block): EncoderFinalBlock(
+        (norm): Sequential(
+          (0): Snake()
+          (1): GroupNorm(8, 768, eps=1e-05, affine=True)
+        )
+        (down): Conv1d(768, 1536, kernel_size=(4,), stride=(2,), padding=(1,))
+        (act): LeakyReLU(negative_slope=0.2)
+        (to_latent): Conv1d(1536, 128, kernel_size=(3,), stride=(1,), padding=(1,))
+      )
+    )
+    (decoder): Decoder(
+      (from_latent): Conv1d(128, 1536, kernel_size=(3,), stride=(1,), padding=(1,))
+      (final_conv): Sequential(
+        (0): Snake()
+        (1): Conv1d(96, 16, kernel_size=(7,), stride=(1,), padding=(3,))
+        (2): Tanh()
+      )
+      (conv): Sequential(
+        (0): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(1536, 768, kernel_size=(4,), stride=(2,), padding=(1,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 768, eps=1e-05, affine=True)
+                    (2): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(1,), groups=1152, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 768, eps=1e-05, affine=True)
+                    (2): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=1152, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 768, eps=1e-05, affine=True)
+                    (2): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=1152, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (1): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(768, 384, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 384, eps=1e-05, affine=True)
+                    (2): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(1,), groups=576, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 384, eps=1e-05, affine=True)
+                    (2): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=576, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 384, eps=1e-05, affine=True)
+                    (2): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=576, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (2): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(384, 192, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 192, eps=1e-05, affine=True)
+                    (2): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(1,), groups=288, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 192, eps=1e-05, affine=True)
+                    (2): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=288, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 192, eps=1e-05, affine=True)
+                    (2): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=288, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (3): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(192, 96, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(1,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (3): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(27,), dilation=(27,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+  (prior): GaussianPrior(
+    (locs): ParameterList(
+        (0): Parameter containing: [torch.float32 of size 128]
+        (1): Parameter containing: [torch.float32 of size 128]
+        (2): Parameter containing: [torch.float32 of size 128]
+    )
+    (scale): ParameterList(
+        (0): Parameter containing: [torch.float32 of size 128]
+        (1): Parameter containing: [torch.float32 of size 128]
+        (2): Parameter containing: [torch.float32 of size 128]
+    )
+  )
+  (slicer): MPSSlicer(
+    (locations): ParameterList(
+        (0): Parameter containing: [torch.float32 of size 128]
+        (1): Parameter containing: [torch.float32 of size 128]
+        (2): Parameter containing: [torch.float32 of size 128]
+    )
+    (scales): ParameterList(
+        (0): Parameter containing: [torch.float32 of size ]
+        (1): Parameter containing: [torch.float32 of size ]
+        (2): Parameter containing: [torch.float32 of size ]
+    )
+  )
+  (distance): AudioDistanceV1(
+    (multiscale_stft): MultiScaleSTFT(
+      (stfts): ModuleList(
+        (0-4): 5 x Spectrogram()
+      )
+      (mel_scales): ModuleList(
+        (0-4): 5 x MelScale()
+      )
+    )
+  )
+)
+31108448
+Learning rate: 0.00015
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(10., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(5., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(1., device='cuda:0', requires_grad=True)
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+Epoch 1
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:52<00:00,  1.35it/s]
+Train loss: 21.844924368653135, Dist Loss: 15374.756964665248, Recon Loss: 10.922462184326568, FB Loss: 10.641177382020174, Time Loss: 0.4978359012329228
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:00<00:00,  2.44it/s]
+Valid loss: 13.889071890199002, Dist Loss: 15771.946509912026, Recon Loss: 6.944535945099501, FB Loss: 7.256007915867248, Time Loss: 0.1931375488638878
+Validation loss decreased (inf --> 13.889072).  Saving model ...
+tensor([ 0.0782,  0.0651,  0.0966,  ...,  0.0857,  1.1647, -1.3067],
+       device='cuda:0') -8.806732177734375 10.33283805847168
+tensor([-0.0059, -0.0168,  0.0173,  ...,  0.1085,  1.1716, -1.3047],
+       device='cuda:0') -8.932403564453125 10.651081085205078
+tensor([-0.0036, -0.0112,  0.0223,  ...,  0.0863,  1.1504, -1.3021],
+       device='cuda:0') -8.842497825622559 10.309556007385254
+Epoch 2
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:07<00:00,  1.37it/s]
+Train loss: 14.078220023060537, Dist Loss: 12328.622182500683, Recon Loss: 7.039110011530268, FB Loss: 7.703173864228095, Time Loss: 0.15014635100103613
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:51<00:00,  2.49it/s]
+Valid loss: 11.645534548686351, Dist Loss: 12464.05226377003, Recon Loss: 5.8227672743431755, FB Loss: 6.189168715192674, Time Loss: 0.14983112064191795
+Validation loss decreased (13.889072 --> 11.645535).  Saving model ...
+tensor([ 0.0224,  0.0071,  0.0027,  ..., -0.1358,  1.1679, -0.4595],
+       device='cuda:0') -8.906330108642578 10.456734657287598
+tensor([-0.0065, -0.0150, -0.0095,  ..., -0.1328,  1.1581, -0.4862],
+       device='cuda:0') -9.15174388885498 10.682218551635742
+tensor([-0.0124, -0.0216, -0.0173,  ..., -0.1479,  1.1568, -0.4732],
+       device='cuda:0') -8.779447555541992 10.210864067077637
+Epoch 3
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:35<00:00,  1.36it/s]
+Train loss: 12.38416122750216, Dist Loss: 9853.028671804264, Recon Loss: 6.19208061375108, FB Loss: 6.608215054502678, Time Loss: 0.1248061749441323
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:00<00:00,  2.44it/s]
+Valid loss: 10.270468533952963, Dist Loss: 10208.999777278868, Recon Loss: 5.135234266976481, FB Loss: 5.221236098564057, Time Loss: 0.12407236961962011
+Validation loss decreased (11.645535 --> 10.270469).  Saving model ...
+tensor([ 2.7022e-02,  1.6024e-02,  3.3588e-04,  ..., -4.1604e-01,
+         4.6950e-01, -5.6166e-01], device='cuda:0') -8.812191009521484 10.131916046142578
+tensor([-0.0020, -0.0027,  0.0027,  ..., -0.4116,  0.4758, -0.5588],
+       device='cuda:0') -8.889405250549316 10.266430854797363
+tensor([ 0.0043,  0.0032,  0.0081,  ..., -0.4131,  0.4729, -0.5593],
+       device='cuda:0') -8.751666069030762 10.124969482421875
+Epoch 4
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:27<00:00,  1.36it/s]
+Train loss: 11.038262722590755, Dist Loss: 8700.92227137744, Recon Loss: 5.519131361295377, FB Loss: 5.889155327334118, Time Loss: 0.09085262491330853
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:00<00:00,  2.44it/s]
+Valid loss: 9.301805998641344, Dist Loss: 9784.141041536348, Recon Loss: 4.650902999320672, FB Loss: 4.68474084209949, Time Loss: 0.08997803755434551
+Validation loss decreased (10.270469 --> 9.301806).  Saving model ...
+tensor([-0.0095, -0.0135, -0.0226,  ...,  0.1925,  0.6615, -0.1675],
+       device='cuda:0') -7.3613386154174805 7.271198272705078
+tensor([-0.0147, -0.0153, -0.0192,  ...,  0.2075,  0.6759, -0.1512],
+       device='cuda:0') -7.596081733703613 7.687666416168213
+tensor([-0.0143, -0.0152, -0.0194,  ...,  0.2006,  0.6696, -0.1589],
+       device='cuda:0') -7.3495917320251465 7.239926338195801
+Epoch 5
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:52<00:00,  1.35it/s]
+Train loss: 10.085881362430685, Dist Loss: 7858.138356843094, Recon Loss: 5.042940681215343, FB Loss: 5.423894430507128, Time Loss: 0.0643984138279912
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:01<00:00,  2.44it/s]
+Valid loss: 8.77430350289028, Dist Loss: 8850.841387409164, Recon Loss: 4.38715175144514, FB Loss: 4.46874235009416, Time Loss: 0.07000114393675957
+Validation loss decreased (9.301806 --> 8.774304).  Saving model ...
+tensor([ 1.0207e-03,  3.3683e-03, -4.6941e-04,  ...,  3.8021e-01,
+         4.0910e-01, -2.9345e-04], device='cuda:0') -4.023372650146484 5.439756870269775
+tensor([-0.0155, -0.0131, -0.0130,  ...,  0.4101,  0.4430,  0.0339],
+       device='cuda:0') -4.19292688369751 5.676699161529541
+tensor([-0.0121, -0.0100, -0.0101,  ...,  0.4024,  0.4313,  0.0209],
+       device='cuda:0') -3.9841861724853516 5.357320308685303
+Epoch 6
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:13<00:00,  1.37it/s]
+Train loss: 9.554167650687628, Dist Loss: 7364.0538436181, Recon Loss: 4.777083825343814, FB Loss: 5.14544382133939, Time Loss: 0.041354660510034336
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:01<00:00,  2.44it/s]
+Valid loss: 8.412299732536432, Dist Loss: 8599.086471323666, Recon Loss: 4.206149866268216, FB Loss: 4.231439578066084, Time Loss: 0.04319259743055478
+Validation loss decreased (8.774304 --> 8.412300).  Saving model ...
+tensor([ 0.0599,  0.0624,  0.0600,  ...,  0.2671,  0.1501, -0.1854],
+       device='cuda:0') -2.95137619972229 2.680039644241333
+tensor([-3.2020e-03,  1.1938e-04,  2.7641e-04,  ...,  3.0751e-01,
+         1.9425e-01, -1.3928e-01], device='cuda:0') -3.012450933456421 3.0075511932373047
+tensor([-0.0016,  0.0015,  0.0014,  ...,  0.3128,  0.1958, -0.1404],
+       device='cuda:0') -2.9012417793273926 2.6698055267333984
+Epoch 7
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:12<00:00,  1.37it/s]
+Train loss: 9.098759090844549, Dist Loss: 7231.348237995397, Recon Loss: 4.5493795454222745, FB Loss: 4.891082308421401, Time Loss: 0.024908029210337482
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:00<00:00,  2.44it/s]
+Valid loss: 8.349000774412788, Dist Loss: 8634.739794339597, Recon Loss: 4.174500387206394, FB Loss: 4.125306770180113, Time Loss: 0.033198086876664916
+Validation loss decreased (8.412300 --> 8.349001).  Saving model ...
+tensor([ 0.0425,  0.0442,  0.0372,  ...,  0.2036,  0.0783, -0.1209],
+       device='cuda:0') -1.1097009181976318 1.1933679580688477
+tensor([ 0.0125,  0.0164,  0.0121,  ...,  0.1653,  0.0431, -0.1565],
+       device='cuda:0') -1.208034873008728 1.3439610004425049
+tensor([ 0.0112,  0.0149,  0.0104,  ...,  0.2003,  0.0742, -0.1271],
+       device='cuda:0') -0.952942967414856 1.0142403841018677
+Epoch 8
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:35<00:00,  1.36it/s]
+Train loss: 8.883073207008417, Dist Loss: 7036.60205634645, Recon Loss: 4.4415366035042085, FB Loss: 4.769509494380845, Time Loss: 0.020940421720447664
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:01<00:00,  2.44it/s]
+Valid loss: 8.35819585400505, Dist Loss: 8289.61983020789, Recon Loss: 4.179097927002525, FB Loss: 4.0685615570013125, Time Loss: 0.03284365112744145
+EarlyStopping counter: 1 out of 10
+Epoch 9
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:12<00:00,  1.37it/s]
+Train loss: 8.653437218363354, Dist Loss: 6855.378585132783, Recon Loss: 4.326718609181677, FB Loss: 4.626622516498395, Time Loss: 0.019976499950396978
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:58<00:00,  2.46it/s]
+Valid loss: 7.954074866117773, Dist Loss: 8238.232251766796, Recon Loss: 3.9770374330588867, FB Loss: 3.905156913567239, Time Loss: 0.030797404667253097
+Validation loss decreased (8.349001 --> 7.954075).  Saving model ...
+tensor([ 0.0239,  0.0272,  0.0245,  ..., -0.0358, -0.0345, -0.0373],
+       device='cuda:0') -0.3339847922325134 0.34400177001953125
+tensor([0.0029, 0.0060, 0.0032,  ..., 0.0297, 0.0336, 0.0344], device='cuda:0') -1.2317519187927246 1.185457468032837
+tensor([0.0049, 0.0079, 0.0051,  ..., 0.0193, 0.0215, 0.0191], device='cuda:0') -0.3923443853855133 0.40407034754753113
+Epoch 10
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:41<00:00,  1.36it/s]
+Train loss: 8.519232324300342, Dist Loss: 6897.370639536093, Recon Loss: 4.259616162150171, FB Loss: 4.54697351009733, Time Loss: 0.019542972520838996
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:00<00:00,  2.44it/s]
+Valid loss: 7.848589369954202, Dist Loss: 8061.722691186648, Recon Loss: 3.924294684977101, FB Loss: 3.8853002932855585, Time Loss: 0.032724311794340766
+Validation loss decreased (7.954075 --> 7.848589).  Saving model ...
+tensor([ 0.0337,  0.0347,  0.0343,  ..., -0.0294, -0.0287, -0.0276],
+       device='cuda:0') -0.3806737959384918 0.3405262529850006
+tensor([0.0067, 0.0074, 0.0066,  ..., 0.0309, 0.0366, 0.0426], device='cuda:0') -1.2319942712783813 1.2044566869735718
+tensor([0.0088, 0.0094, 0.0085,  ..., 0.0241, 0.0267, 0.0288], device='cuda:0') -0.3869844973087311 0.3961508572101593
+Epoch 11
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:32<00:00,  1.36it/s]
+Train loss: 8.414440399339771, Dist Loss: 6642.231135169648, Recon Loss: 4.2072201996698855, FB Loss: 4.4830098664146005, Time Loss: 0.019461445817769502
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:59<00:00,  2.45it/s]
+Valid loss: 8.075879228176007, Dist Loss: 7841.629981591714, Recon Loss: 4.037939614088003, FB Loss: 3.9081254702004298, Time Loss: 0.02992979961556892
+EarlyStopping counter: 1 out of 10
+Epoch 12
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:19<00:00,  1.36it/s]
+Train loss: 8.310286260027047, Dist Loss: 6685.794475176714, Recon Loss: 4.155143130013523, FB Loss: 4.416906966419488, Time Loss: 0.019297854673832854
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:00<00:00,  2.44it/s]
+Valid loss: 8.169771315495037, Dist Loss: 7674.263881390912, Recon Loss: 4.0848856577475186, FB Loss: 3.8632775073969383, Time Loss: 0.03116936641366473
+EarlyStopping counter: 2 out of 10
+Epoch 13
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:10<00:00,  1.37it/s]
+Train loss: 8.226102531743548, Dist Loss: 6494.858102571726, Recon Loss: 4.113051265871774, FB Loss: 4.368983880072692, Time Loss: 0.01871757686340925
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:58<00:00,  2.45it/s]
+Valid loss: 7.801130279365553, Dist Loss: 7697.665780842406, Recon Loss: 3.9005651396827763, FB Loss: 3.849771730944489, Time Loss: 0.031088905274714113
+Validation loss decreased (7.848589 --> 7.801130).  Saving model ...
+tensor([ 0.0171,  0.0178,  0.0194,  ..., -0.0115, -0.0123, -0.0150],
+       device='cuda:0') -0.38997748494148254 0.3477441370487213
+tensor([0.0029, 0.0023, 0.0022,  ..., 0.0310, 0.0340, 0.0353], device='cuda:0') -1.209504246711731 1.1955293416976929
+tensor([0.0047, 0.0040, 0.0039,  ..., 0.0412, 0.0420, 0.0403], device='cuda:0') -0.3946438133716583 0.4068147540092468
+Epoch 14
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:48<00:00,  1.35it/s]
+Train loss: 8.141911521687323, Dist Loss: 6267.807584212392, Recon Loss: 4.0709557608436615, FB Loss: 4.3206499027708105, Time Loss: 0.018465579233124762
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:20<00:00,  2.67it/s]
+Valid loss: 7.590372706190691, Dist Loss: 7636.025174350511, Recon Loss: 3.7951863530953456, FB Loss: 3.7019956040829167, Time Loss: 0.02896568127898888
+Validation loss decreased (7.801130 --> 7.590373).  Saving model ...
+tensor([0.0313, 0.0305, 0.0318,  ..., 0.0299, 0.0321, 0.0322], device='cuda:0') -0.3263365626335144 0.27659720182418823
+tensor([ 0.0006, -0.0007, -0.0002,  ...,  0.0549,  0.0614,  0.0656],
+       device='cuda:0') -1.235539436340332 1.2416300773620605
+tensor([ 0.0008, -0.0006, -0.0001,  ...,  0.0621,  0.0655,  0.0668],
+       device='cuda:0') -0.382046103477478 0.37405043840408325
+Epoch 15
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [56:47<00:00,  1.38it/s]
+Train loss: 8.06687502288087, Dist Loss: 6239.721252012314, Recon Loss: 4.033437511440435, FB Loss: 4.271231670962733, Time Loss: 0.018295356825043293
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:59<00:00,  2.45it/s]
+Valid loss: 7.558683874253723, Dist Loss: 7278.144412091075, Recon Loss: 3.7793419371268615, FB Loss: 3.7179912267795414, Time Loss: 0.029118458662323696
+Validation loss decreased (7.590373 --> 7.558684).  Saving model ...
+tensor([ 0.0352,  0.0352,  0.0336,  ..., -0.0158, -0.0132, -0.0125],
+       device='cuda:0') -0.3982844650745392 0.325286865234375
+tensor([0.0048, 0.0050, 0.0037,  ..., 0.0160, 0.0227, 0.0284], device='cuda:0') -1.1764439344406128 1.2182081937789917
+tensor([0.0066, 0.0068, 0.0056,  ..., 0.0170, 0.0205, 0.0224], device='cuda:0') -0.3690796494483948 0.37668225169181824
+Epoch 16
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:34<00:00,  1.36it/s]
+Train loss: 8.050876671068202, Dist Loss: 6274.376142270218, Recon Loss: 4.025438335534101, FB Loss: 4.256972064350228, Time Loss: 0.018062900125185362
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:57<00:00,  2.46it/s]
+Valid loss: 7.566609852155591, Dist Loss: 7293.614207903002, Recon Loss: 3.7833049260777956, FB Loss: 3.6758542209102103, Time Loss: 0.02877576513476892
+EarlyStopping counter: 1 out of 10
+Epoch 17
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:02<00:00,  1.37it/s]
+Train loss: 7.962534817320568, Dist Loss: 6068.025896980146, Recon Loss: 3.981267408660284, FB Loss: 4.200913023836927, Time Loss: 0.01775164553301562
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:00<00:00,  2.44it/s]
+Valid loss: 7.59459517639784, Dist Loss: 7194.259608514061, Recon Loss: 3.79729758819892, FB Loss: 3.693407358668326, Time Loss: 0.02917220718263025
+EarlyStopping counter: 2 out of 10
+Epoch 18
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [56:44<00:00,  1.38it/s]
+Train loss: 7.940007840820105, Dist Loss: 6075.360464010739, Recon Loss: 3.9700039204100523, FB Loss: 4.186920722748911, Time Loss: 0.017592821437980573
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:55<00:00,  2.47it/s]
+Valid loss: 7.515553351358417, Dist Loss: 7094.208373399569, Recon Loss: 3.7577766756792084, FB Loss: 3.66087868002448, Time Loss: 0.02733415582902877
+Validation loss decreased (7.558684 --> 7.515553).  Saving model ...
+tensor([ 0.0250,  0.0232,  0.0247,  ..., -0.0130, -0.0134, -0.0097],
+       device='cuda:0') -0.32985714077949524 0.3061121106147766
+tensor([ 0.0020, -0.0001,  0.0013,  ...,  0.0140,  0.0216,  0.0311],
+       device='cuda:0') -1.1483018398284912 1.1919547319412231
+tensor([0.0027, 0.0003, 0.0016,  ..., 0.0113, 0.0111, 0.0164], device='cuda:0') -0.33001992106437683 0.35432204604148865
+Epoch 19
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:20<00:00,  1.36it/s]
+Train loss: 7.846753877429288, Dist Loss: 5994.87886760567, Recon Loss: 3.923376938714644, FB Loss: 4.128473229036465, Time Loss: 0.017395781583020176
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:01<00:00,  2.44it/s]
+Valid loss: 7.42781906192916, Dist Loss: 7062.808992818023, Recon Loss: 3.71390953096458, FB Loss: 3.607181470276347, Time Loss: 0.02790345482819149
+Validation loss decreased (7.515553 --> 7.427819).  Saving model ...
+tensor([0.0183, 0.0209, 0.0220,  ..., 0.0133, 0.0167, 0.0142], device='cuda:0') -0.3632577359676361 0.33722689747810364
+tensor([-0.0068, -0.0051, -0.0052,  ...,  0.0443,  0.0512,  0.0519],
+       device='cuda:0') -1.161014437675476 1.245249629020691
+tensor([-0.0047, -0.0030, -0.0032,  ...,  0.0259,  0.0292,  0.0271],
+       device='cuda:0') -0.34100207686424255 0.3769512474536896
+Epoch 20
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [56:44<00:00,  1.38it/s]
+Train loss: 7.849048418850405, Dist Loss: 5999.249412351332, Recon Loss: 3.9245242094252024, FB Loss: 4.126068242672001, Time Loss: 0.01737615272145231
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:59<00:00,  2.45it/s]
+Valid loss: 7.560154465231823, Dist Loss: 7064.160413699824, Recon Loss: 3.7800772326159113, FB Loss: 3.6698048998184465, Time Loss: 0.02709985768907978
+EarlyStopping counter: 1 out of 10
+Epoch 21
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:22<00:00,  1.36it/s]
+Train loss: 7.805396175201669, Dist Loss: 6026.717649806851, Recon Loss: 3.9026980876008346, FB Loss: 4.1011535504243195, Time Loss: 0.01720168991478634
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:58<00:00,  2.45it/s]
+Valid loss: 7.445926703626903, Dist Loss: 7187.510098978852, Recon Loss: 3.7229633518134513, FB Loss: 3.5997868020855384, Time Loss: 0.02670983627359811
+EarlyStopping counter: 2 out of 10
+Epoch 22
+ 52%|██████████████████████████████████████████████████████████████████████████████████████▍                                                                               | 2445/4694 [30:03<32:44,  1.14it/s]
+ 52%|██████████████████████████████████████████████████████████████████████████████████████▍                                                                               | 2445/4694 [30:04<27:39,  1.35it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line 385, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line 246, in train
+    beginning = peak_norm(apply_augmentations(real_imgs, sample_rate=sample_rate).cuda())
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audiomentations/core/composition.py", line 210, in forward
+    inputs = self.transforms[i](**inputs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audiomentations/core/transforms_interface.py", line 341, in forward
+    perturbed: ObjectDict = self.apply_transform(
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audiomentations/augmentations/pitch_shift.py", line 121, in apply_transform
+    samples[i, ...] = pitch_shift(
+  File "/home/r/.local/lib/python3.10/site-packages/torch_pitch_shift/main.py", line 156, in pitch_shift
+    output = torch.stft(output, n_fft, hop_length, return_complex=v011)[None, ...]
+  File "/usr/local/lib/python3.10/dist-packages/torch/functional.py", line 641, in stft
+    return _VF.stft(input, n_fft, hop_length, win_length, window,  # type: ignore[attr-defined]
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$

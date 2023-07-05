@@ -1,0 +1,1626 @@
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+TrainerAE(
+  (backbone): Orpheus(
+    (pqmf): PQMF()
+    (encoder): Encoder(
+      (stages): ModuleList(
+        (0): EncoderStage(
+          (expand): Conv1d(16, 96, kernel_size=(7,), stride=(1,), padding=(3,), bias=False)
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(1,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (3): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(27,), dilation=(27,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (1): EncoderStage(
+          (downscale): EBlock_DOWN(
+            (act): Snake()
+            (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+            (dw): Conv1d(96, 192, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+          )
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+                  (pw1): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(1,), groups=288, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+                  (pw1): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=288, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+                  (pw1): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=288, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (2): EncoderStage(
+          (downscale): EBlock_DOWN(
+            (act): Snake()
+            (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+            (dw): Conv1d(192, 384, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+          )
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+                  (pw1): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(1,), groups=576, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+                  (pw1): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=576, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+                  (pw1): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=576, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (3): EncoderStage(
+          (downscale): EBlock_DOWN(
+            (act): Snake()
+            (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+            (dw): Conv1d(384, 768, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+          )
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 768, eps=1e-05, affine=True)
+                  (pw1): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(1,), groups=1152, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 768, eps=1e-05, affine=True)
+                  (pw1): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=1152, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 768, eps=1e-05, affine=True)
+                  (pw1): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=1152, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+      )
+      (final_block): EncoderFinalBlock(
+        (norm): Sequential(
+          (0): Snake()
+          (1): GroupNorm(8, 768, eps=1e-05, affine=True)
+        )
+        (down): Conv1d(768, 1536, kernel_size=(4,), stride=(2,), padding=(1,))
+        (act): Snake()
+        (to_latent): Conv1d(1536, 128, kernel_size=(3,), stride=(1,), padding=(1,))
+      )
+    )
+    (decoder): Decoder(
+      (from_latent): Conv1d(128, 1536, kernel_size=(3,), stride=(1,), padding=(1,))
+      (final_conv): Sequential(
+        (0): Snake()
+        (1): Conv1d(96, 16, kernel_size=(7,), stride=(1,), padding=(3,))
+        (2): Tanh()
+      )
+      (conv): Sequential(
+        (0): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(1536, 768, kernel_size=(4,), stride=(2,), padding=(1,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 768, eps=1e-05, affine=True)
+                    (2): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(1,), groups=1152, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 768, eps=1e-05, affine=True)
+                    (2): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=1152, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 768, eps=1e-05, affine=True)
+                    (2): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=1152, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (1): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(768, 384, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 384, eps=1e-05, affine=True)
+                    (2): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(1,), groups=576, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 384, eps=1e-05, affine=True)
+                    (2): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=576, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 384, eps=1e-05, affine=True)
+                    (2): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=576, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (2): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(384, 192, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 192, eps=1e-05, affine=True)
+                    (2): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(1,), groups=288, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 192, eps=1e-05, affine=True)
+                    (2): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=288, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 192, eps=1e-05, affine=True)
+                    (2): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=288, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (3): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(192, 96, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(1,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (3): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(27,), dilation=(27,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+  (prior): GaussianPrior(
+    (locs): ParameterList(
+        (0): Parameter containing: [torch.float32 of size 128]
+        (1): Parameter containing: [torch.float32 of size 128]
+        (2): Parameter containing: [torch.float32 of size 128]
+    )
+    (scale): ParameterList(
+        (0): Parameter containing: [torch.float32 of size 128]
+        (1): Parameter containing: [torch.float32 of size 128]
+        (2): Parameter containing: [torch.float32 of size 128]
+    )
+  )
+  (slicer): MPSSlicer(
+    (locations): ParameterList(
+        (0): Parameter containing: [torch.float32 of size 128]
+        (1): Parameter containing: [torch.float32 of size 128]
+        (2): Parameter containing: [torch.float32 of size 128]
+    )
+    (scales): ParameterList(
+        (0): Parameter containing: [torch.float32 of size ]
+        (1): Parameter containing: [torch.float32 of size ]
+        (2): Parameter containing: [torch.float32 of size ]
+    )
+  )
+  (distance): AudioDistanceV1(
+    (multiscale_stft): MultiScaleSTFT(
+      (stfts): ModuleList(
+        (0-4): 5 x Spectrogram()
+      )
+      (mel_scales): ModuleList(
+        (0-4): 5 x MelScale()
+      )
+    )
+  )
+)
+31109984
+Learning rate: 0.00015
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(5., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(1., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(50., device='cuda:0', requires_grad=True)
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+Epoch 1
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [55:00<00:00,  1.42it/s]
+Train loss: 23.457474818674616, Dist Loss: 17857.097777176066, Recon Loss: 11.728737409337308, FB Loss: 10.929636215625237, Time Loss: 0.5378493725758285
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:27<00:00,  2.62it/s]
+Valid loss: 17.526838817628928, Dist Loss: 18146.76700374987, Recon Loss: 8.763419408814464, FB Loss: 7.724585950273062, Time Loss: 0.43622192034729496
+Validation loss decreased (inf --> 17.526839).  Saving model ...
+tensor([ 0.1093,  0.1159,  0.1296,  ..., -0.5131, -2.8343, -2.4363],
+       device='cuda:0') -8.775128364562988 8.47159481048584
+tensor([ 0.0227,  0.0321,  0.0452,  ..., -0.7065, -2.9622, -2.4968],
+       device='cuda:0') -9.03787612915039 8.476008415222168
+tensor([ 0.0138,  0.0236,  0.0385,  ..., -0.5179, -2.8373, -2.4372],
+       device='cuda:0') -8.864895820617676 8.496036529541016
+Epoch 2
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [56:11<00:00,  1.39it/s]
+Train loss: 16.3415033487142, Dist Loss: 15674.19364450046, Recon Loss: 8.1707516743571, FB Loss: 8.342962052398507, Time Loss: 0.2752216307690004
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:40<00:00,  2.55it/s]
+Valid loss: 13.277111825991733, Dist Loss: 15273.065183883225, Recon Loss: 6.638555912995867, FB Loss: 6.66490690346674, Time Loss: 0.24302075629390688
+Validation loss decreased (17.526839 --> 13.277112).  Saving model ...
+tensor([ 0.0639,  0.0530,  0.0586,  ...,  0.2617, -1.2220, -0.4247],
+       device='cuda:0') -8.583280563354492 7.223260879516602
+tensor([ 0.0111,  0.0029,  0.0035,  ...,  0.2604, -1.2222, -0.4248],
+       device='cuda:0') -8.85554313659668 7.22454833984375
+tensor([-0.0042, -0.0119, -0.0104,  ...,  0.2621, -1.2210, -0.4239],
+       device='cuda:0') -8.500207901000977 7.224947452545166
+Epoch 3
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [56:41<00:00,  1.38it/s]
+Train loss: 13.567127993120048, Dist Loss: 12263.596112609264, Recon Loss: 6.783563996560024, FB Loss: 7.2401259235996465, Time Loss: 0.20839477730434805
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:42<00:00,  2.54it/s]
+Valid loss: 12.049646376751147, Dist Loss: 12028.792141292124, Recon Loss: 6.024823188375573, FB Loss: 6.045505637813873, Time Loss: 0.21843282643585027
+Validation loss decreased (13.277112 --> 12.049646).  Saving model ...
+tensor([ 7.4998e-03,  8.0138e-04, -5.2719e-03,  ...,  1.7129e-01,
+        -1.2639e+00, -5.0006e-01], device='cuda:0') -8.315828323364258 6.617687225341797
+tensor([ 5.1270e-03, -7.5173e-04, -5.9776e-03,  ...,  1.7117e-01,
+        -1.2642e+00, -5.0013e-01], device='cuda:0') -8.59515380859375 6.713034152984619
+tensor([ 6.2523e-03,  9.1673e-04, -3.3635e-03,  ...,  1.7117e-01,
+        -1.2640e+00, -5.0010e-01], device='cuda:0') -8.297663688659668 6.613178253173828
+Epoch 4
+ 15%|████████████████████████▌                                                                                                                                            | 698/4694 [08:22<1:07:17,  1.01s/it]
+ 15%|████████████████████████▊                                                                                                                                              | 698/4694 [08:23<48:02,  1.39it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line 385, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line 246, in train
+    beginning = peak_norm(apply_augmentations(real_imgs, sample_rate=sample_rate).cuda())
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audiomentations/core/composition.py", line 210, in forward
+    inputs = self.transforms[i](**inputs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audiomentations/core/transforms_interface.py", line 341, in forward
+    perturbed: ObjectDict = self.apply_transform(
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audiomentations/augmentations/pitch_shift.py", line 121, in apply_transform
+    samples[i, ...] = pitch_shift(
+  File "/home/r/.local/lib/python3.10/site-packages/torch_pitch_shift/main.py", line 156, in pitch_shift
+    output = torch.stft(output, n_fft, hop_length, return_complex=v011)[None, ...]
+  File "/usr/local/lib/python3.10/dist-packages/torch/functional.py", line 641, in stft
+    return _VF.stft(input, n_fft, hop_length, win_length, window,  # type: ignore[attr-defined]
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+TrainerAE(
+  (backbone): Orpheus(
+    (pqmf): PQMF()
+    (encoder): Encoder(
+      (stages): ModuleList(
+        (0): EncoderStage(
+          (expand): Conv1d(16, 96, kernel_size=(7,), stride=(1,), padding=(3,), bias=False)
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(1,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (3): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(27,), dilation=(27,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (1): EncoderStage(
+          (downscale): EBlock_DOWN(
+            (act): Snake()
+            (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+            (dw): Conv1d(96, 192, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+          )
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+                  (pw1): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(1,), groups=288, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+                  (pw1): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=288, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+                  (pw1): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=288, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (2): EncoderStage(
+          (downscale): EBlock_DOWN(
+            (act): Snake()
+            (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+            (dw): Conv1d(192, 384, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+          )
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+                  (pw1): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(1,), groups=576, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+                  (pw1): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=576, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+                  (pw1): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=576, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (3): EncoderStage(
+          (downscale): EBlock_DOWN(
+            (act): Snake()
+            (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+            (dw): Conv1d(384, 768, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+          )
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 768, eps=1e-05, affine=True)
+                  (pw1): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(1,), groups=1152, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 768, eps=1e-05, affine=True)
+                  (pw1): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=1152, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 768, eps=1e-05, affine=True)
+                  (pw1): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=1152, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+      )
+      (final_block): EncoderFinalBlock(
+        (norm): Sequential(
+          (0): Snake()
+          (1): GroupNorm(8, 768, eps=1e-05, affine=True)
+        )
+        (down): Conv1d(768, 1536, kernel_size=(4,), stride=(2,), padding=(1,))
+        (act): ELU(alpha=1.0)
+        (to_latent): Conv1d(1536, 128, kernel_size=(3,), stride=(1,), padding=(1,))
+      )
+    )
+    (decoder): Decoder(
+      (from_latent): Conv1d(128, 1536, kernel_size=(3,), stride=(1,), padding=(1,))
+      (final_conv): Sequential(
+        (0): Snake()
+        (1): Conv1d(96, 16, kernel_size=(7,), stride=(1,), padding=(3,))
+        (2): Tanh()
+      )
+      (conv): Sequential(
+        (0): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(1536, 768, kernel_size=(4,), stride=(2,), padding=(1,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 768, eps=1e-05, affine=True)
+                    (2): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(1,), groups=1152, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 768, eps=1e-05, affine=True)
+                    (2): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=1152, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 768, eps=1e-05, affine=True)
+                    (2): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=1152, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (1): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(768, 384, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 384, eps=1e-05, affine=True)
+                    (2): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(1,), groups=576, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 384, eps=1e-05, affine=True)
+                    (2): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=576, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 384, eps=1e-05, affine=True)
+                    (2): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=576, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (2): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(384, 192, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 192, eps=1e-05, affine=True)
+                    (2): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(1,), groups=288, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 192, eps=1e-05, affine=True)
+                    (2): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=288, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 192, eps=1e-05, affine=True)
+                    (2): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=288, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (3): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(192, 96, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(1,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (3): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(27,), dilation=(27,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+  (prior): GaussianPrior(
+    (locs): ParameterList(
+        (0): Parameter containing: [torch.float32 of size 128]
+        (1): Parameter containing: [torch.float32 of size 128]
+        (2): Parameter containing: [torch.float32 of size 128]
+    )
+    (scale): ParameterList(
+        (0): Parameter containing: [torch.float32 of size 128]
+        (1): Parameter containing: [torch.float32 of size 128]
+        (2): Parameter containing: [torch.float32 of size 128]
+    )
+  )
+  (slicer): MPSSlicer(
+    (locations): ParameterList(
+        (0): Parameter containing: [torch.float32 of size 128]
+        (1): Parameter containing: [torch.float32 of size 128]
+        (2): Parameter containing: [torch.float32 of size 128]
+    )
+    (scales): ParameterList(
+        (0): Parameter containing: [torch.float32 of size ]
+        (1): Parameter containing: [torch.float32 of size ]
+        (2): Parameter containing: [torch.float32 of size ]
+    )
+  )
+  (distance): AudioDistanceV1(
+    (multiscale_stft): MultiScaleSTFT(
+      (stfts): ModuleList(
+        (0-4): 5 x Spectrogram()
+      )
+      (mel_scales): ModuleList(
+        (0-4): 5 x MelScale()
+      )
+    )
+  )
+)
+31108448
+Learning rate: 0.00015
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(10., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(100., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(1., device='cuda:0', requires_grad=True)
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+Epoch 1
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:32<00:00,  1.36it/s]
+Train loss: 23.09932213902321, Dist Loss: 19897.300126116785, Recon Loss: 11.549661069511606, FB Loss: 10.859041669493692, Time Loss: 0.4013010703589137
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:05<00:00,  2.42it/s]
+Valid loss: 15.838663435063532, Dist Loss: 19694.14360210152, Recon Loss: 7.919331717531766, FB Loss: 7.271261395140848, Time Loss: 0.3677624675875222
+Validation loss decreased (inf --> 15.838663).  Saving model ...
+tensor([-2.7727, -4.4831, -0.4986,  ..., -0.0678, -0.0604, -0.0534],
+       device='cuda:0') -9.283285140991211 9.745518684387207
+tensor([-2.7456, -4.5191, -0.4668,  ..., -0.0645, -0.0545, -0.0398],
+       device='cuda:0') -9.322760581970215 9.730365753173828
+tensor([-2.7113, -4.5343, -0.4174,  ..., -0.0635, -0.0553, -0.0444],
+       device='cuda:0') -9.33247184753418 9.732177734375
+Epoch 2
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [57:14<00:00,  1.37it/s]
+Train loss: 14.952903700423434, Dist Loss: 16857.858716121977, Recon Loss: 7.476451850211717, FB Loss: 8.262838371875796, Time Loss: 0.2904224408227787
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:02<00:00,  2.43it/s]
+Valid loss: 12.161635952060836, Dist Loss: 17059.80272938405, Recon Loss: 6.080817976030418, FB Loss: 6.410640552056099, Time Loss: 0.32981446475501364
+Validation loss decreased (15.838663 --> 12.161636).  Saving model ...
+tensor([-2.4156, -3.0563,  0.1334,  ..., -0.0137, -0.0103, -0.0110],
+       device='cuda:0') -8.44982624053955 8.99283218383789
+tensor([-2.4408, -3.0832,  0.1436,  ..., -0.0454, -0.0399, -0.0399],
+       device='cuda:0') -8.605294227600098 9.007954597473145
+tensor([-2.4110, -3.0596,  0.1234,  ..., -0.0394, -0.0339, -0.0309],
+       device='cuda:0') -8.48149299621582 9.001752853393555
+Epoch 3
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [58:16<00:00,  1.34it/s]
+Train loss: 12.897204446650385, Dist Loss: 14545.125134761049, Recon Loss: 6.448602223325192, FB Loss: 7.235485893846016, Time Loss: 0.24455963422770088
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [08:01<00:00,  2.44it/s]
+Valid loss: 11.289926244615494, Dist Loss: 15313.471237156622, Recon Loss: 5.644963122307747, FB Loss: 5.986066234172711, Time Loss: 0.27678113279696015
+Validation loss decreased (12.161636 --> 11.289926).  Saving model ...
+tensor([-2.2571, -2.3682, -0.2101,  ...,  0.0115,  0.0165,  0.0162],
+       device='cuda:0') -7.478586673736572 7.858164310455322
+tensor([-2.2529, -2.3774, -0.2307,  ..., -0.0148, -0.0065, -0.0106],
+       device='cuda:0') -7.490999698638916 8.25081729888916
+tensor([-2.2595, -2.3769, -0.2204,  ..., -0.0268, -0.0189, -0.0175],
+       device='cuda:0') -7.480607509613037 7.902951717376709
+Epoch 4
+ 14%|███████████████████████▊                                                                                                                                               | 669/4694 [08:08<50:47,  1.32it/s]
+ 14%|███████████████████████▊                                                                                                                                               | 669/4694 [08:08<49:00,  1.37it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line 385, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line 246, in train
+    beginning = peak_norm(apply_augmentations(real_imgs, sample_rate=sample_rate).cuda())
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audiomentations/core/composition.py", line 210, in forward
+    inputs = self.transforms[i](**inputs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audiomentations/core/transforms_interface.py", line 341, in forward
+    perturbed: ObjectDict = self.apply_transform(
+  File "/home/r/.local/lib/python3.10/site-packages/torch_audiomentations/augmentations/pitch_shift.py", line 121, in apply_transform
+    samples[i, ...] = pitch_shift(
+  File "/home/r/.local/lib/python3.10/site-packages/torch_pitch_shift/main.py", line 160, in pitch_shift
+    output = stretcher(output)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torchaudio/transforms/_transforms.py", line 1110, in forward
+    return F.phase_vocoder(complex_specgrams, rate, self.phase_advance)
+  File "/usr/local/lib/python3.10/dist-packages/torchaudio/functional/functional.py", line 772, in phase_vocoder
+    complex_specgrams = torch.nn.functional.pad(complex_specgrams, [0, 2])
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$ python3 train.py
+TrainerAE(
+  (backbone): Orpheus(
+    (pqmf): PQMF()
+    (encoder): Encoder(
+      (stages): ModuleList(
+        (0): EncoderStage(
+          (expand): Conv1d(16, 96, kernel_size=(7,), stride=(1,), padding=(3,), bias=False)
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(1,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (3): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+                  (pw1): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(27,), dilation=(27,), groups=144, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (1): EncoderStage(
+          (downscale): EBlock_DOWN(
+            (act): Snake()
+            (norm): GroupNorm(4, 96, eps=1e-05, affine=True)
+            (dw): Conv1d(96, 192, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+          )
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+                  (pw1): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(1,), groups=288, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+                  (pw1): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=288, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+                  (pw1): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=288, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (2): EncoderStage(
+          (downscale): EBlock_DOWN(
+            (act): Snake()
+            (norm): GroupNorm(4, 192, eps=1e-05, affine=True)
+            (dw): Conv1d(192, 384, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+          )
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+                  (pw1): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(1,), groups=576, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+                  (pw1): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=576, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+                  (pw1): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=576, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (3): EncoderStage(
+          (downscale): EBlock_DOWN(
+            (act): Snake()
+            (norm): GroupNorm(4, 384, eps=1e-05, affine=True)
+            (dw): Conv1d(384, 768, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+          )
+          (blocks): ModuleList(
+            (0): EncoderBlock(
+              (conv): ModuleList(
+                (0): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 768, eps=1e-05, affine=True)
+                  (pw1): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(1,), groups=1152, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 768, eps=1e-05, affine=True)
+                  (pw1): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=1152, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): EBlock_DS(
+                  (act1): Snake()
+                  (act2): ELU(alpha=1.0)
+                  (act3): Snake()
+                  (norm): GroupNorm(4, 768, eps=1e-05, affine=True)
+                  (pw1): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                  (dw): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=1152, bias=False)
+                  (grn): GRN()
+                  (pw2): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+      )
+      (final_block): EncoderFinalBlock(
+        (norm): Sequential(
+          (0): Snake()
+          (1): GroupNorm(8, 768, eps=1e-05, affine=True)
+        )
+        (down): Conv1d(768, 1536, kernel_size=(4,), stride=(2,), padding=(1,))
+        (act): LeakyReLU(negative_slope=0.2)
+        (to_latent): Conv1d(1536, 128, kernel_size=(3,), stride=(1,), padding=(1,))
+      )
+    )
+    (decoder): Decoder(
+      (from_latent): Conv1d(128, 1536, kernel_size=(3,), stride=(1,), padding=(1,))
+      (final_conv): Sequential(
+        (0): Snake()
+        (1): Conv1d(96, 16, kernel_size=(7,), stride=(1,), padding=(3,))
+        (2): Tanh()
+      )
+      (conv): Sequential(
+        (0): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(1536, 768, kernel_size=(4,), stride=(2,), padding=(1,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 768, eps=1e-05, affine=True)
+                    (2): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(1,), groups=1152, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 768, eps=1e-05, affine=True)
+                    (2): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=1152, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 768, eps=1e-05, affine=True)
+                    (2): Conv1d(768, 1152, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(1152, 1152, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=1152, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(1152, 768, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (1): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(768, 384, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 384, eps=1e-05, affine=True)
+                    (2): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(1,), groups=576, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 384, eps=1e-05, affine=True)
+                    (2): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=576, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 384, eps=1e-05, affine=True)
+                    (2): Conv1d(384, 576, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(576, 576, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=576, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(576, 384, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (2): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(384, 192, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 192, eps=1e-05, affine=True)
+                    (2): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(1,), groups=288, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 192, eps=1e-05, affine=True)
+                    (2): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=288, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 192, eps=1e-05, affine=True)
+                    (2): Conv1d(192, 288, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(288, 288, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=288, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(288, 192, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+        (3): DecoderStage(
+          (blocks): Sequential(
+            (0): Sequential(
+              (0): Snake()
+              (1): ConvTranspose1d(192, 96, kernel_size=(8,), stride=(4,), padding=(2,), bias=False)
+            )
+            (1): DecoderBlock(
+              (conv): Sequential(
+                (0): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(1,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (1): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(3,), dilation=(3,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (2): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(9,), dilation=(9,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+                (3): DBlock_DS(
+                  (net): Sequential(
+                    (0): Snake()
+                    (1): GroupNorm(4, 96, eps=1e-05, affine=True)
+                    (2): Conv1d(96, 144, kernel_size=(1,), stride=(1,), bias=False)
+                    (3): ELU(alpha=1.0)
+                    (4): Conv1d(144, 144, kernel_size=(3,), stride=(1,), padding=(27,), dilation=(27,), groups=144, bias=False)
+                    (5): Snake()
+                    (6): GRN()
+                    (7): Conv1d(144, 96, kernel_size=(1,), stride=(1,), bias=False)
+                  )
+                  (drop_path): DropPath(drop_prob=0.050)
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+  (prior): GaussianPrior(
+    (locs): ParameterList(
+        (0): Parameter containing: [torch.float32 of size 128]
+        (1): Parameter containing: [torch.float32 of size 128]
+        (2): Parameter containing: [torch.float32 of size 128]
+    )
+    (scale): ParameterList(
+        (0): Parameter containing: [torch.float32 of size 128]
+        (1): Parameter containing: [torch.float32 of size 128]
+        (2): Parameter containing: [torch.float32 of size 128]
+    )
+  )
+  (slicer): MPSSlicer(
+    (locations): ParameterList(
+        (0): Parameter containing: [torch.float32 of size 128]
+        (1): Parameter containing: [torch.float32 of size 128]
+        (2): Parameter containing: [torch.float32 of size 128]
+    )
+    (scales): ParameterList(
+        (0): Parameter containing: [torch.float32 of size ]
+        (1): Parameter containing: [torch.float32 of size ]
+        (2): Parameter containing: [torch.float32 of size ]
+    )
+  )
+  (distance): AudioDistanceV1(
+    (multiscale_stft): MultiScaleSTFT(
+      (stfts): ModuleList(
+        (0-4): 5 x Spectrogram()
+      )
+      (mel_scales): ModuleList(
+        (0-4): 5 x MelScale()
+      )
+    )
+  )
+)
+31108448
+Learning rate: 0.00015
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(100., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(100., device='cuda:0', requires_grad=True)
+tensor(1., device='cuda:0') Parameter containing:
+tensor(50., device='cuda:0', requires_grad=True)
+Parameter containing:
+tensor([1., 1., 1.], device='cuda:0', requires_grad=True)
+Epoch 1
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [53:58<00:00,  1.45it/s]
+Train loss: 22.648969400574106, Dist Loss: 18377.43219631278, Recon Loss: 11.324484700287053, FB Loss: 10.612075579943532, Time Loss: 0.5201548607928681
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:08<00:00,  2.74it/s]
+Valid loss: 14.86129903874568, Dist Loss: 18597.05833879565, Recon Loss: 7.43064951937284, FB Loss: 7.135991511190567, Time Loss: 0.33055769228193993
+Validation loss decreased (inf --> 14.861299).  Saving model ...
+tensor([ 0.1160,  0.1097,  0.1085,  ..., -2.6380,  0.3757,  1.7403],
+       device='cuda:0') -9.010140419006348 6.496634483337402
+tensor([-2.7010e-03, -1.6298e-02, -1.5815e-02,  ..., -2.7525e+00,
+         2.9929e-01,  1.7476e+00], device='cuda:0') -9.0090970993042 6.543756008148193
+tensor([ 0.0043, -0.0090, -0.0087,  ..., -2.6639,  0.3676,  1.7373],
+       device='cuda:0') -9.006753921508789 6.512726306915283
+Epoch 2
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [56:38<00:00,  1.38it/s]
+Train loss: 15.178779079703814, Dist Loss: 15317.543002141198, Recon Loss: 7.589389539851907, FB Loss: 7.608804068262647, Time Loss: 0.24438768180827664
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:59<00:00,  2.45it/s]
+Valid loss: 12.80463466530561, Dist Loss: 14686.021985549536, Recon Loss: 6.402317332652805, FB Loss: 6.033002800592166, Time Loss: 0.3146095448689221
+Validation loss decreased (14.861299 --> 12.804635).  Saving model ...
+tensor([-0.0233, -0.0158, -0.0120,  ..., -2.6900,  0.0485,  1.6211],
+       device='cuda:0') -8.182466506958008 6.239062309265137
+tensor([ 0.0183,  0.0179,  0.0197,  ..., -2.6826,  0.0980,  1.6381],
+       device='cuda:0') -8.539474487304688 6.721478462219238
+tensor([ 0.0183,  0.0183,  0.0202,  ..., -2.7137,  0.0549,  1.6208],
+       device='cuda:0') -8.370555877685547 6.401924133300781
+Epoch 3
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4694/4694 [55:29<00:00,  1.41it/s]
+Train loss: 13.508173535821994, Dist Loss: 12730.603081955522, Recon Loss: 6.754086767910997, FB Loss: 6.6798140330166325, Time Loss: 0.2287429271446018
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1174/1174 [07:33<00:00,  2.59it/s]
+Valid loss: 12.218655648792014, Dist Loss: 12996.359101121632, Recon Loss: 6.109327824396007, FB Loss: 5.742653959654462, Time Loss: 0.28976754610644084
+Validation loss decreased (12.804635 --> 12.218656).  Saving model ...
+tensor([-2.1967e-04,  4.6589e-03,  1.0768e-02,  ..., -1.9428e+00,
+         2.2732e-01,  1.8863e+00], device='cuda:0') -7.453339099884033 5.4747700691223145
+tensor([ 0.0690,  0.0696,  0.0750,  ..., -2.0373,  0.1565,  1.8335],
+       device='cuda:0') -7.734591960906982 5.89790153503418
+tensor([ 0.0647,  0.0652,  0.0708,  ..., -1.9588,  0.2109,  1.8764],
+       device='cuda:0') -7.550928592681885 5.600491046905518
+Epoch 4
+  1%|█▌                                                                                                                                                                      | 44/4694 [00:35<33:03,  2.34it/s]
+  1%|█▌                                                                                                                                                                    | 44/4694 [00:35<1:03:12,  1.23it/s]
+Traceback (most recent call last):
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line 385, in <module>
+    train(trainer, train_dl, val_dl, lr=training_params["learning_rate"],
+  File "/home/r/Documents/Projects/orpheus/orpheus/train.py", line 294, in train
+    scaler.step(opt)
+  File "/usr/local/lib/python3.10/dist-packages/torch/cuda/amp/grad_scaler.py", line 374, in step
+    retval = self._maybe_opt_step(optimizer, optimizer_state, *args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/cuda/amp/grad_scaler.py", line 289, in _maybe_opt_step
+    if not sum(v.item() for v in optimizer_state["found_inf_per_device"].values()):
+  File "/usr/local/lib/python3.10/dist-packages/torch/cuda/amp/grad_scaler.py", line 289, in <genexpr>
+    if not sum(v.item() for v in optimizer_state["found_inf_per_device"].values()):
+KeyboardInterrupt
+
+r@Azumith:~/Documents/Projects/orpheus/orpheus$

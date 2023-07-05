@@ -58,16 +58,13 @@ class DBlock_DS(nn.Module):
         padding = (kernel_size - 1) * dilation // 2
 
         self.net = nn.Sequential(
-            # Snake(channels),
-            nn.LeakyReLU(0.2),
+            Snake(channels),
             nn.GroupNorm(num_groups, channels),
             nn.Conv1d(channels, hidden_channels, kernel_size=1, bias=bias),
-            # Snake(hidden_channels),
-            nn.LeakyReLU(0.2),
+            nn.ELU(),
             DynamicConv1d(hidden_channels, hidden_channels, kernel_size=kernel_size, padding=padding, dilation=dilation, groups=hidden_channels) if dynamic else 
             nn.Conv1d(hidden_channels, hidden_channels, kernel_size=kernel_size, padding=padding, dilation=dilation, groups=hidden_channels, bias=bias),
-            # Snake(hidden_channels),
-            nn.LeakyReLU(0.2),
+            Snake(hidden_channels),
             GRN(hidden_channels),
             nn.Conv1d(hidden_channels, channels, kernel_size=1, bias=bias)
         )

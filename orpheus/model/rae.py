@@ -104,7 +104,7 @@ class Orpheus(nn.Module):
         z = self.encode(x)
         expected, _ = self.decode(z)
 
-        return expected
+        return expected, z
 
     def expand_dml(self, logits):
         B, _, L = logits.size()

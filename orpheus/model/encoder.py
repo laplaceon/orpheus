@@ -65,15 +65,16 @@ class EncoderFinalBlock(nn.Module):
         super().__init__()
 
         self.norm = nn.Sequential(
-            # Snake(dim),
-            nn.LeakyReLU(0.2),
+            Snake(dim),
+            # nn.LeakyReLU(0.2),
             nn.GroupNorm(8, dim)
         )
 
         self.down = nn.Conv1d(dim, dim * 2, kernel_size=4, stride=2, padding=1)
         
         # self.act = Snake(dim * 2)
-        self.act = nn.LeakyReLU(0.2)
+        self.act = nn.ELU()
+        # self.act = nn.LeakyReLU(0.2)
         self.to_latent = weight_norm(nn.Conv1d(dim * 2, latent_dim, kernel_size=3, padding=1))
 
         self.final_scale = final_scale
@@ -174,7 +175,7 @@ class EncoderBlock(nn.Module):
                     dilation = dilation,
                     bias = False,
                     expansion_factor = ds_expansion_factor,
-                    dynamic = True,
+                    dynamic = False,
                     drop_path = drop_path
                 ) if ds else
 

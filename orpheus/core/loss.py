@@ -59,7 +59,7 @@ class MultiScaleSTFT(nn.Module):
                  sample_rate: int,
                  magnitude: bool = True,
                  normalized: bool = False,
-                 num_mels: Optional[int] = None) -> None:
+                 num_mels: Optional[Sequence[int]] = None) -> None:
         super().__init__()
         self.scales = scales
         self.magnitude = magnitude
@@ -67,7 +67,7 @@ class MultiScaleSTFT(nn.Module):
 
         self.stfts = []
         self.mel_scales = []
-        for scale in scales:
+        for i, scale in enumerate(scales):
             self.stfts.append(
                 torchaudio.transforms.Spectrogram(
                     n_fft=scale,
@@ -81,7 +81,7 @@ class MultiScaleSTFT(nn.Module):
                     MelScale(
                         sample_rate=sample_rate,
                         n_fft=scale,
-                        n_mels=num_mels,
+                        n_mels=num_mels[i],
                     ))
             else:
                 self.mel_scales.append(None)
