@@ -55,7 +55,7 @@ class TrainerAE(nn.Module):
 
     def forward_nm(self, x):
         x_subbands = self.backbone.decompose(x)
-        y_subbands = self.backbone.forward_nm(x_subbands)
+        y_subbands, _ = self.backbone.forward_nm(x_subbands)
 
         y = self.backbone.recompose(y_subbands)
 

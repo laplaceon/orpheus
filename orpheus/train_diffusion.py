@@ -27,25 +27,30 @@ from early import EarlyStopping
 from tqdm import tqdm
 from enum import Enum
 
-from torch_audiomentations import SomeOf, Gain, PolarityInversion, PeakNormalization, Compose
+from torch_audiomentations import SomeOf, Gain, PolarityInversion, PeakNormalization, HighPassFilter, LowPassFilter, BandPassFilter, OneOf, PitchShift
 
 sequence_length = 131072 * 8
 sample_rate = 44100
 NUM_GENRES = 8
 
 
-# apply_augmentations = Compose(
-#     transforms=[
-#         SomeOf(
-#             num_transforms = (0, None),
-#             transforms = [
-#                 PolarityInversion(),
-#                 Gain()
-#             ]
-#         ),
-#         PeakNormalization(apply_to="only_too_loud_sounds", p=1., sample_rate=sample_rate)
-#     ]
-# ).cuda()
+apply_augmentations = SomeOf(
+    num_transforms = (1, 3),
+    transforms = [
+        PolarityInversion(),
+        PitchShift(sample_rate=sample_rate),
+        Gain(),
+        OneOf(
+            transforms = [
+                HighPassFilter(),
+                LowPassFilter(),
+                # BandPassFilter()
+            ]
+        )
+    ]
+)
+
+peak_norm = PeakNormalization(apply_to="only_too_loud_sounds", p=1., sample_rate=sample_rate).cuda()
 
 class Genre(Enum):
     CLASSICAL = 0
@@ -136,7 +141,7 @@ def eval(model, encoder, val_dl, cfg_rate, genre_embedder=None):
         return valid_loss/nb
 
 def train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=1e-4, cfg_rate=0., mixed_precision=False, checkpoint=None, save_path=None):
-    opt = AdamW(list(model.parameters()) + list(genre_embedder.parameters()), lr)
+    opt = AdamW(list(model.parameters()) + list(genre_embedder.parameters()), lr, betas=(0.5, 0.99))
     scaler = GradScaler(enabled=mixed_precision)
 
     val_loss_min = None
@@ -166,8 +171,8 @@ def train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=1e-4, c
                 genres = genre_embedder(genres)
 
             with torch.no_grad():
-                encoded_wave = encoder(audio_wave.cuda())
-                # encoded_wave = encoder(apply_augmentations(audio_wave.cuda(), sample_rate))
+                # encoded_wave = encoder(audio_wave.cuda())
+                encoded_wave = encoder(peak_norm(apply_augmentations(audio_wave, sample_rate).cuda()))
 
             with torch.autocast('cuda', dtype=torch.float16, enabled=mixed_precision):
                 loss = model(
@@ -191,7 +196,7 @@ def train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=1e-4, c
 
         valid_loss = eval(model, encoder, val_dl, cfg_rate, genre_embedder)
         if early_stopping(valid_loss):
-            early_stopping.save_checkpoint(valid_loss, [{"model": model.state_dict(), "opt": opt.state_dict()}], [save_path])
+            early_stopping.save_checkpoint(valid_loss, [{"model": model.state_dict(), "opt": opt.state_dict()}, {"model": genre_embedder.state_dict()}], save_path)
             real_eval(model, encoder, upscaler, genre_embedder, epoch)
         
         if early_stopping.early_stop:
@@ -319,7 +324,7 @@ training_params = {
     "dataloader_pin_mem": False,
     "mixed_precision": True,
     "cfg_rate": 0.1,
-    "save_path": "../models/diffuser.pt"
+    "save_path": ["../models/diffuser.pt", "../models/genre_embedder.pt"]
 }
 
 train_ds = AudioFileDataset(X_train, sequence_length, multiplier=training_params["dataset_multiplier"])

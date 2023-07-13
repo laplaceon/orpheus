@@ -132,7 +132,7 @@ def eval(model, val_dl, hparams=None, stage=1):
     d_loss_total = 0
     nb = 0
 
-    r_loss_beta, d_loss_beta, f_loss_beta = 1., 1e-5, 0.2
+    r_loss_beta, d_loss_beta, f_loss_beta = 1., 1e-4, 0.2
     
     model.eval()
     with torch.no_grad():
@@ -175,7 +175,7 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
         disc.cuda()
         model.stage2()
 
-        # betas = (0.5, 0.99)
+        # betas = (0.7, 0.99)
         opt_dis = AdamW(disc.parameters(), lr, betas=betas)
     
     opt = AdamW(model.parameters(), lr, betas=betas)
@@ -259,7 +259,7 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
 
                     r_loss_beta = 1.
                     # d_loss_beta = cyclic_kl(step, total_batch * 1, maxp=1, max_beta=3e-7)
-                    d_loss_beta = 1e-5 if (epoch >= hparams["dist_skip_epochs"] and stage == 1 and not resuming) else 0.
+                    d_loss_beta = 1e-4 if ((stage == 1) and (epoch >= hparams["dist_skip_epochs"] or resuming)) else 0.
 
                     loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
                     # loss = (r_loss_beta * r_loss)
@@ -322,22 +322,24 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
             print("Early stopping")
             break
             
-# model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, enc_drop_path=0.05, dec_drop_path=0.05, fast_recompose=True)
-model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, dec_drop_path=0.025, fast_recompose=True)
+model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, enc_drop_path=0.05, dec_drop_path=0.05, fast_recompose=True)
+# model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, dec_drop_path=0.05, fast_recompose=True)
 # model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, fast_recompose=True)
 
 # print(model)
 
-prior = GaussianPrior(128, 3)
-slicer = MPSSlicer(128, 3, 50)
-disc_scales = [4096, 2048, 1024, 512, 256]
-conv_period = ConvNet(1, 1, (5, 1), (2, 1), nn.Conv2d)
-conv_scale = ConvNet(1, 1, 15, 7, nn.Conv1d)
-discriminator = CombineDiscriminators([
-    MultiPeriodDiscriminator([2, 3, 5, 7, 11], conv_period), 
-    MultiScaleDiscriminator(3, conv_scale), 
-    # MultiScaleSpectralDiscriminator1d(disc_scales)
-])
+K = 3
+prior = GaussianPrior(128, K)
+slicer = MPSSlicer(128, K, 50)
+# disc_scales = [4096, 2048, 1024, 512, 256]
+# conv_period = ConvNet(1, 1, (5, 1), (2, 1), nn.Conv2d)
+# conv_scale = ConvNet(1, 1, 15, 7, nn.Conv1d)
+# discriminator = CombineDiscriminators([
+#     MultiPeriodDiscriminator([2, 3, 5, 7, 11], conv_period), 
+#     MultiScaleDiscriminator(3, conv_scale), 
+#     # MultiScaleSpectralDiscriminator1d(disc_scales)
+# ])
+discriminator = None
 
 trainer = TrainerAE(model, prior, slicer)
 
@@ -348,11 +350,11 @@ X_train, X_test = train_test_split(audio_files, train_size=0.8, random_state=42)
 
 hparams = {
     "quantize_bins": 256,
-    "dist_skip_epochs": 1
+    "dist_skip_epochs": 2
 }
 
 training_params = {
-    "batch_size": 32, # Set to multiple of 8 if mixed_precision is True
+    "batch_size": 22, # Set to multiple of 8 if mixed_precision is True
     "learning_rate": 1.5e-4,
     "dataset_multiplier": 384,
     "dataloader_num_workers": 4,
@@ -360,8 +362,8 @@ training_params = {
     "mixed_precision": True,
     "compile": False,
     "warmup": None, #(1e-6, 1),
-    "stage": 2,
-    "save_paths": ["../models/ravae_stage2.pt", "../models/ravae_disc_wave_dp.pt"]
+    "stage": 1,
+    "save_paths": ["../models/ravae_stage1_sk2_3en5_1en4e16.pt", "../models/ravae_disc_wave_dp.pt"]
 }
 
 train_ds = AudioFileDataset(X_train, sequence_length, multiplier=training_params["dataset_multiplier"])
@@ -391,7 +393,7 @@ train(trainer, train_dl, val_dl, lr=training_params["learning_rate"],
 # real_eval(trainer.backbone, 1001)
 # sample_from_prior(trainer.backbone, trainer.prior, 64 * 4)
 
-# checkpoint = torch.load("../models/ravae_stage2.pt")
+# checkpoint = torch.load("../models/ravae_stage1.pt")
 # trainer.load_state_dict(checkpoint["model"])
 
 # torch.save(trainer.backbone.state_dict(), "../models/orpheus_stage2.pt")

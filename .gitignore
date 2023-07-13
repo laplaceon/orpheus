@@ -10,5 +10,6 @@ data/
 input/
 output/
 models/
+logs/
 
 .code-workspace
