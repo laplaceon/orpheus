@@ -132,7 +132,7 @@ def eval(model, val_dl, hparams=None, stage=1):
     d_loss_total = 0
     nb = 0
 
-    r_loss_beta, d_loss_beta, f_loss_beta = 1., 1e-4, 0.2
+    r_loss_beta, d_loss_beta, f_loss_beta = 1., hparams["dist_beta"], 0.2
     
     model.eval()
     with torch.no_grad():
@@ -258,8 +258,8 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
                     # skip = warmup[1] if warmup is not None else 2
 
                     r_loss_beta = 1.
-                    # d_loss_beta = cyclic_kl(step, total_batch * 1, maxp=1, max_beta=3e-7)
-                    d_loss_beta = 1e-4 if ((stage == 1) and (epoch >= hparams["dist_skip_epochs"] or resuming)) else 0.
+                    # d_loss_beta_max = cyclic_kl(step - (hparams["dist_skip_epochs"] * total_batch), hparams["dist_cyclic_length"] * total_batch, maxp=1, max_beta=hparams["dist_beta"]) if hparams["dist_cyclic_length"] is not None else hparams["dist_beta"]
+                    d_loss_beta = hparams["dist_beta"] if ((stage == 1) and (epoch >= hparams["dist_skip_epochs"] or resuming)) else 0.
 
                     loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
                     # loss = (r_loss_beta * r_loss)
@@ -328,7 +328,7 @@ model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, enc_dr
 
 # print(model)
 
-K = 3
+K = 4
 prior = GaussianPrior(128, K)
 slicer = MPSSlicer(128, K, 50)
 # disc_scales = [4096, 2048, 1024, 512, 256]
@@ -350,11 +350,13 @@ X_train, X_test = train_test_split(audio_files, train_size=0.8, random_state=42)
 
 hparams = {
     "quantize_bins": 256,
-    "dist_skip_epochs": 2
+    "dist_beta": 2e-2,
+    "dist_skip_epochs": 3,
+    "dist_cyclic_length": None
 }
 
 training_params = {
-    "batch_size": 22, # Set to multiple of 8 if mixed_precision is True
+    "batch_size": 24, # Set to multiple of 8 if mixed_precision is True
     "learning_rate": 1.5e-4,
     "dataset_multiplier": 384,
     "dataloader_num_workers": 4,
@@ -363,7 +365,7 @@ training_params = {
     "compile": False,
     "warmup": None, #(1e-6, 1),
     "stage": 1,
-    "save_paths": ["../models/ravae_stage1_sk2_3en5_1en4e16.pt", "../models/ravae_disc_wave_dp.pt"]
+    "save_paths": ["../models/ravae_stage1.pt", "../models/ravae_disc_wave_dp.pt"]
 }
 
 train_ds = AudioFileDataset(X_train, sequence_length, multiplier=training_params["dataset_multiplier"])
@@ -380,20 +382,20 @@ print(pytorch_total_params)
 # ../models/ravae_disc_wave_1_5_e-4.pt = disc with l1 loss ~0.1
 # ../models/ravae_stage2.pt = gen with l1 loss ~0.1
 
-checkpoint = torch.load("../models/ravae_stage1.pt")
+# checkpoint = torch.load("../models/ravae_stage1.pt")
 # checkpoint = None
 # disc_checkpoint = torch.load("../models/ravae_disc_wave_cont.pt")
 disc_checkpoint = None
-train(trainer, train_dl, val_dl, lr=training_params["learning_rate"], 
-      stage=training_params["stage"], mixed_precision=training_params["mixed_precision"], 
-      compile=training_params["compile"], warmup=training_params["warmup"], hparams=hparams, 
-      checkpoint=checkpoint, disc=discriminator, disc_checkpoint=disc_checkpoint, save_paths=training_params["save_paths"])
+# train(trainer, train_dl, val_dl, lr=training_params["learning_rate"], 
+#       stage=training_params["stage"], mixed_precision=training_params["mixed_precision"], 
+#       compile=training_params["compile"], warmup=training_params["warmup"], hparams=hparams, 
+#       checkpoint=checkpoint, disc=discriminator, disc_checkpoint=disc_checkpoint, save_paths=training_params["save_paths"])
 
 # trainer.load_state_dict(checkpoint["model"])
 # real_eval(trainer.backbone, 1001)
 # sample_from_prior(trainer.backbone, trainer.prior, 64 * 4)
 
-# checkpoint = torch.load("../models/ravae_stage1.pt")
+# checkpoint = torch.load("../models/ravae_stage1_sk3_2en2_4m.pt")
 # trainer.load_state_dict(checkpoint["model"])
 
-# torch.save(trainer.backbone.state_dict(), "../models/orpheus_stage2.pt")
+# torch.save(trainer.backbone.state_dict(), "../models/orpheus_stage1_sk3_2en2_4m.pt")

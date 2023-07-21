@@ -12,8 +12,10 @@ from torch.cuda.amp import GradScaler
 
 from einops import reduce
 
-from audio_diffusion_pytorch import DiffusionModel, UNetV0, VDiffusion, VSampler
+from audio_diffusion_pytorch import DiffusionModel, VDiffusion, VSampler
 from a_unet import NumberEmbedder, Module, Repeat, exists
+
+from train_diffusion_helper import UNetV1
 
 from model.rae import Orpheus
 
@@ -35,20 +37,20 @@ NUM_GENRES = 8
 
 
 apply_augmentations = SomeOf(
-    num_transforms = (1, 3),
+    num_transforms = (1, None),
     transforms = [
         PolarityInversion(),
         PitchShift(sample_rate=sample_rate),
         Gain(),
-        OneOf(
-            transforms = [
-                HighPassFilter(),
-                LowPassFilter(),
-                # BandPassFilter()
-            ]
-        )
+        # OneOf(
+        #     transforms = [
+        #         HighPassFilter(),
+        #         LowPassFilter(),
+        #         # BandPassFilter()
+        #     ]
+        # )
     ]
-)
+).cuda()
 
 peak_norm = PeakNormalization(apply_to="only_too_loud_sounds", p=1., sample_rate=sample_rate).cuda()
 
@@ -75,42 +77,42 @@ def real_eval(model, encoder, upscaler, genre_embedder, epoch):
         7: "rock"
     }
 
-    test_file = "fkm"
+    test_files = ["neurotic", "xotour", "Synthwave Coolin'"]
 
-    # Turn noise into new audio sample with diffusion
-    # data, _ = torchaudio.load("../input/fukumean_inst.wav")
-    data, _ = torchaudio.load("../input/Waiting For The End [Official Music Video] - Linkin Park-HQ.wav")
-    bal = 0.5
+    print("Generating variations")
+    for test_file in tqdm(test_files):
+        # Turn noise into new audio sample with diffusion
+        data, _ = torchaudio.load(f"../input/{test_file}.wav")
+        bal = 0.5
 
-    if data.shape[0] == 2:
-        data = bal * data[0, :] + (1 - bal) * data[1, :]
-    else:
-        data = data[0, :]
+        if data.shape[0] == 2:
+            data = bal * data[0, :] + (1 - bal) * data[1, :]
+        else:
+            data = data[0, :]
 
-    model.eval()
-    genre_embedder.eval()
+        model.eval()
+        genre_embedder.eval()
 
-    with torch.no_grad():
-        chopped = data[:sequence_length * 2].cuda().unsqueeze(0).unsqueeze(1)
-        encoded_wave = encoder(chopped)
-        noise = torch.randn_like(encoded_wave).cuda()
-        noisy_latent = torch.lerp(encoded_wave, noise, 0.2)
+        with torch.no_grad():
+            chopped = data[:sequence_length * 2].cuda().unsqueeze(0).unsqueeze(1)
+            encoded_wave = encoder(chopped)
+            noise = torch.randn_like(encoded_wave).cuda()
+            noisy_latent = torch.lerp(encoded_wave, noise, 0.2)
 
-        print("Generating variations")
-        for i in tqdm(range(NUM_GENRES)):
-            genre = F.one_hot(torch.tensor(i), NUM_GENRES).cuda().unsqueeze(0).float()
-            genre = genre_embedder(genre.unsqueeze(1))
+            for i in range(NUM_GENRES):
+                genre = F.one_hot(torch.tensor(i), NUM_GENRES).cuda().unsqueeze(0).float()
+                genre = genre_embedder(genre.unsqueeze(1))
 
-            sample = model.sample(
-                noisy_latent,
-                embedding=genre,
-                embedding_scale=7.5, # Higher for more text importance, suggested range: 1-15 (Classifier-Free Guidance Scale)
-                num_steps=40 # Higher for better quality, suggested num_steps: 10-100
-            )
+                sample = model.sample(
+                    noisy_latent,
+                    embedding=genre,
+                    embedding_scale=7.5, # Higher for more text importance, suggested range: 1-15 (Classifier-Free Guidance Scale)
+                    num_steps=100 # Higher for better quality, suggested num_steps: 10-100
+                )
 
-            upscaled = upscaler(sample)
-            # with_vocals = 
-            torchaudio.save(f"../output/{slugify(test_file)}_{genres_map[i]}.wav", upscaled.cpu().squeeze(0), sample_rate)
+                upscaled = upscaler(sample)
+                # with_vocals = 
+                torchaudio.save(f"../output/{slugify(test_file)}_{genres_map[i]}_epoch{epoch}.wav", upscaled.cpu().squeeze(0), sample_rate)
 
 def eval(model, encoder, val_dl, cfg_rate, genre_embedder=None):
     valid_loss = 0
@@ -172,7 +174,7 @@ def train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=1e-4, c
 
             with torch.no_grad():
                 # encoded_wave = encoder(audio_wave.cuda())
-                encoded_wave = encoder(peak_norm(apply_augmentations(audio_wave, sample_rate).cuda()))
+                encoded_wave = encoder(peak_norm(apply_augmentations(audio_wave.cuda(), sample_rate)))
 
             with torch.autocast('cuda', dtype=torch.float16, enabled=mixed_precision):
                 loss = model(
@@ -269,9 +271,9 @@ class GenreConditioningPlugin(nn.Module):
 
 
 model = DiffusionModel(
-    net_t=UNetV0, # The model type used for diffusion (U-Net V0 in this case)
+    net_t=UNetV1, # The model type used for diffusion (U-Net V0 in this case)
     in_channels=128, # U-Net: number of input/output (audio) channels
-    channels=[256, 256, 512, 512, 768, 768, 768], # U-Net: channels at each layer
+    channels=[256, 256, 512, 512, 768, 768, 896], # U-Net: channels at each layer
     factors=[1, 2, 2, 2, 2, 2, 2], # U-Net: downsampling and upsampling factors at each layer
     items=[1, 2, 2, 2, 2, 4, 4], # U-Net: number of repeating items at each layer
     attentions=[0, 0, 1, 1, 1, 1, 1], # U-Net: attention enabled/disabled at each layer
@@ -283,7 +285,7 @@ model = DiffusionModel(
     use_embedding_cfg=True, # U-Net: enables classifier free guidance
     embedding_max_length=8, # U-Net: text embedding maximum length (default for T5-base)
     embedding_features=32, # U-Net: text mbedding features (default for T5-base)
-    cross_attentions=[1, 1, 1, 1, 1, 1, 1], # U-Net: cross-attention enabled/disabled at each layer
+    cross_attentions=[0, 0, 1, 1, 1, 1, 1], # U-Net: cross-attention enabled/disabled at each layer
 )
 
 # class DiffusionWrapper(nn.Module):
@@ -294,7 +296,7 @@ model = DiffusionModel(
 #         self.embedder = embedder
 
 orpheus = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, fast_recompose=True)
-orpheus_chk = torch.load("../models/orpheus_stage2.pt")
+orpheus_chk = torch.load("../models/orpheus_stage1_sk3_2en2_4m.pt")
 orpheus.load_state_dict(orpheus_chk)
 
 encoder = Encoder(orpheus.encoder, orpheus.pqmf)
@@ -317,9 +319,9 @@ audio_files = aggregate_wavs([f"{data_folder}/Classical", f"{data_folder}/Electr
 X_train, X_test = train_test_split(audio_files, train_size=0.8, random_state=42)
 
 training_params = {
-    "batch_size": 72,
-    "learning_rate": 1.5e-4,
-    "dataset_multiplier": 384,
+    "batch_size": 68,
+    "learning_rate": 1e-4,
+    "dataset_multiplier": 512,
     "dataloader_num_workers": 4,
     "dataloader_pin_mem": False,
     "mixed_precision": True,
@@ -331,6 +333,10 @@ train_ds = AudioFileDataset(X_train, sequence_length, multiplier=training_params
 val_ds = AudioFileDataset(X_test, sequence_length, multiplier=training_params["dataset_multiplier"])
 train_dl = DataLoader(train_ds, batch_size=training_params["batch_size"], shuffle=True, num_workers=training_params["dataloader_num_workers"], pin_memory=training_params["dataloader_pin_mem"])
 val_dl = DataLoader(val_ds, batch_size=training_params["batch_size"], num_workers=training_params["dataloader_num_workers"], pin_memory=training_params["dataloader_pin_mem"])
+
+pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+print(pytorch_total_params)
+# print(model)
 
 checkpoint = None
 train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=training_params["learning_rate"], cfg_rate=training_params["cfg_rate"], 

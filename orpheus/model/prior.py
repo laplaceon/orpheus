@@ -15,7 +15,9 @@ class PsPrior(nn.Module):
         kappas = [1., 5., 10., 50., 100.]
 
         self.locations = nn.ParameterList([locations[i] for i in range(K)])
-        self.scales = nn.ParameterList([torch.tensor(random.choice(kappas)) for _ in range(K)])
+        # scale_choices = [torch.tensor(random.choice(kappas)) for _ in range(K)]
+        scale_choices = [torch.tensor(kappas[i % len(kappas)]) for i in range(K)]
+        self.scales = nn.ParameterList(scale_choices)
         self.weights = nn.Parameter(torch.ones(K,))
     
     def sample(self, n):
