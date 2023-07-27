@@ -1,26 +1,19 @@
 import torchaudio
 
-import numpy as np
-
-from pprint import pprint
-
 from slugify import slugify
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.optim import AdamW, Adamax
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from torch.cuda.amp import GradScaler
 
-from model.rae import Orpheus
+from model.rae_dml import Orpheus
 from model.prior import GaussianPrior
 from model.slicer import MPSSlicer
-from model.discriminator import MultiScaleSpectralDiscriminator, MultiScaleSpectralDiscriminator1d, CombineDiscriminators, MultiPeriodDiscriminator, MultiScaleDiscriminator, ConvNet
-from model.mol_translate import MoLTranslate
+# from model.discriminator import MultiScaleSpectralDiscriminator, MultiScaleSpectralDiscriminator1d, CombineDiscriminators, MultiPeriodDiscriminator, MultiScaleDiscriminator, ConvNet
+from model.descript_discriminator import DescriptDiscriminator
 
-from train_helper import TrainerAE
+from train_helper_dml import TrainerAE
 
 from early import EarlyStopping
 
@@ -28,8 +21,6 @@ from lr_scheduler.warmup_lr_scheduler import WarmupLRScheduler
 
 from dataset import AudioFileDataset, aggregate_wavs
 from sklearn.model_selection import train_test_split
-
-from torchaudio.transforms import Resample
 
 from torch_audiomentations import SomeOf, OneOf, PolarityInversion, TimeInversion, AddColoredNoise, Gain, HighPassFilter, LowPassFilter, BandPassFilter, PeakNormalization, PitchShift
 
@@ -97,15 +88,15 @@ def real_eval(model, epoch):
     model.eval()
 
     test_files = [
-        "Synthwave Coolin'.wav",
-        "Waiting For The End [Official Music Video] - Linkin Park-HQ.wav",
-        "q1.wav"
+        "Synthwave Coolin'",
+        "Waiting For The End [Official Music Video] - Linkin Park-HQ",
+        "q1"
     ]
 
     for test_file in test_files:
-        out = get_song_features(model, f"../input/{test_file}")
+        out = get_song_features(model, f"../input/{test_file}.wav")
         print(out, torch.min(out).item(), torch.max(out).item())
-        torchaudio.save(f"../output/{slugify(test_file)}_epoch{epoch}_ps.wav", out.cpu().unsqueeze(0), sample_rate)
+        torchaudio.save(f"../output/{slugify(test_file)}_epoch{epoch}.wav", out.cpu().unsqueeze(0), sample_rate)
 
 def sample_from_prior(backbone, prior, num_samples):
     backbone.eval()
@@ -145,9 +136,10 @@ def eval(model, val_dl, hparams=None, stage=1):
 
             if stage == 1:
                 mb_loss, fb_loss, d_loss, f_loss = model(mod)
-                r_loss = mb_loss + fb_loss
-                loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
-                # loss = (r_loss_beta * r_loss)
+                # r_loss = mb_loss + fb_loss
+                r_loss = mb_loss
+                # loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
+                loss = (r_loss_beta * r_loss)
             elif stage == 2:
                 mb_loss, fb_loss, d_loss, f_loss = model.forward_nm(mod)
                 r_loss = mb_loss + fb_loss
@@ -167,7 +159,11 @@ def eval(model, val_dl, hparams=None, stage=1):
 def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=False, compile=False, warmup=None, checkpoint=None, disc=None, disc_checkpoint=None, save_paths=None):
     print("Learning rate:", lr)
 
+    total_batch = len(train_dl)
+
     betas = (0.9, 0.999)
+    disc_lr_multiplier = 0.1
+    gen_lr_multiplier = 0.5
 
     if stage == 1:
         model.stage1()
@@ -175,8 +171,8 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
         disc.cuda()
         model.stage2()
 
-        # betas = (0.7, 0.99)
-        opt_dis = AdamW(disc.parameters(), lr, betas=betas)
+        betas = (0.5, 0.99)
+        opt_dis = AdamW(disc.parameters(), lr * disc_lr_multiplier, betas=betas)
     
     opt = AdamW(model.parameters(), lr, betas=betas)
     scaler = GradScaler(enabled=mixed_precision)
@@ -187,8 +183,8 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
 
     if checkpoint is not None:
         model.load_state_dict(checkpoint["model"])
-        opt.load_state_dict(checkpoint["opt"])
         if stage == 1 or (disc_checkpoint is not None):
+            opt.load_state_dict(checkpoint["opt"])
             val_loss_min = checkpoint["loss"]
         print(f"Resuming from model with val loss: {checkpoint['loss']}")
         resuming = True
@@ -205,21 +201,28 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
     if compile:
         model = torch.compile(model)
 
-    if warmup is not None:
+    if stage == 1 and (checkpoint is None) and (warmup is not None):
         scheduler = WarmupLRScheduler(
-          opt, 
-          init_lr=warmup[0], 
-          peak_lr=lr, 
-          warmup_steps=warmup[1] * len(train_dl)
-    )
+            opt, 
+            init_lr=warmup[0], 
+            peak_lr=lr, 
+            warmup_steps=warmup[1] * total_batch
+        )
+        
+    if stage == 2 and (disc_checkpoint is None):
+        warmup = lr * gen_lr_multiplier
+        scheduler = WarmupLRScheduler(
+            opt, 
+            init_lr=warmup, 
+            peak_lr=lr, 
+            warmup_steps=total_batch
+        )
 
     step = 0
     epoch = 0
 
     model.prior.print_parameters()
     model.slicer.print_parameters()
-
-    total_batch = len(train_dl)
 
     # real_eval(model.backbone, i)
     while True:
@@ -253,7 +256,8 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
             with torch.autocast('cuda', dtype=torch.float16, enabled=mixed_precision):
                 if stage == 1:
                     mb_loss, fb_loss, d_loss, f_loss = model(beginning)
-                    r_loss = mb_loss + fb_loss
+                    # r_loss = mb_loss + fb_loss
+                    r_loss = mb_loss
                     
                     # skip = warmup[1] if warmup is not None else 2
 
@@ -261,8 +265,8 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
                     # d_loss_beta_max = cyclic_kl(step - (hparams["dist_skip_epochs"] * total_batch), hparams["dist_cyclic_length"] * total_batch, maxp=1, max_beta=hparams["dist_beta"]) if hparams["dist_cyclic_length"] is not None else hparams["dist_beta"]
                     d_loss_beta = hparams["dist_beta"] if ((stage == 1) and (epoch >= hparams["dist_skip_epochs"] or resuming)) else 0.
 
-                    loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
-                    # loss = (r_loss_beta * r_loss)
+                    # loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
+                    loss = (r_loss_beta * r_loss)
                 elif stage == 2:
                     r_loss, adv_loss, disc_loss, fm_loss, f_loss = model.forward_wd(beginning, disc)
 
@@ -283,7 +287,7 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
                 disc_loss_total += disc_loss.item()
                 fm_loss_total += fm_loss.item()
 
-            if stage == 2 and (step % 4 == 0):
+            if stage == 2 and (step % 5 == 0):
                 opt_dis.zero_grad()
                 scaler.scale(disc_loss).backward()
                 scaler.step(opt_dis)
@@ -326,8 +330,6 @@ model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, enc_dr
 # model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, dec_drop_path=0.05, fast_recompose=True)
 # model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, fast_recompose=True)
 
-# print(model)
-
 K = 4
 prior = GaussianPrior(128, K)
 slicer = MPSSlicer(128, K, 50)
@@ -339,6 +341,8 @@ slicer = MPSSlicer(128, K, 50)
 #     MultiScaleDiscriminator(3, conv_scale), 
 #     # MultiScaleSpectralDiscriminator1d(disc_scales)
 # ])
+
+# discriminator = DescriptDiscriminator()
 discriminator = None
 
 trainer = TrainerAE(model, prior, slicer)
@@ -346,17 +350,17 @@ trainer = TrainerAE(model, prior, slicer)
 data_folder = "../data"
 
 audio_files = aggregate_wavs([f"{data_folder}/Classical", f"{data_folder}/Electronic", f"{data_folder}/Hip Hop", f"{data_folder}/Jazz", f"{data_folder}/Metal", f"{data_folder}/Pop", f"{data_folder}/R&B", f"{data_folder}/Rock"])
-X_train, X_test = train_test_split(audio_files, train_size=0.8, random_state=42)
+X_train, X_test = train_test_split(audio_files[:64], train_size=0.8, random_state=42)
 
 hparams = {
     "quantize_bins": 256,
-    "dist_beta": 2e-2,
+    "dist_beta": 1.5e-2,
     "dist_skip_epochs": 3,
     "dist_cyclic_length": None
 }
 
 training_params = {
-    "batch_size": 24, # Set to multiple of 8 if mixed_precision is True
+    "batch_size": 3, # Set to multiple of 8 if mixed_precision is True
     "learning_rate": 1.5e-4,
     "dataset_multiplier": 384,
     "dataloader_num_workers": 4,
@@ -365,7 +369,7 @@ training_params = {
     "compile": False,
     "warmup": None, #(1e-6, 1),
     "stage": 1,
-    "save_paths": ["../models/ravae_stage1.pt", "../models/ravae_disc_wave_dp.pt"]
+    "save_paths": ["../models/ravae_stage1_dml.pt", "../models/ravae_disc_wave_dp.pt"]
 }
 
 train_ds = AudioFileDataset(X_train, sequence_length, multiplier=training_params["dataset_multiplier"])
@@ -378,24 +382,20 @@ val_dl = DataLoader(val_ds, batch_size=training_params["batch_size"], num_worker
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(pytorch_total_params)
 
-# ../models/ravae_stage1_cont_d_1e4.pt = completed first stage model
-# ../models/ravae_disc_wave_1_5_e-4.pt = disc with l1 loss ~0.1
-# ../models/ravae_stage2.pt = gen with l1 loss ~0.1
-
-# checkpoint = torch.load("../models/ravae_stage1.pt")
-# checkpoint = None
+# checkpoint = torch.load("../models/ravae_stage1_sk3_2en2_4m.pt")
+checkpoint = None
 # disc_checkpoint = torch.load("../models/ravae_disc_wave_cont.pt")
 disc_checkpoint = None
-# train(trainer, train_dl, val_dl, lr=training_params["learning_rate"], 
-#       stage=training_params["stage"], mixed_precision=training_params["mixed_precision"], 
-#       compile=training_params["compile"], warmup=training_params["warmup"], hparams=hparams, 
-#       checkpoint=checkpoint, disc=discriminator, disc_checkpoint=disc_checkpoint, save_paths=training_params["save_paths"])
+train(trainer, train_dl, val_dl, lr=training_params["learning_rate"], 
+      stage=training_params["stage"], mixed_precision=training_params["mixed_precision"], 
+      compile=training_params["compile"], warmup=training_params["warmup"], hparams=hparams, 
+      checkpoint=checkpoint, disc=discriminator, disc_checkpoint=disc_checkpoint, save_paths=training_params["save_paths"])
 
 # trainer.load_state_dict(checkpoint["model"])
 # real_eval(trainer.backbone, 1001)
 # sample_from_prior(trainer.backbone, trainer.prior, 64 * 4)
 
-# checkpoint = torch.load("../models/ravae_stage1_sk3_2en2_4m.pt")
+# checkpoint = torch.load("../models/ravae_stage2_sk3_2en2_4m.pt")
 # trainer.load_state_dict(checkpoint["model"])
 
-# torch.save(trainer.backbone.state_dict(), "../models/orpheus_stage1_sk3_2en2_4m.pt")
+# torch.save(trainer.backbone.state_dict(), "../models/orpheus_stage2_sk3_2en2_4m.pt")

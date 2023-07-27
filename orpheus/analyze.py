@@ -159,8 +159,8 @@ n_fft = 2048
 n_stft = n_fft // 2 + 1
 n_mels = 64
 
-# to_complex = torchaudio.transforms.Spectrogram(n_fft=n_fft, power=None).cuda()
-# to_mel = torchaudio.transforms.MelScale(sample_rate=bitrate, n_stft=n_fft // 2 + 1, n_mels=n_mels).cuda()
+to_complex = torchaudio.transforms.Spectrogram(n_fft=n_fft, power=None).cuda()
+to_mel = torchaudio.transforms.MelScale(sample_rate=bitrate, n_stft=n_fft // 2 + 1, n_mels=n_mels).cuda()
 # resize = torchvision.transforms.Resize((n_stft, n_stft)).cuda()
 
 clips = load_audio_clips(["../input/Synthwave Coolin'.wav", "../input/Waiting For The End [Official Music Video] - Linkin Park-HQ.wav"])
@@ -202,12 +202,16 @@ def visualize_spec(specs):
     plt.colorbar()
     plt.show()
 
+
+print(clips.shape)
+
 # mask = gen_random_mask_1d(clips, 0.1, 2048)
 # wav_mask = upsample_mask(mask, 2048).unsqueeze(1)
 
 # print(wav_mask.shape, clips.shape)
 
-# clips_mel = mel_spec(clips, 2048, num_mels=128)
+clips_mel = mel_spec(clips, 2048, num_mels=128)
+print(clips_mel.shape)
 # mask_mel = min_max_scale(mel_spec(wav_mask, 2048, num_mels=128))
 
 # print(mask, mask_mel.min().item(), mask_mel.max().item())
@@ -222,10 +226,10 @@ def visualize_spec(specs):
 # print(spec)
 # print(spec.shape, spec.min(), spec.max())
 
-nums = torch.rand(5,)
-logprobs = torch.log_softmax(nums, dim=0)
-probs = torch.softmax(nums, dim=0)
-exp = torch.exp(logprobs)
-log = torch.log(probs)
+# nums = torch.rand(5,)
+# logprobs = torch.log_softmax(nums, dim=0)
+# probs = torch.softmax(nums, dim=0)
+# exp = torch.exp(logprobs)
+# log = torch.log(probs)
 
-print(nums, logprobs, exp, log)
+# print(nums, logprobs, exp, log)

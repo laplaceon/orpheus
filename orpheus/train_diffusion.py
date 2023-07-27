@@ -25,16 +25,16 @@ from torch.utils.data import DataLoader
 from dataset import aggregate_wavs, AudioFileDataset
 from sklearn.model_selection import train_test_split
 
+from lr_scheduler.warmup_lr_scheduler import WarmupLRScheduler
 from early import EarlyStopping
 from tqdm import tqdm
 from enum import Enum
 
 from torch_audiomentations import SomeOf, Gain, PolarityInversion, PeakNormalization, HighPassFilter, LowPassFilter, BandPassFilter, OneOf, PitchShift
 
-sequence_length = 131072 * 8
+sequence_length = 131072 * 4
 sample_rate = 44100
 NUM_GENRES = 8
-
 
 apply_augmentations = SomeOf(
     num_transforms = (1, None),
@@ -142,19 +142,31 @@ def eval(model, encoder, val_dl, cfg_rate, genre_embedder=None):
         print(f"Valid loss: {valid_loss/nb}")
         return valid_loss/nb
 
-def train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=1e-4, cfg_rate=0., mixed_precision=False, checkpoint=None, save_path=None):
+def train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=1e-4, warmup=None, cfg_rate=0., mixed_precision=False, checkpoints=None, save_path=None):
     opt = AdamW(list(model.parameters()) + list(genre_embedder.parameters()), lr, betas=(0.5, 0.99))
     scaler = GradScaler(enabled=mixed_precision)
 
+    total_batch = len(train_dl)
+
     val_loss_min = None
 
-    if checkpoint is not None:
-        model.load_state_dict(checkpoint["model"])
-        opt.load_state_dict(checkpoint["opt"])
-        val_loss_min = checkpoint["loss"]
-        print(f"Resuming from model with val loss: {checkpoint['loss']}")
+    if checkpoints is not None:
+        model.load_state_dict(checkpoints[0]["model"])
+        opt.load_state_dict(checkpoints[0]["opt"])
+        val_loss_min = checkpoints[0]["loss"]
+        genre_embedder.load_state_dict(checkpoints[1]["model"])
+        
+        print(f"Resuming from model with val loss: {checkpoints[0]['loss']}")
 
     early_stopping = EarlyStopping(patience=10, verbose=True, val_loss_min=val_loss_min)
+
+    if (checkpoints is None) and (warmup is not None):
+        scheduler = WarmupLRScheduler(
+            opt, 
+            init_lr=warmup[0], 
+            peak_lr=lr, 
+            warmup_steps=warmup[1] * total_batch
+        )
 
     epoch = 0
     while True:
@@ -175,6 +187,7 @@ def train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=1e-4, c
             with torch.no_grad():
                 # encoded_wave = encoder(audio_wave.cuda())
                 encoded_wave = encoder(peak_norm(apply_augmentations(audio_wave.cuda(), sample_rate)))
+                # encoded_wave = encoder(peak_norm(apply_augmentations(audio_wave, sample_rate).cuda()))
 
             with torch.autocast('cuda', dtype=torch.float16, enabled=mixed_precision):
                 loss = model(
@@ -190,6 +203,9 @@ def train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=1e-4, c
             scaler.scale(loss).backward()
             scaler.step(opt)
             scaler.update()
+
+            if warmup is not None:
+                scheduler.step()
 
             nb += 1
 
@@ -296,7 +312,8 @@ model = DiffusionModel(
 #         self.embedder = embedder
 
 orpheus = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, fast_recompose=True)
-orpheus_chk = torch.load("../models/orpheus_stage1_sk3_2en2_4m.pt")
+# orpheus_chk = torch.load("../models/orpheus_stage1_sk3_2en2_4m.pt")
+orpheus_chk = torch.load("../models/orpheus_stage2_sk3_2en2_4m.pt")
 orpheus.load_state_dict(orpheus_chk)
 
 encoder = Encoder(orpheus.encoder, orpheus.pqmf)
@@ -319,14 +336,15 @@ audio_files = aggregate_wavs([f"{data_folder}/Classical", f"{data_folder}/Electr
 X_train, X_test = train_test_split(audio_files, train_size=0.8, random_state=42)
 
 training_params = {
-    "batch_size": 68,
-    "learning_rate": 1e-4,
+    "batch_size": 96,
+    "learning_rate": 1.2e-4,
     "dataset_multiplier": 512,
-    "dataloader_num_workers": 4,
+    "dataloader_num_workers": 2,
     "dataloader_pin_mem": False,
     "mixed_precision": True,
     "cfg_rate": 0.1,
-    "save_path": ["../models/diffuser.pt", "../models/genre_embedder.pt"]
+    "warmup": (2, 1e-6),
+    "save_path": ["../models/diffuser_12s.pt", "../models/genre_embedder_12s.pt"]
 }
 
 train_ds = AudioFileDataset(X_train, sequence_length, multiplier=training_params["dataset_multiplier"])
@@ -338,8 +356,9 @@ pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_g
 print(pytorch_total_params)
 # print(model)
 
-checkpoint = None
-train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=training_params["learning_rate"], cfg_rate=training_params["cfg_rate"], 
-      mixed_precision=training_params["mixed_precision"], checkpoint=checkpoint, save_path=training_params["save_path"])
+checkpoints = None
+train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=training_params["learning_rate"], warmup=training_params["warmup"], 
+      cfg_rate=training_params["cfg_rate"], mixed_precision=training_params["mixed_precision"], checkpoints=checkpoints, 
+      save_path=training_params["save_path"])
 
 # real_eval(model, encoder, upscaler, 0)
