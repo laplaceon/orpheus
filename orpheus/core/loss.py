@@ -142,22 +142,30 @@ class AudioDistanceCE(nn.Module):
             dml_labels = min_max_scale(x)
 
             y_scales_t, y_weights_t = self.translators(y_scale[1], y, y_scale[0], y_weighted)
-            # print(dml_labels.min().item(), dml_labels.max().item())
-            # print("mean", y.min().item(), y.max().item())
-            # print("scale", y_scales_t.min().item(), y_scales_t.max().item())
-            # print("w", y_weights_t.min().item(), y_weights_t.max().item())
 
-            y = y.view(B, -1, H, W)
-            y_scales_t = y_scales_t.view(B, -1, H, W)
-            y_weights_t = y_weights_t.view(B, -1, H, W)
+            y = y.view(-1, self.num_mixtures, H, W)
+            y_scales_t = y_scales_t.view(-1, self.num_mixtures, H, W)
+            y_weights_t = y_weights_t.view(-1, self.num_mixtures, H, W)
 
-            dml_labels = dml_labels.view(B, -1, H, W)
+            dml_labels = dml_labels.view(-1, 1, H, W)
 
             # print(y.shape, dml_labels.shape, y_scales_t.shape, y_weights_t.shape)
 
             dmll = discretized_mix_logistic_loss(y, y_scales_t, y_weights_t, dml_labels, self.num_classes, self.num_mixtures)
 
-            print(dmll.min().item(), dmll.max().item())
+            # print(dmll.min().item(), dmll.max().item())
+
+            # if dmll.min().isnan():
+                # print("prelabels", x.min().item(), x.max().item())
+                # print("labels", dml_labels.min().item(), dml_labels.max().item())
+                # print("mean", y.min().item(), y.max().item())
+                # print("scale", y_scales_t.min().item(), y_scales_t.max().item())
+                # print("w", y_weights_t.min().item(), y_weights_t.max().item())
+
+                # torch.save(x, "./x_spec.pt")
+                # print(x)
+
+                # break
 
             if mask is not None:
                 mod_mask = F.interpolate(mask.unsqueeze(1), size=dmll.shape[3], mode="linear").unsqueeze(2)

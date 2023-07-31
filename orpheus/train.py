@@ -80,6 +80,7 @@ def get_song_features(model, file):
 
     with torch.no_grad():
         output, _ = model.forward_nm(model.decompose(data_spec))
+        _, _, _, output = model.sum_mix(output)
         output = model.recompose(output).flatten()
         # print(output[:5].shape)
         return output
@@ -224,7 +225,7 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
     model.prior.print_parameters()
     model.slicer.print_parameters()
 
-    # real_eval(model.backbone, i)
+    # real_eval(model.backbone, epoch)
     while True:
         model.train()
 

@@ -101,6 +101,13 @@ class Orpheus(nn.Module):
         for param in self.pqmf.parameters():
             param.requires_grad = False
 
+    def sum_mix(self, y_subbands_mix):
+        _, _, L = y_subbands_mix.size()
+        y_weights, y_means, y_scales = self.expand_dml(y_subbands_mix)
+        y_means_weighted = y_means * F.softmax(y_weights, dim=-1)
+        y_subbands = torch.sum(y_means_weighted, dim=2)
+        return y_weights, y_means, y_scales, y_subbands.view(-1, self.num_bands, L)
+
     def forward_nm(self, x):
         z = self.encode(x)
         expected, _ = self.decode(z)

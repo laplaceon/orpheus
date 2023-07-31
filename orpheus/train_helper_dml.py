@@ -116,13 +116,12 @@ class TrainerAE(nn.Module):
 
         # ce_mask = mask.repeat(1, 2048 // 16)
 
-        y_weights, y_means, y_scales = self.backbone.expand_dml(y_subbands_mix)
-        y_means_weighted = y_means * F.softmax(y_weights, dim=-1)
-        y_subbands = torch.sum(y_means_weighted, dim=2)
+        y_weights, y_means, y_scales, y_subbands = self.backbone.sum_mix(y_subbands_mix)
 
+        # torch.save(x_subbands, "./x_subbands.pt")
         continuity_loss = self.entropy_distance(x_subbands, y_means.transpose(1, 2), F.softmax(y_weights, dim=-1).transpose(1, 2), y_scales.transpose(1, 2), mask=None)["entropy_distance"]
 
-        y = self.backbone.recompose(y_subbands.reshape(B, C, L))
+        y = self.backbone.recompose(y_subbands)
         fb_dist = self.distance(y, x)
 
         z_samples = self.prior.sample(z.shape[0] * z.shape[2])
