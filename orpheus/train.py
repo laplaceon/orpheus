@@ -257,8 +257,8 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
             with torch.autocast('cuda', dtype=torch.float16, enabled=mixed_precision):
                 if stage == 1:
                     mb_loss, fb_loss, d_loss, f_loss = model(beginning)
-                    # r_loss = mb_loss + fb_loss
-                    r_loss = mb_loss
+                    r_loss = mb_loss + (0.1 * fb_loss)
+                    # r_loss = mb_loss
                     
                     # skip = warmup[1] if warmup is not None else 2
 
@@ -361,7 +361,7 @@ hparams = {
 }
 
 training_params = {
-    "batch_size": 3, # Set to multiple of 8 if mixed_precision is True
+    "batch_size": 14, # Set to multiple of 8 if mixed_precision is True
     "learning_rate": 1.5e-4,
     "dataset_multiplier": 384,
     "dataloader_num_workers": 4,

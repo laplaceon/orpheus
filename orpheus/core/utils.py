@@ -8,6 +8,8 @@ def min_max_scale(x: torch.Tensor):
 
     return (x - min) / (range + 1e-8)
 
+def max_scale(x: torch.Tensor, max: float):
+    return x  / (max + 1e-8)
 
 # x1 = torch.load("../x_spec.pt")
 # print(x)

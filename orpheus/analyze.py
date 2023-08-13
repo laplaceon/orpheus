@@ -20,6 +20,8 @@ from model.mask import gen_random_mask_1d, upsample_mask
 
 from einops import rearrange
 
+from torch_audiomentations import PeakNormalization
+
 apply_augmentations = SomeOf(
     num_transforms = (1, 3),
     transforms = [
@@ -34,6 +36,8 @@ apply_augmentations = SomeOf(
         )
     ]
 )
+
+peak_norm = PeakNormalization(apply_to="only_too_loud_sounds", p=1., sample_rate=44100)
 
 to_db = torchaudio.transforms.AmplitudeToDB(top_db=80)
 
@@ -108,7 +112,7 @@ def load_audio_clips(l):
 
     for file in l:
         data, _ = torchaudio.load(file)
-        bal = random.uniform(0.25, 0.75)
+        bal = random.uniform(0.5, 0.5)
 
         if data.shape[0] == 2:
             data = bal * data[0, :] + (1 - bal) * data[1, :]
@@ -133,7 +137,7 @@ def mel_spec(x, scale, normalized=False, num_mels=None, sample_rate=44100):
         power=None,
     )
 
-    spec = to_spec(x)
+    spec = to_spec(x).abs()
 
     if num_mels is not None:
         to_mel = MelScale(
@@ -142,7 +146,7 @@ def mel_spec(x, scale, normalized=False, num_mels=None, sample_rate=44100):
             n_mels=num_mels,
         )
 
-        spec = to_mel(spec).abs()
+        spec = to_mel(spec)
 
     _, C, L = spec.size()
     spec = spec.view(B, -1, C, L)
@@ -154,7 +158,7 @@ def get_trunc_norm(min, max, mu, std):
 
 bitrate = 44100
 # sequence_length = 262144
-sequence_length = 131072
+sequence_length = 131072 * 14
 n_fft = 2048
 n_stft = n_fft // 2 + 1
 n_mels = 64
@@ -163,8 +167,13 @@ to_complex = torchaudio.transforms.Spectrogram(n_fft=n_fft, power=None).cuda()
 to_mel = torchaudio.transforms.MelScale(sample_rate=bitrate, n_stft=n_fft // 2 + 1, n_mels=n_mels).cuda()
 # resize = torchvision.transforms.Resize((n_stft, n_stft)).cuda()
 
-clips = load_audio_clips(["../input/Synthwave Coolin'.wav", "../input/Waiting For The End [Official Music Video] - Linkin Park-HQ.wav"])
-clips = list(clips.values())[1][sequence_length*5:sequence_length*6].unsqueeze(0).unsqueeze(1)
+clips = load_audio_clips(["../input/Synthwave Coolin'.wav", 
+                          "../input/Waiting For The End [Official Music Video] - Linkin Park-HQ.wav", 
+                          "../output/q1_epoch1.wav",
+                          "../input/lost.wav",
+                          "../input/neurotic.wav",
+                          "../input/xotour.wav"])
+clips = torch.stack([x[:sequence_length] for x in clips.values()]).unsqueeze(1)
 
 def test_wave_spectral_prob_relationship():
     # clips = pqmf(clips)
@@ -203,15 +212,17 @@ def visualize_spec(specs):
     plt.show()
 
 
-print(clips.shape)
+print(clips.shape, clips.min().item(), clips.max().item())
+# clips = peak_norm(clips * 5)
+# print(clips.shape, clips.min().item(), clips.max().item())
 
 # mask = gen_random_mask_1d(clips, 0.1, 2048)
 # wav_mask = upsample_mask(mask, 2048).unsqueeze(1)
 
 # print(wav_mask.shape, clips.shape)
 
-clips_mel = mel_spec(clips, 2048, num_mels=128)
-print(clips_mel.shape)
+clips_mel = mel_spec(clips, 32, num_mels=5)
+print(clips_mel.shape, clips_mel.min().item(), clips_mel.max().item())
 # mask_mel = min_max_scale(mel_spec(wav_mask, 2048, num_mels=128))
 
 # print(mask, mask_mel.min().item(), mask_mel.max().item())

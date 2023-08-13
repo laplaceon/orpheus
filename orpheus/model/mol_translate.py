@@ -29,4 +29,5 @@ class MoLTranslate(nn.Module):
 
         y_scale_translated, y_weight_translated = translated.chunk(2, dim=1)
 
-        return torch.sigmoid(y_scale_translated), torch.softmax(y_weight_translated, dim=1)
+        # return torch.sigmoid(y_scale_translated), torch.softmax(y_weight_translated, dim=1)
+        return y_scale_translated, y_weight_translated

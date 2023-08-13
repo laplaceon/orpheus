@@ -8,7 +8,7 @@ from typing import Callable, Optional, Sequence, Union, Tuple
 
 import torch.nn.functional as F
 
-from .utils import min_max_scale
+from .utils import max_scale
 
 def relative_distance(
     x: torch.Tensor,
@@ -116,13 +116,15 @@ class AudioDistanceCE(nn.Module):
         multiscale_stft: nn.Module,
         translators: nn.Module,
         num_classes: int,
-        num_mixtures: int
+        num_mixtures: int,
+        maxes: Sequence[int],
     ) -> None:
         super().__init__()
         self.multiscale_stft = multiscale_stft
         self.translators = translators
         self.num_classes = num_classes - 1
         self.num_mixtures = num_mixtures
+        self.maxes = maxes
         self.epsilon = 1e-7
 
     def forward(self, x: torch.Tensor, y_means: torch.Tensor, y_means_weighted: torch.Tensor, y_scales: torch.Tensor, mask: torch.Tensor = None):
@@ -138,16 +140,19 @@ class AudioDistanceCE(nn.Module):
             # x = rearrange(x, "b c h w -> (b c) h w")
             _, H, W = y.size()
 
-            y = min_max_scale(y)
-            dml_labels = min_max_scale(x)
+            # print(y.min().item(), y.max().item(), self.maxes[y_scale[1]])
+
+            y = max_scale(y, self.maxes[y_scale[1]])
+            # print(y.min().item(), y.max().item())
+            dml_labels = max_scale(x, self.maxes[y_scale[1]])
 
             y_scales_t, y_weights_t = self.translators(y_scale[1], y, y_scale[0], y_weighted)
 
-            y = y.view(-1, self.num_mixtures, H, W)
-            y_scales_t = y_scales_t.view(-1, self.num_mixtures, H, W)
-            y_weights_t = y_weights_t.view(-1, self.num_mixtures, H, W)
+            y = y.view(B, -1, H, W)
+            y_scales_t = y_scales_t.view(B, -1, H, W)
+            y_weights_t = y_weights_t.view(B, -1, H, W)
 
-            dml_labels = dml_labels.view(-1, 1, H, W)
+            dml_labels = dml_labels.view(B, -1, H, W)
 
             # print(y.shape, dml_labels.shape, y_scales_t.shape, y_weights_t.shape)
 
@@ -234,6 +239,10 @@ def discretized_mix_logistic_loss(model_means, logit_scales, logit_probs, target
     # l = logits[:, num_mixtures:, :, :]  # B, M*C*3 ,H, W
     # l = l.reshape(B, C, 2 * num_mixtures, H, W)  # B, C, 3 * M, H, W
 
+    model_means = model_means.view(B, 16, num_mixtures, H, W)
+    logit_scales = logit_scales.view(B, 16, num_mixtures, H, W)
+    logit_probs = logit_probs.view(B, 16, num_mixtures, H, W)
+
     # model_means = l[:, :, :num_mixtures, :, :]  # B, C, M, H, W
 
     inv_stdv, log_scales = _compute_inv_stdv(logit_scales)
@@ -273,7 +282,8 @@ def discretized_mix_logistic_loss(model_means, logit_scales, logit_probs, target
     # print(log_probs.shape, logit_probs.shape)
 
     # log_probs = torch.sum(log_probs, dim=1) + F.log_softmax(logit_probs, dim=1)  # B, M, H, W
-    log_probs = log_probs + torch.log(logit_probs)  # B, M, H, W
+    log_probs = log_probs + F.log_softmax(logit_probs, dim=1)  # B, M, H, W
+    # log_probs = log_probs + torch.log(logit_probs)  # B, M, H, W
     negative_log_probs = -torch.logsumexp(log_probs, dim=1)  # B, H, W
 
     return negative_log_probs

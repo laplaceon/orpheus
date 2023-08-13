@@ -11,8 +11,9 @@ class TrainerAE(nn.Module):
     def __init__(self, backbone, prior, slicer, sample_rate=44100):
         super().__init__()
 
-        scales = [2048, 1024, 512, 256, 128]
-        num_mels = [320, 160, 80, 40, 20]
+        scales = [2048, 1024, 512, 256, 128, 32]
+        num_mels = [320, 160, 80, 40, 20, 5]
+        maxes = [33, 8, 2.5, 0.6, 0.18, 0.015]
 
         self.backbone = backbone
         self.prior = prior
@@ -24,7 +25,7 @@ class TrainerAE(nn.Module):
         self.num_skipped_features = 1
 
         stft = closs.MultiScaleSTFT(scales, sample_rate, num_mels=num_mels)
-        self.entropy_distance = closs.AudioDistanceCE(stft, self.translator, 256, 4)
+        self.entropy_distance = closs.AudioDistanceCE(stft, self.translator, 1024, 4, {scale: max for scale, max in zip(scales, maxes)})
         self.distance = closs.AudioDistanceV1(stft, log_epsilon)
 
     def stage1(self):
@@ -118,8 +119,9 @@ class TrainerAE(nn.Module):
 
         y_weights, y_means, y_scales, y_subbands = self.backbone.sum_mix(y_subbands_mix)
 
-        # torch.save(x_subbands, "./x_subbands.pt")
-        continuity_loss = self.entropy_distance(x_subbands, y_means.transpose(1, 2), F.softmax(y_weights, dim=-1).transpose(1, 2), y_scales.transpose(1, 2), mask=None)["entropy_distance"]
+        continuity_loss = self.entropy_distance(x_subbands, y_means.transpose(1, 2), y_weights.transpose(1, 2), y_scales.transpose(1, 2), mask=None)["entropy_distance"]
+
+        print(continuity_loss.item())
 
         y = self.backbone.recompose(y_subbands)
         fb_dist = self.distance(y, x)
