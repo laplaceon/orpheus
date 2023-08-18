@@ -7,13 +7,13 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from torch.cuda.amp import GradScaler
 
-from model.rae_dml import Orpheus
-from model.prior import GaussianPrior
+from model.rae import Orpheus
+from model.prior import GaussianPrior, SingleGaussianPrior
 from model.slicer import MPSSlicer
 # from model.discriminator import MultiScaleSpectralDiscriminator, MultiScaleSpectralDiscriminator1d, CombineDiscriminators, MultiPeriodDiscriminator, MultiScaleDiscriminator, ConvNet
 from model.descript_discriminator import DescriptDiscriminator
 
-from train_helper_dml import TrainerAE
+from train_helper import TrainerAE
 
 from early import EarlyStopping
 
@@ -49,7 +49,7 @@ apply_augmentations_adv = SomeOf(
     num_transforms = (1, 3),
     transforms = [
         PolarityInversion(),
-        TimeInversion(),
+        # TimeInversion(),
         AddColoredNoise(),
         PitchShift(sample_rate=sample_rate),
         Gain(),
@@ -63,6 +63,27 @@ apply_augmentations_adv = SomeOf(
 )
 
 peak_norm = PeakNormalization(apply_to="only_too_loud_sounds", p=1., sample_rate=sample_rate).cuda()
+
+def get_song_features_dml(model, file):
+    data, rate = torchaudio.load(file)
+    bal = 0.5
+
+    if data.shape[0] == 2:
+        data = bal * data[0, :] + (1 - bal) * data[1, :]
+    else:
+        data = data[0, :]
+
+    consumable = data.shape[0] - (data.shape[0] % sequence_length)
+
+    data = torch.stack(torch.split(data[:consumable], sequence_length)).cuda()
+    data_spec = data[:15].unsqueeze(1)
+
+    with torch.no_grad():
+        output, _ = model.forward_nm(model.decompose(data_spec))
+        _, _, _, output = model.sum_mix(output)
+        output = model.recompose(output).flatten()
+        # print(output[:5].shape)
+        return output
 
 def get_song_features(model, file):
     data, rate = torchaudio.load(file)
@@ -80,7 +101,6 @@ def get_song_features(model, file):
 
     with torch.no_grad():
         output, _ = model.forward_nm(model.decompose(data_spec))
-        _, _, _, output = model.sum_mix(output)
         output = model.recompose(output).flatten()
         # print(output[:5].shape)
         return output
@@ -135,12 +155,12 @@ def eval(model, val_dl, hparams=None, stage=1):
             # x_avg = F.avg_pool1d(mod, 16)
             # x_quantized = mu_law_encoding(x_avg.squeeze(1), hparams["quantize_bins"])
 
-            if stage == 1:
+            if stage == 1 or stage == 3:
                 mb_loss, fb_loss, d_loss, f_loss = model(mod)
-                # r_loss = mb_loss + fb_loss
-                r_loss = mb_loss
-                # loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
-                loss = (r_loss_beta * r_loss)
+                r_loss = mb_loss + fb_loss
+                # r_loss = mb_loss
+                loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
+                # loss = (r_loss_beta * r_loss)
             elif stage == 2:
                 mb_loss, fb_loss, d_loss, f_loss = model.forward_nm(mod)
                 r_loss = mb_loss + fb_loss
@@ -162,9 +182,9 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
 
     total_batch = len(train_dl)
 
-    betas = (0.9, 0.999)
-    disc_lr_multiplier = 0.1
-    gen_lr_multiplier = 0.5
+    betas = (0.8, 0.99)
+    disc_lr_multiplier = 1.
+    gen_lr_multiplier = 1.
 
     if stage == 1:
         model.stage1()
@@ -173,6 +193,10 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
         model.stage2()
 
         betas = (0.5, 0.99)
+        opt_dis = AdamW(disc.parameters(), lr * disc_lr_multiplier, betas=betas)
+    elif stage == 3:
+        model.stage1()
+        disc.cuda()
         opt_dis = AdamW(disc.parameters(), lr * disc_lr_multiplier, betas=betas)
     
     opt = AdamW(model.parameters(), lr, betas=betas)
@@ -183,17 +207,21 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
     resuming = False
 
     if checkpoint is not None:
-        model.load_state_dict(checkpoint["model"])
-        if stage == 1 or (disc_checkpoint is not None):
-            opt.load_state_dict(checkpoint["opt"])
-            val_loss_min = checkpoint["loss"]
-        print(f"Resuming from model with val loss: {checkpoint['loss']}")
+        checkpoint_loaded = torch.load(checkpoint, map_location='cpu')
+        model.load_state_dict(checkpoint_loaded["model"])
+        if stage == 1 or stage == 3 or (disc_checkpoint is not None):
+            opt.load_state_dict(checkpoint_loaded["opt"])
+            val_loss_min = checkpoint_loaded["loss"]
+        print(f"Resuming from model with val loss: {checkpoint_loaded['loss']}")
         resuming = True
     
-    if (disc_checkpoint is not None) and stage == 2:
-        disc.load_state_dict(disc_checkpoint["model"])
-        opt_dis.load_state_dict(disc_checkpoint["opt"])
+    if (disc_checkpoint is not None) and (stage == 2 or stage == 3):
+        disc_checkpoint_loaded = torch.load(disc_checkpoint, map_location='cpu')
+        disc.load_state_dict(disc_checkpoint_loaded["model"])
+        opt_dis.load_state_dict(disc_checkpoint_loaded["opt"])
         print("Resuming from disc checkpoint")
+    
+    torch.cuda.empty_cache()
 
     # print(model.backbone)
 
@@ -202,7 +230,7 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
     if compile:
         model = torch.compile(model)
 
-    if stage == 1 and (checkpoint is None) and (warmup is not None):
+    if (stage == 1 or stage == 3) and (checkpoint is None) and (warmup is not None):
         scheduler = WarmupLRScheduler(
             opt, 
             init_lr=warmup[0], 
@@ -248,7 +276,7 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
             with torch.no_grad():
                 if stage == 1:
                     beginning = peak_norm(apply_augmentations(real_imgs, sample_rate=sample_rate).cuda())
-                elif stage == 2:
+                elif stage == 2 or stage == 3:
                     beginning = peak_norm(apply_augmentations_adv(real_imgs, sample_rate=sample_rate).cuda())
             #     x_avg = F.avg_pool1d(beginning, 16)
             #     x_quantized = mu_law_encoding(torch.clamp(x_avg, -1, 1).squeeze(1), hparams["quantize_bins"])
@@ -257,22 +285,32 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
             with torch.autocast('cuda', dtype=torch.float16, enabled=mixed_precision):
                 if stage == 1:
                     mb_loss, fb_loss, d_loss, f_loss = model(beginning)
-                    r_loss = mb_loss + (0.1 * fb_loss)
+                    r_loss = mb_loss + fb_loss
                     # r_loss = mb_loss
                     
                     # skip = warmup[1] if warmup is not None else 2
 
                     r_loss_beta = 1.
                     # d_loss_beta_max = cyclic_kl(step - (hparams["dist_skip_epochs"] * total_batch), hparams["dist_cyclic_length"] * total_batch, maxp=1, max_beta=hparams["dist_beta"]) if hparams["dist_cyclic_length"] is not None else hparams["dist_beta"]
-                    d_loss_beta = hparams["dist_beta"] if ((stage == 1) and (epoch >= hparams["dist_skip_epochs"] or resuming)) else 0.
+                    d_loss_beta = hparams["dist_beta"] if (epoch >= hparams["dist_skip_epochs"] or resuming) else 0.
 
-                    # loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
-                    loss = (r_loss_beta * r_loss)
+                    loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
+                    # loss = (r_loss_beta * r_loss)
                 elif stage == 2:
                     r_loss, adv_loss, disc_loss, fm_loss, f_loss = model.forward_wd(beginning, disc)
 
                     r_loss_beta, adv_loss_beta, disc_loss_beta, fm_loss_beta = 1., 1., 1., 20.
                     loss = (r_loss_beta * r_loss) + (adv_loss_beta * adv_loss) + (fm_loss_beta * fm_loss)
+                    disc_loss = disc_loss_beta * disc_loss
+                elif stage == 3:
+                    mb_loss, fb_loss, d_loss, adv_loss, disc_loss, fm_loss, f_loss = model.forward_wd2(beginning, disc)
+                    r_loss = mb_loss + fb_loss
+
+                    # r_loss_beta, adv_loss_beta, disc_loss_beta, fm_loss_beta = 2., 1., 1., 15.
+                    r_loss_beta, adv_loss_beta, disc_loss_beta, fm_loss_beta = 7.5, 1., 1., 10.
+                    d_loss_beta = hparams["dist_beta"] if (epoch >= hparams["dist_skip_epochs"] or resuming) else 0.
+
+                    loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss) + (adv_loss_beta * adv_loss) + (fm_loss_beta * fm_loss)
                     disc_loss = disc_loss_beta * disc_loss
 
             training_loss += loss.item()
@@ -287,8 +325,18 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
                 adv_loss_total += adv_loss.item()
                 disc_loss_total += disc_loss.item()
                 fm_loss_total += fm_loss.item()
+            elif stage == 3:
+                d_loss_total += d_loss.item()
+                fb_loss_total += fb_loss.item()
+                adv_loss_total += adv_loss.item()
+                disc_loss_total += disc_loss.item()
+                fm_loss_total += fm_loss.item()
 
-            if stage == 2 and (step % 5 == 0):
+
+            disc_update_interval = hparams["disc_updates_every"][1] if (epoch >= hparams["disc_warmup_epochs"] or resuming) \
+                else hparams["disc_updates_every"][0]
+
+            if (stage == 2 or stage == 3) and (step % disc_update_interval == 0):
                 opt_dis.zero_grad()
                 scaler.scale(disc_loss).backward()
                 scaler.step(opt_dis)
@@ -300,7 +348,7 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
 
             scaler.update()
 
-            if warmup is not None:
+            if warmup is not None and not resuming:
                 scheduler.step()
 
             nb += 1
@@ -309,6 +357,8 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
             print(f"Train loss: {training_loss/nb}, Dist Loss: {d_loss_total/nb}, Recon Loss: {r_loss_total/nb}, FB Loss: {fb_loss_total/nb}, Time Loss: {f_loss_total/nb}")
         elif stage == 2:
             print(f"Train loss: {training_loss/nb}, Disc Loss: {disc_loss_total/nb}, Adv Loss: {adv_loss_total/nb}, FM Loss: {fm_loss_total/nb}, Recon Loss: {r_loss_total/nb}, Time Loss: {f_loss_total/nb}")
+        elif stage == 3:
+            print(f"Train loss: {training_loss/nb}, Dist Loss: {d_loss_total/nb}, Disc Loss: {disc_loss_total/nb}, Adv Loss: {adv_loss_total/nb}, FM Loss: {fm_loss_total/nb}, Recon Loss: {r_loss_total/nb}, Time Loss: {f_loss_total/nb}")
         
         epoch += 1
 
@@ -316,7 +366,7 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
         if early_stopping(valid_loss):
             if stage == 1:
                 early_stopping.save_checkpoint(valid_loss, [{"model": model.state_dict(), "opt": opt.state_dict()}], [save_paths[0]])
-            elif stage == 2:
+            elif (stage == 2 or stage == 3):
                 early_stopping.save_checkpoint(valid_loss, [
                     {"model": model.state_dict(), "opt": opt.state_dict()}, 
                     {"model": disc.state_dict(), "opt": opt_dis.state_dict()}
@@ -332,7 +382,8 @@ model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, enc_dr
 # model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, fast_recompose=True)
 
 K = 4
-prior = GaussianPrior(128, K)
+# prior = GaussianPrior(128, K)
+prior = SingleGaussianPrior(128)
 slicer = MPSSlicer(128, K, 50)
 # disc_scales = [4096, 2048, 1024, 512, 256]
 # conv_period = ConvNet(1, 1, (5, 1), (2, 1), nn.Conv2d)
@@ -343,34 +394,36 @@ slicer = MPSSlicer(128, K, 50)
 #     # MultiScaleSpectralDiscriminator1d(disc_scales)
 # ])
 
-# discriminator = DescriptDiscriminator()
-discriminator = None
+discriminator = DescriptDiscriminator()
+# discriminator = None
 
 trainer = TrainerAE(model, prior, slicer)
 
-data_folder = "../data"
+data_folder = "/home/r/Datasets/Music"
 
 audio_files = aggregate_wavs([f"{data_folder}/Classical", f"{data_folder}/Electronic", f"{data_folder}/Hip Hop", f"{data_folder}/Jazz", f"{data_folder}/Metal", f"{data_folder}/Pop", f"{data_folder}/R&B", f"{data_folder}/Rock"])
-X_train, X_test = train_test_split(audio_files[:64], train_size=0.8, random_state=42)
+X_train, X_test = train_test_split(audio_files, train_size=0.8, random_state=42)
 
 hparams = {
     "quantize_bins": 256,
-    "dist_beta": 1.5e-2,
-    "dist_skip_epochs": 3,
-    "dist_cyclic_length": None
+    "dist_beta": 1e-3,
+    "dist_skip_epochs": 2,
+    "dist_cyclic_length": None,
+    "disc_warmup_epochs": 2,
+    "disc_updates_every": (5, 5)
 }
 
 training_params = {
-    "batch_size": 14, # Set to multiple of 8 if mixed_precision is True
+    "batch_size": 7, # Set to multiple of 8 if mixed_precision is True
     "learning_rate": 1.5e-4,
     "dataset_multiplier": 384,
     "dataloader_num_workers": 4,
     "dataloader_pin_mem": False,
     "mixed_precision": True,
     "compile": False,
-    "warmup": None, #(1e-6, 1),
-    "stage": 1,
-    "save_paths": ["../models/ravae_stage1_dml.pt", "../models/ravae_disc_wave_dp.pt"]
+    "warmup": (1e-6, 1),
+    "stage": 3,
+    "save_paths": ["../models/ravae_stage3_v2.pt", "../models/ravae_disc_wave_s3.pt"]
 }
 
 train_ds = AudioFileDataset(X_train, sequence_length, multiplier=training_params["dataset_multiplier"])
@@ -383,9 +436,9 @@ val_dl = DataLoader(val_ds, batch_size=training_params["batch_size"], num_worker
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(pytorch_total_params)
 
-# checkpoint = torch.load("../models/ravae_stage1_sk3_2en2_4m.pt")
+# checkpoint = "../models/ravae_stage3_v2.pt"
 checkpoint = None
-# disc_checkpoint = torch.load("../models/ravae_disc_wave_cont.pt")
+# disc_checkpoint = "../models/ravae_disc_wave_s3.pt"
 disc_checkpoint = None
 train(trainer, train_dl, val_dl, lr=training_params["learning_rate"], 
       stage=training_params["stage"], mixed_precision=training_params["mixed_precision"], 

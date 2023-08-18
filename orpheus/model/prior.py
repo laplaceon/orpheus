@@ -64,4 +64,19 @@ class GaussianPrior(nn.Module):
     def print_parameters(self):
         print(self.weights)
 
+class SingleGaussianPrior(nn.Module):
+    def __init__(self, latent_dim):
+        super().__init__()
+
+        self.loc = nn.Parameter(torch.randn(latent_dim))
+        self.scale = nn.Parameter(torch.rand(latent_dim))
+
+    def sample(self, n):
+        component = Normal(2 * F.sigmoid(self.loc) - 1, F.sigmoid(self.scale))
+
+        return component.rsample((n,))
+    
+    def print_parameters(self):
+        pass
+
 # gmm = GaussianPrior(128, 1)
