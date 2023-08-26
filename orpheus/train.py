@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from torch.cuda.amp import GradScaler
 
 from model.rae import Orpheus
-from model.prior import GaussianPrior, SingleGaussianPrior
+from model.prior import SingleGaussianPrior
 from model.slicer import MPSSlicer
 # from model.discriminator import MultiScaleSpectralDiscriminator, MultiScaleSpectralDiscriminator1d, CombineDiscriminators, MultiPeriodDiscriminator, MultiScaleDiscriminator, ConvNet
 from model.descript_discriminator import DescriptDiscriminator

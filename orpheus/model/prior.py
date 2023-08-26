@@ -5,41 +5,6 @@ import torch.nn.functional as F
 from power_spherical import PowerSpherical
 from torch.distributions import Normal
 
-class PsPrior(nn.Module):
-    def __init__(self, latent_dim, K):
-        super().__init__()
-
-        assert latent_dim >= K, f"latent dim must be at least the number of mixture components"
-
-        locations = torch.eye(latent_dim)
-        kappas = [1., 5., 10., 50.]
-
-        self.locations = nn.ParameterList([locations[i] for i in range(K)])
-        # scale_choices = [torch.tensor(random.choice(kappas)) for _ in range(K)]
-        scale_choices = [torch.tensor(kappas[i % len(kappas)]) for i in range(K)]
-        self.scales = nn.ParameterList(scale_choices)
-        self.weights = nn.Parameter(torch.ones(K,))
-    
-    def sample(self, n):
-        samples = []
-
-        for location, scale in zip(self.locations, self.scales):
-            component = PowerSpherical(loc=F.normalize(location, dim=0), scale=scale)
-            samples.append(component.rsample((n,)))
-
-        # probs = F.softmax(self.weights, dim=-1)
-        probs = F.gumbel_softmax(self.weights)
-        weighted_samples = torch.stack(samples).transpose(0, 2) * probs
-        weighted_sum = torch.sum(weighted_samples.transpose(0, 2), dim=0)
-
-        return weighted_sum
-    
-    def print(self):
-        with torch.no_grad():
-            for location, scale in zip(self.locations, self.scales):
-                print(torch.sum(location), scale)
-            print(self.weights)
-
 class GaussianPrior(nn.Module):
     def __init__(self, latent_dim, K):
         super().__init__()

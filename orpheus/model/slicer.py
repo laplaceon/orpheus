@@ -11,10 +11,11 @@ class MPSSlicer(nn.Module):
         assert latent_dim >= K, f"latent dim must be at least the number of mixture components"
 
         locations = torch.eye(latent_dim)
-        kappas = [1., 5., 10., 50., 100.]
+        kappas = [1., 5., 10., 50.]
 
         self.locations = nn.ParameterList([locations[i] for i in range(K)])
-        self.scales = nn.ParameterList([torch.tensor(random.choice(kappas)) for _ in range(K)])
+        # self.scales = nn.ParameterList([torch.tensor(random.choice(kappas)) for _ in range(K)])
+        self.scales = nn.ParameterList([torch.tensor(kappas[i % len(kappas)]) for i in range(K)])
         self.weights = nn.Parameter(torch.ones(K,))
 
         self.L = L
