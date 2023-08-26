@@ -12,7 +12,7 @@ class PsPrior(nn.Module):
         assert latent_dim >= K, f"latent dim must be at least the number of mixture components"
 
         locations = torch.eye(latent_dim)
-        kappas = [1., 5., 10., 50., 100.]
+        kappas = [1., 5., 10., 50.]
 
         self.locations = nn.ParameterList([locations[i] for i in range(K)])
         # scale_choices = [torch.tensor(random.choice(kappas)) for _ in range(K)]

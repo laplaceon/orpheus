@@ -290,9 +290,9 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
                     
                     # skip = warmup[1] if warmup is not None else 2
 
-                    r_loss_beta = 1.
+                    r_loss_beta = 7.5
                     # d_loss_beta_max = cyclic_kl(step - (hparams["dist_skip_epochs"] * total_batch), hparams["dist_cyclic_length"] * total_batch, maxp=1, max_beta=hparams["dist_beta"]) if hparams["dist_cyclic_length"] is not None else hparams["dist_beta"]
-                    d_loss_beta = hparams["dist_beta"] if (epoch >= hparams["dist_skip_epochs"] or resuming) else 0.
+                    d_loss_beta = hparams["dist_beta"] if ((epoch >= hparams["dist_skip_epochs"] and (epoch - hparams["dist_skip_epochs"]) % hparams["dist_update_every"] == 0) or resuming) else 0.
 
                     loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
                     # loss = (r_loss_beta * r_loss)
@@ -307,8 +307,8 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
                     r_loss = mb_loss + fb_loss
 
                     # r_loss_beta, adv_loss_beta, disc_loss_beta, fm_loss_beta = 2., 1., 1., 15.
-                    r_loss_beta, adv_loss_beta, disc_loss_beta, fm_loss_beta = 7.5, 1., 1., 10.
-                    d_loss_beta = hparams["dist_beta"] if (epoch >= hparams["dist_skip_epochs"] or resuming) else 0.
+                    r_loss_beta, adv_loss_beta, disc_loss_beta, fm_loss_beta = 7.5, 1., 1., 15.
+                    d_loss_beta = hparams["dist_beta"] if ((epoch >= hparams["dist_skip_epochs"] and (epoch - hparams["dist_skip_epochs"]) % hparams["dist_update_every"] == 0) or resuming) else 0.
 
                     loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss) + (adv_loss_beta * adv_loss) + (fm_loss_beta * fm_loss)
                     disc_loss = disc_loss_beta * disc_loss
@@ -377,9 +377,9 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
             print("Early stopping")
             break
             
-model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, enc_drop_path=0.05, dec_drop_path=0.05, fast_recompose=True)
+# model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, enc_drop_path=0.05, dec_drop_path=0.05, fast_recompose=True)
 # model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, dec_drop_path=0.05, fast_recompose=True)
-# model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, fast_recompose=True)
+model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, fast_recompose=True)
 
 K = 4
 # prior = GaussianPrior(128, K)
@@ -406,24 +406,25 @@ X_train, X_test = train_test_split(audio_files, train_size=0.8, random_state=42)
 
 hparams = {
     "quantize_bins": 256,
-    "dist_beta": 1e-3,
-    "dist_skip_epochs": 2,
+    "dist_beta": 1e-4,
+    "dist_skip_epochs": 3,
+    "dist_update_every": 2,
     "dist_cyclic_length": None,
     "disc_warmup_epochs": 2,
     "disc_updates_every": (5, 5)
 }
 
 training_params = {
-    "batch_size": 7, # Set to multiple of 8 if mixed_precision is True
-    "learning_rate": 1.5e-4,
+    "batch_size": 24, # Set to multiple of 8 if mixed_precision is True
+    "learning_rate": 1e-4,
     "dataset_multiplier": 384,
     "dataloader_num_workers": 4,
     "dataloader_pin_mem": False,
     "mixed_precision": True,
     "compile": False,
     "warmup": (1e-6, 1),
-    "stage": 3,
-    "save_paths": ["../models/ravae_stage3_v2.pt", "../models/ravae_disc_wave_s3.pt"]
+    "stage": 1,
+    "save_paths": ["../models/ravae_stage1_v2.pt", "../models/ravae_disc_wave_s1.pt"]
 }
 
 train_ds = AudioFileDataset(X_train, sequence_length, multiplier=training_params["dataset_multiplier"])
