@@ -5,13 +5,13 @@ import torch.nn.functional as F
 from power_spherical import PowerSpherical
 
 class MPSSlicer(nn.Module):
-    def __init__(self, latent_dim, K, L):
+    def __init__(self, latent_dim, K, L, kappas=None):
         super().__init__()
 
         assert latent_dim >= K, f"latent dim must be at least the number of mixture components"
 
         locations = torch.eye(latent_dim)
-        kappas = [1., 5., 10., 50.]
+        kappas = [1., 5., 10., 50.] if kappas is None else kappas
 
         self.locations = nn.ParameterList([locations[i] for i in range(K)])
         # self.scales = nn.ParameterList([torch.tensor(random.choice(kappas)) for _ in range(K)])
@@ -61,7 +61,7 @@ class MPSSlicer(nn.Module):
         samples = []
 
         for location, scale in zip(self.locations, self.scales):
-            component = PowerSpherical(loc=F.normalize(location, dim=0), scale=scale)
+            component = PowerSpherical(loc=F.normalize(location, dim=-1), scale=scale)
             samples.append(component.rsample((self.L,)))
 
         # probs = F.softmax(self.weights, dim=-1)
@@ -74,5 +74,5 @@ class MPSSlicer(nn.Module):
     def print_parameters(self):
         with torch.no_grad():
             for location, scale in zip(self.locations, self.scales):
-                print(torch.sum(location), scale)
+                print([torch.sum(torch.square(location)).item(), scale.item()])
             print(self.weights)

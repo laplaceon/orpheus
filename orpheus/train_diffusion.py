@@ -15,6 +15,7 @@ from einops import reduce
 from audio_diffusion_pytorch import DiffusionModel, VDiffusion, VSampler
 from a_unet import NumberEmbedder, Module, Repeat, exists
 
+from train_helper import TrainerAE
 from train_diffusion_helper import UNetV1
 
 from model.rae import Orpheus
@@ -32,7 +33,8 @@ from enum import Enum
 
 from torch_audiomentations import SomeOf, Gain, PolarityInversion, PeakNormalization, HighPassFilter, LowPassFilter, BandPassFilter, OneOf, PitchShift
 
-sequence_length = 131072 * 4
+sequence_length = 131072 * 2
+test_sequence_length = sequence_length * 4
 sample_rate = 44100
 NUM_GENRES = 8
 
@@ -94,7 +96,7 @@ def real_eval(model, encoder, upscaler, genre_embedder, epoch):
         genre_embedder.eval()
 
         with torch.no_grad():
-            chopped = data[:sequence_length * 2].cuda().unsqueeze(0).unsqueeze(1)
+            chopped = data[:test_sequence_length * 2].cuda().unsqueeze(0).unsqueeze(1)
             encoded_wave = encoder(chopped)
             noise = torch.randn_like(encoded_wave).cuda()
             noisy_latent = torch.lerp(encoded_wave, noise, 0.2)
@@ -112,7 +114,7 @@ def real_eval(model, encoder, upscaler, genre_embedder, epoch):
 
                 upscaled = upscaler(sample)
                 # with_vocals = 
-                torchaudio.save(f"../output/{slugify(test_file)}_{genres_map[i]}_epoch{epoch}.wav", upscaled.cpu().squeeze(0), sample_rate)
+                torchaudio.save(f"../output/diffusion/{slugify(test_file)}_{genres_map[i]}_epoch{epoch}.wav", upscaled.cpu().squeeze(0), sample_rate)
 
 def eval(model, encoder, val_dl, cfg_rate, genre_embedder=None):
     valid_loss = 0
@@ -143,7 +145,7 @@ def eval(model, encoder, val_dl, cfg_rate, genre_embedder=None):
         return valid_loss/nb
 
 def train(model, encoder, upscaler, genre_embedder, train_dl, val_dl, lr=1e-4, warmup=None, cfg_rate=0., mixed_precision=False, checkpoints=None, save_path=None):
-    opt = AdamW(list(model.parameters()) + list(genre_embedder.parameters()), lr, betas=(0.5, 0.99))
+    opt = AdamW(list(model.parameters()) + list(genre_embedder.parameters()), lr, betas=(0.8, 0.99))
     scaler = GradScaler(enabled=mixed_precision)
 
     total_batch = len(train_dl)
@@ -312,8 +314,7 @@ model = DiffusionModel(
 #         self.embedder = embedder
 
 orpheus = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, fast_recompose=True)
-# orpheus_chk = torch.load("../models/orpheus_stage1_sk3_2en2_4m.pt")
-orpheus_chk = torch.load("../models/orpheus_stage2_sk3_2en2_4m.pt")
+orpheus_chk = torch.load("../models/orpheus_stage3.pt")
 orpheus.load_state_dict(orpheus_chk)
 
 encoder = Encoder(orpheus.encoder, orpheus.pqmf)
@@ -330,21 +331,21 @@ upscaler.cuda()
 upscaler.eval()
 genre_embedder.cuda()
 
-data_folder = "../data"
+data_folder = "/home/r/Datasets/Music"
 
 audio_files = aggregate_wavs([f"{data_folder}/Classical", f"{data_folder}/Electronic", f"{data_folder}/Hip Hop", f"{data_folder}/Jazz", f"{data_folder}/Metal", f"{data_folder}/Pop", f"{data_folder}/R&B", f"{data_folder}/Rock"])
 X_train, X_test = train_test_split(audio_files, train_size=0.8, random_state=42)
 
 training_params = {
-    "batch_size": 96,
-    "learning_rate": 1.2e-4,
+    "batch_size": 280,
+    "learning_rate": 1e-4,
     "dataset_multiplier": 512,
-    "dataloader_num_workers": 2,
+    "dataloader_num_workers": 0,
     "dataloader_pin_mem": False,
     "mixed_precision": True,
     "cfg_rate": 0.1,
     "warmup": (2, 1e-6),
-    "save_path": ["../models/diffuser_12s.pt", "../models/genre_embedder_12s.pt"]
+    "save_path": ["../models/diffuser_6s.pt", "../models/genre_embedder_6s.pt"]
 }
 
 train_ds = AudioFileDataset(X_train, sequence_length, multiplier=training_params["dataset_multiplier"])

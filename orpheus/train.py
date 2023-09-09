@@ -292,7 +292,7 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
 
                     r_loss_beta = 7.5
                     # d_loss_beta_max = cyclic_kl(step - (hparams["dist_skip_epochs"] * total_batch), hparams["dist_cyclic_length"] * total_batch, maxp=1, max_beta=hparams["dist_beta"]) if hparams["dist_cyclic_length"] is not None else hparams["dist_beta"]
-                    d_loss_beta = hparams["dist_beta"] if ((epoch >= hparams["dist_skip_epochs"] and (epoch - hparams["dist_skip_epochs"]) % hparams["dist_update_every"] == 0) or resuming) else 0.
+                    d_loss_beta = hparams["dist_beta"] if ((epoch >= hparams["dist_skip_epochs"] and (epoch - hparams["dist_skip_epochs"]) % hparams["dist_update_every"] == 0) or (resuming and epoch % hparams["dist_update_every"] == 0)) else 0.
 
                     loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss)
                     # loss = (r_loss_beta * r_loss)
@@ -307,7 +307,7 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
                     r_loss = mb_loss + fb_loss
 
                     # r_loss_beta, adv_loss_beta, disc_loss_beta, fm_loss_beta = 2., 1., 1., 15.
-                    r_loss_beta, adv_loss_beta, disc_loss_beta, fm_loss_beta = 7.5, 1., 1., 15.
+                    r_loss_beta, adv_loss_beta, disc_loss_beta, fm_loss_beta = 7.5, 1., 1., 16.
                     d_loss_beta = hparams["dist_beta"] if ((epoch >= hparams["dist_skip_epochs"] and (epoch - hparams["dist_skip_epochs"]) % hparams["dist_update_every"] == 0) or resuming) else 0.
 
                     loss = (r_loss_beta * r_loss) + (d_loss_beta * d_loss) + (adv_loss_beta * adv_loss) + (fm_loss_beta * fm_loss)
@@ -377,14 +377,14 @@ def train(model, train_dl, val_dl, lr, hparams=None, stage=1, mixed_precision=Fa
             print("Early stopping")
             break
             
-# model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, enc_drop_path=0.05, dec_drop_path=0.05, fast_recompose=True)
+model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, enc_drop_path=0.05, dec_drop_path=0.05, fast_recompose=True)
 # model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, dec_drop_path=0.05, fast_recompose=True)
-model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, fast_recompose=True)
+# model = Orpheus(enc_ds_expansion_factor=1.5, dec_ds_expansion_factor=1.5, fast_recompose=True)
 
 K = 4
 # prior = GaussianPrior(128, K)
 prior = SingleGaussianPrior(128)
-slicer = MPSSlicer(128, K, 50)
+slicer = MPSSlicer(128, K, 50, kappas=[10., 50., 5., 1.])
 # disc_scales = [4096, 2048, 1024, 512, 256]
 # conv_period = ConvNet(1, 1, (5, 1), (2, 1), nn.Conv2d)
 # conv_scale = ConvNet(1, 1, 15, 7, nn.Conv1d)
@@ -406,16 +406,16 @@ X_train, X_test = train_test_split(audio_files, train_size=0.8, random_state=42)
 
 hparams = {
     "quantize_bins": 256,
-    "dist_beta": 1e-4,
+    "dist_beta": 5e-3,
     "dist_skip_epochs": 3,
-    "dist_update_every": 2,
+    "dist_update_every": 1,
     "dist_cyclic_length": None,
     "disc_warmup_epochs": 2,
     "disc_updates_every": (5, 5)
 }
 
 training_params = {
-    "batch_size": 24, # Set to multiple of 8 if mixed_precision is True
+    "batch_size": 7, # Set to multiple of 8 if mixed_precision is True
     "learning_rate": 1e-4,
     "dataset_multiplier": 384,
     "dataloader_num_workers": 4,
@@ -423,8 +423,8 @@ training_params = {
     "mixed_precision": True,
     "compile": False,
     "warmup": (1e-6, 1),
-    "stage": 1,
-    "save_paths": ["../models/ravae_stage1_v2.pt", "../models/ravae_disc_wave_s1.pt"]
+    "stage": 3,
+    "save_paths": ["../models/ravae_s3_v2.pt", "../models/ravae_disc_s3.pt"]
 }
 
 train_ds = AudioFileDataset(X_train, sequence_length, multiplier=training_params["dataset_multiplier"])
@@ -437,20 +437,20 @@ val_dl = DataLoader(val_ds, batch_size=training_params["batch_size"], num_worker
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(pytorch_total_params)
 
-# checkpoint = "../models/ravae_stage3_v2.pt"
-checkpoint = None
-# disc_checkpoint = "../models/ravae_disc_wave_s3.pt"
-disc_checkpoint = None
-train(trainer, train_dl, val_dl, lr=training_params["learning_rate"], 
-      stage=training_params["stage"], mixed_precision=training_params["mixed_precision"], 
-      compile=training_params["compile"], warmup=training_params["warmup"], hparams=hparams, 
-      checkpoint=checkpoint, disc=discriminator, disc_checkpoint=disc_checkpoint, save_paths=training_params["save_paths"])
+# checkpoint = "../models/ravae_s3_v2_e44.pt"
+# checkpoint = None
+# disc_checkpoint = "../models/ravae_disc_s3_e44.pt"
+# disc_checkpoint = None
+# train(trainer, train_dl, val_dl, lr=training_params["learning_rate"], 
+#       stage=training_params["stage"], mixed_precision=training_params["mixed_precision"], 
+#       compile=training_params["compile"], warmup=training_params["warmup"], hparams=hparams, 
+#       checkpoint=checkpoint, disc=discriminator, disc_checkpoint=disc_checkpoint, save_paths=training_params["save_paths"])
 
 # trainer.load_state_dict(checkpoint["model"])
 # real_eval(trainer.backbone, 1001)
 # sample_from_prior(trainer.backbone, trainer.prior, 64 * 4)
 
-# checkpoint = torch.load("../models/ravae_stage2_sk3_2en2_4m.pt")
+# checkpoint = torch.load("../models/ravae_s3_v2_e44.pt")
 # trainer.load_state_dict(checkpoint["model"])
 
-# torch.save(trainer.backbone.state_dict(), "../models/orpheus_stage2_sk3_2en2_4m.pt")
+# torch.save(trainer.backbone.state_dict(), "../models/orpheus_stage3.pt")
